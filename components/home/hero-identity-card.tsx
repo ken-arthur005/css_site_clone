@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import type { SiteInfo } from "@/types/site";
 
-export function HeroIdentityCard({ site }: { site: SiteInfo }) {
+export function HeroIdentityCard({ site, typeOnReveal }: { site: SiteInfo; typeOnReveal: boolean }) {
   const getCompleteLines = () => [
     "Institutional identity",
     "CSS / KNUST",
@@ -16,6 +16,10 @@ export function HeroIdentityCard({ site }: { site: SiteInfo }) {
   const [visibleLines, setVisibleLines] = useState(getCompleteLines);
 
   useEffect(() => {
+    if (!typeOnReveal) {
+      return;
+    }
+
     let lineIndex = 0;
     let characterIndex = 0;
     let timeout = 0;
@@ -55,7 +59,7 @@ export function HeroIdentityCard({ site }: { site: SiteInfo }) {
       window.cancelAnimationFrame(frame);
       window.clearTimeout(timeout);
     };
-  }, [completeLines]);
+  }, [completeLines, typeOnReveal]);
 
   const accessibleSummary = `${site.name}. ${site.institution}. ${site.college}. ${site.location}.`;
 

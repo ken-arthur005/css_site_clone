@@ -160,8 +160,10 @@ export function HeroTechField() {
             }}
             style={style}
           >
-            <div className="hero-tech-field__float">
-              <Image alt="" height={128} src={`/tech_icons/${symbol.file}`} width={128} />
+            <div className="hero-tech-field__entry" data-depth={symbol.depth}>
+              <div className="hero-tech-field__float">
+                <Image alt="" height={128} src={`/tech_icons/${symbol.file}`} width={128} />
+              </div>
             </div>
           </div>
         );
