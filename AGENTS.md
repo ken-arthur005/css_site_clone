@@ -57,9 +57,9 @@ The site should feel connected from page to page. Give every major section an in
 
 - Persistent header on **all viewport sizes**: “COMPUTER SCIENCE SOCIETY” at left, and a clearly labeled `MENU` control with hamburger icon at right. Do not replace the desktop menu with an ordinary horizontal navigation bar.
 - Menu opens into a quick full-screen navigation surface with About, Executives, Events, Merch, plus appropriate contact/social context. Support keyboard, touch, Escape, focus trapping/return, and correct open/closed semantics.
-- Use one coherent, fast angular route transition from a persistent app-level coordinator. The transition must respect navigation timing, direct URL loads, browser Back/Forward and reduced motion; avoid masking a failed or slow route. Aim for a brief visual beat, not a mandatory long intro.
+- Use one coherent, fast angular route transition from a persistent app-level coordinator. The transition must respect navigation timing, direct URL loads and browser Back/Forward; avoid masking a failed or slow route. Aim for a brief visual beat, not a mandatory long intro.
 - A short logo/title opening sequence may cover **critical first-view loading** on a first visit in a session. It must not wait for every photo, model and section. Subsequent navigation uses only the short route transition. Do not hold the hero hostage to a fabricated progress bar.
-- Use subtle Lenis smoothing on capable desktop contexts if it improves the experience; preserve near-native mobile scrolling. Synchronize it with ScrollTrigger if used. Disable smoothing for reduced motion, and verify anchors, keyboard navigation, focus and browser restoration.
+- Use subtle Lenis smoothing on capable desktop contexts if it improves the experience; preserve near-native mobile scrolling. Synchronize it with ScrollTrigger if used, and verify anchors, keyboard navigation, focus and browser restoration.
 
 ## Homepage storyboard
 
@@ -126,7 +126,6 @@ Place verified content and explicitly marked placeholders together in a clear co
 
 - Design each breakpoint intentionally. Desktop's pinned About sequence becomes a shorter readable mobile experience; desktop executive accordion becomes mobile cards; desktop horizontal event rail becomes accessible native-feeling navigation.
 - All interactive elements must work by keyboard and touch, expose visible focus, and have meaningful labels. Images need appropriate alt text; decorative symbols can be hidden from assistive technology. Preserve headings and sensible reading order in all animation states.
-- Respect `prefers-reduced-motion`: no intensive scrub/pin or smooth scrolling, limited nonessential parallax/rotation, and an equivalent direct path to the same content. Do not hide content until an animation has run.
 - Test narrow phones, tablets, desktop, zoomed text and touch. Avoid trapping scrolling or making navigation dependent on hover.
 - Meet usable contrast for real text and controls against the selected lighter blue/near-white palette. Check both mock and real photography behind text.
 

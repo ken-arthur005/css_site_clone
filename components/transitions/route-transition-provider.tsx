@@ -38,17 +38,6 @@ export function RouteTransitionProvider({ children }: { children: ReactNode }) {
   const isProgrammaticNavigation = useRef(false);
   const releaseTimeout = useRef<number | null>(null);
   const failSafeTimeout = useRef<number | null>(null);
-  const [reducedMotion, setReducedMotion] = useState(false);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const updateMotionPreference = () => setReducedMotion(mediaQuery.matches);
-
-    updateMotionPreference();
-    mediaQuery.addEventListener("change", updateMotionPreference);
-    return () => mediaQuery.removeEventListener("change", updateMotionPreference);
-  }, []);
-
   useEffect(() => {
     if (pathname === pathnameRef.current) {
       return;
@@ -61,11 +50,6 @@ export function RouteTransitionProvider({ children }: { children: ReactNode }) {
       failSafeTimeout.current = null;
     }
 
-    if (reducedMotion) {
-      isProgrammaticNavigation.current = false;
-      return;
-    }
-
     // Back/Forward reaches the destination before React can intercept it.
     // A brief pass over the new route keeps that path visually coherent.
     if (!isProgrammaticNavigation.current) {
@@ -75,7 +59,7 @@ export function RouteTransitionProvider({ children }: { children: ReactNode }) {
       setPhase("leaving");
       isProgrammaticNavigation.current = false;
     }
-  }, [pathname, reducedMotion]);
+  }, [pathname]);
 
   useEffect(() => {
     if (phase !== "leaving") {
@@ -104,11 +88,6 @@ export function RouteTransitionProvider({ children }: { children: ReactNode }) {
 
   const navigate = (href: string, destinationLabel = "") => {
     if (isProgrammaticNavigation.current || href === pathname) {
-      return;
-    }
-
-    if (reducedMotion) {
-      router.push(href);
       return;
     }
 

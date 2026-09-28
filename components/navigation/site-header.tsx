@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
+import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { TransitionLink } from "@/components/transitions/transition-link";
 
 const menuItems = [
@@ -10,8 +12,23 @@ const menuItems = [
   { href: "/merch", label: "MERCH", number: "04" },
 ];
 
+function subscribeToScroll(onStoreChange: () => void) {
+  window.addEventListener("scroll", onStoreChange, { passive: true });
+  return () => window.removeEventListener("scroll", onStoreChange);
+}
+
+function getScrollSnapshot() {
+  return window.scrollY > 24;
+}
+
+function getServerScrollSnapshot() {
+  return false;
+}
+
 export function SiteHeader() {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const hasScrolled = useSyncExternalStore(subscribeToScroll, getScrollSnapshot, getServerScrollSnapshot);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const returnFocusRef = useRef(true);
@@ -20,6 +37,8 @@ export function SiteHeader() {
     returnFocusRef.current = returnFocus;
     setIsOpen(false);
   };
+
+  const isHome = pathname === "/";
 
   useEffect(() => {
     if (!isOpen) {
@@ -82,13 +101,17 @@ export function SiteHeader() {
 
   return (
     <>
-      <header className="site-header">
+      <header
+        className={`site-header${isHome ? " site-header--hero" : ""}`}
+        data-scrolled={hasScrolled}
+      >
         <TransitionLink
           className="site-header__identity"
           href="/"
           transitionLabel="HOME"
         >
-          COMPUTER SCIENCE SOCIETY
+          <Image alt="" className="site-header__logo" height={22} priority src="/css_logo.svg" width={42} />
+          <span>COMPUTER SCIENCE SOCIETY</span>
         </TransitionLink>
         <button
           ref={triggerRef}
