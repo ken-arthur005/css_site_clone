@@ -808,6 +808,79 @@
     transform: translate(-50%, 1.75rem);
   }
 
+  .home-about__chapter--paths {
+    padding: 0;
+  }
+
+  .home-about__paths-stage {
+    height: 100svh;
+  }
+
+  .home-about__paths-overlay {
+    position: fixed;
+    z-index: 41;
+    inset: 0;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .home-about__paths-overlay h2 {
+    position: absolute;
+    top: calc(4.5rem + var(--space-1));
+    left: 50%;
+    width: max-content;
+    max-width: none;
+    margin: 0;
+    font-family: var(--font-bricolage), sans-serif;
+    font-size: clamp(2.55rem, 5.1vw, 5.95rem);
+    font-weight: 650;
+    letter-spacing: var(--tracking-display);
+    line-height: 0.84;
+    text-align: center;
+    white-space: nowrap;
+    transform: translateX(-50%);
+  }
+
+  .home-about__compass {
+    position: absolute;
+    top: 55%;
+    left: 50%;
+    width: min(46vw, 35rem);
+    aspect-ratio: 1;
+    transform: translate(-50%, -50%);
+  }
+
+  .home-about__compass-clock,
+  .home-about__compass-ring {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .home-about__compass-ring circle,
+  .home-about__compass-ring line {
+    stroke: color-mix(in oklch, var(--foreground) 42%, transparent);
+    stroke-width: 0.35;
+  }
+
+  .home-about__compass-label {
+    --compass-radius: min(26vw, 20rem);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max-content;
+    color: color-mix(in oklch, var(--foreground) 58%, transparent);
+    font-family: var(--font-geist-mono), monospace;
+    font-size: clamp(0.72rem, 1.05vw, 1rem);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-align: center;
+    transform: rotate(var(--compass-angle)) translateY(calc(-1 * var(--compass-radius))) rotate(calc(-1 * var(--compass-angle))) translate(-50%, -50%);
+  }
+
   .home-about__collage {
     position: fixed;
     z-index: 41;
@@ -1277,6 +1350,22 @@
 
   .home-about__chapter--community h2 {
     font-size: clamp(2.2rem, 10vw, 3.8rem);
+  }
+
+  .home-about__paths-overlay h2 {
+    top: calc(4.5rem + var(--space-1));
+    font-size: clamp(1.87rem, 8.5vw, 3.23rem);
+  }
+
+  .home-about__compass {
+    top: 57%;
+    width: min(74vw, 25rem);
+  }
+
+  .home-about__compass-label {
+    --compass-radius: 43vw;
+    font-size: 0.62rem;
+    letter-spacing: 0.02em;
   }
 
   .home-about__collage {

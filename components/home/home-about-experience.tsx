@@ -5,7 +5,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -22,10 +22,21 @@ const communityImages = [
   { src: "/this%20is%20css/WhatsApp%20Image%202026-09-28%20at%201.41.30%20PM%20(1).jpeg", alt: "CSS community gathering", position: "east" },
 ];
 
+const careerPaths = [
+  "Cybersecurity",
+  "Data Science",
+  "UI/UX Design",
+  "Software Engineering",
+  "AI/ML Engineering",
+  "Cloud Engineering",
+  "DevOps",
+];
+
 export function HomeAboutExperience() {
   const rootRef = useRef<HTMLElement>(null);
   const progressRef = useRef(0);
   const settleProgressRef = useRef(0);
+  const pathsDockRef = useRef(0);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [sceneActive, setSceneActive] = useState(false);
   const [aboutActive, setAboutActive] = useState(false);
@@ -56,11 +67,14 @@ export function HomeAboutExperience() {
     const community = root.querySelector<HTMLElement>(".home-about__chapter--community");
     const communityStage = root.querySelector<HTMLElement>(".home-about__community-stage");
     const communityHeading = communityStage?.querySelector<HTMLElement>("h2");
+    const pathsStage = root.querySelector<HTMLElement>(".home-about__paths-stage");
+    const pathsOverlay = root.querySelector<HTMLElement>(".home-about__paths-overlay");
+    const clock = root.querySelector<HTMLElement>(".home-about__compass-clock");
     const cardEntries = cardRefs.current
       .map((card) => ({ card, entry: card?.querySelector<HTMLElement>(".home-about__collage-card-inner") }))
       .filter((item): item is { card: HTMLDivElement; entry: HTMLElement } => item.card !== null && item.entry !== null);
 
-    if (!statement || !community || !communityStage || !communityHeading) {
+    if (!statement || !community || !communityStage || !communityHeading || !pathsStage || !pathsOverlay || !clock) {
       return;
     }
 
@@ -104,6 +118,7 @@ export function HomeAboutExperience() {
     });
 
     settleProgressRef.current = 0;
+    pathsDockRef.current = 0;
     const headingText = "this is us";
     const typingState = { progress: 0 };
     communityHeading.textContent = "";
@@ -118,7 +133,79 @@ export function HomeAboutExperience() {
         invalidateOnRefresh: true,
         onEnter: () => setAboutState(true),
         onEnterBack: () => setAboutState(true),
-        onLeave: () => setAboutState(false),
+        // Keep the shared model alive after the collage pin ends so it can
+        // travel into the paths scene instead of disappearing between stages.
+        onLeaveBack: () => setAboutState(false),
+      },
+    });
+
+    const setPathsVisible = (visible: boolean) => {
+      root.dataset.pathsActive = String(visible);
+      gsap.set(pathsOverlay, { autoAlpha: visible ? 1 : 0 });
+    };
+
+    setPathsVisible(false);
+
+    const clockTimeline = gsap.timeline({ paused: true, repeat: -1 });
+    const step = 360 / careerPaths.length;
+    careerPaths.forEach(() => {
+      clockTimeline
+        .to(clock, { rotation: `+=${step}`, duration: 0.65, ease: "power2.inOut", transformOrigin: "50% 50%" })
+        .to({}, { duration: 1.45 });
+    });
+
+    const travelTrigger = ScrollTrigger.create({
+      trigger: pathsStage,
+      start: "top bottom",
+      end: "top top",
+      scrub: 0.3,
+      invalidateOnRefresh: true,
+      onEnter: () => setAboutState(true),
+      onEnterBack: () => setAboutState(true),
+      onUpdate: (self) => {
+        // Reserve the final part of the journey for the pinned compass scene.
+        pathsDockRef.current = self.progress * 0.72;
+        gsap.set(pathsOverlay, {
+          autoAlpha: gsap.utils.clamp(0, 1, (self.progress - 0.48) / 0.52),
+        });
+      },
+      onLeaveBack: () => {
+        pathsDockRef.current = 0;
+        gsap.set(pathsOverlay, { autoAlpha: 0 });
+      },
+    });
+
+    const pathsTrigger = ScrollTrigger.create({
+      trigger: pathsStage,
+      start: "top top",
+      end: "+=120%",
+      pin: true,
+      pinSpacing: true,
+      scrub: 0.3,
+      invalidateOnRefresh: true,
+      onUpdate: (self) => {
+        pathsDockRef.current = 0.72 + self.progress * 0.28;
+      },
+      onEnter: () => {
+        setPathsVisible(true);
+        clockTimeline.play();
+        setAboutState(true);
+      },
+      onEnterBack: () => {
+        setPathsVisible(true);
+        clockTimeline.play();
+        setAboutState(true);
+      },
+      onLeave: () => {
+        setPathsVisible(false);
+        clockTimeline.pause();
+        setAboutState(false);
+      },
+      onLeaveBack: () => {
+        // Hand back to the bridge at its completed position when scrolling up.
+        pathsDockRef.current = 0.72;
+        setPathsVisible(true);
+        clockTimeline.pause(0);
       },
     });
 
@@ -149,6 +236,11 @@ export function HomeAboutExperience() {
     return () => {
       handoffTrigger.kill();
       communityTimeline.scrollTrigger?.kill();
+      travelTrigger.kill();
+      pathsTrigger.kill();
+      clockTimeline.kill();
+      gsap.set(pathsOverlay, { clearProps: "opacity,visibility" });
+      delete root.dataset.pathsActive;
       document.documentElement.classList.remove("about-model-active");
     };
   }, { scope: rootRef });
@@ -220,7 +312,7 @@ export function HomeAboutExperience() {
   return (
     <section className="home-about" data-active={aboutActive} ref={rootRef} aria-label="About CSS">
       <div className="home-about__model-layer">
-        {sceneActive && <AboutModelScene progressRef={progressRef} settleProgressRef={settleProgressRef} />}
+        {sceneActive && <AboutModelScene progressRef={progressRef} settleProgressRef={settleProgressRef} pathsDockRef={pathsDockRef} />}
       </div>
       <section className="home-about__chapter home-about__chapter--statement">
           <h2>A society shaped by computing.</h2>
@@ -230,6 +322,27 @@ export function HomeAboutExperience() {
           <h2 aria-label="this is us">this is us</h2>
         </div>
       </section>
+      <section className="home-about__chapter home-about__chapter--paths" aria-label="Computer science career paths">
+        <div className="home-about__paths-stage" />
+      </section>
+      <div aria-hidden="true" className="home-about__paths-overlay">
+        <h2>greatness awaits</h2>
+        <div className="home-about__compass">
+          <div className="home-about__compass-clock">
+            <svg className="home-about__compass-ring" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" fill="none" r="42" />
+              {careerPaths.map((path, index) => (
+                <line key={path} x1="50" x2="50" y1="5" y2="10" transform={`rotate(${(index * 360) / careerPaths.length} 50 50)`} />
+              ))}
+            </svg>
+          </div>
+          {careerPaths.map((path, index) => (
+            <span className="home-about__compass-label" key={path} style={{ "--compass-angle": `${(index * 360) / careerPaths.length - 90}deg` } as CSSProperties}>
+              {path}
+            </span>
+          ))}
+        </div>
+      </div>
       <div aria-hidden="true" className="home-about__collage">
         {communityImages.map((image, index) => (
           <div className={`home-about__collage-card home-about__collage-card--${image.position}`} key={image.src} ref={(element) => { cardRefs.current[index] = element; }}>

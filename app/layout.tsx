@@ -6,6 +6,7 @@ import {
   Geist_Mono,
 } from "next/font/google";
 import { SiteFooter } from "@/components/navigation/site-footer";
+import { SmoothScrollProvider } from "@/components/providers/smooth-scroll-provider";
 import { SiteHeader } from "@/components/navigation/site-header";
 import { RouteTransitionProvider } from "@/components/transitions/route-transition-provider";
 import "./globals.css";
@@ -43,11 +44,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${bricolage.variable} ${bioRhyme.variable} ${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <RouteTransitionProvider>
-          <SiteHeader />
-          {children}
-          <SiteFooter />
-        </RouteTransitionProvider>
+        <SmoothScrollProvider>
+          <RouteTransitionProvider>
+            <SiteHeader />
+            {children}
+            <SiteFooter />
+          </RouteTransitionProvider>
+        </SmoothScrollProvider>
       </body>
     </html>
   );

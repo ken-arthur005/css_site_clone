@@ -4,6 +4,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { TransitionLink } from "@/components/transitions/transition-link";
+import { useSmoothScroll } from "@/components/providers/smooth-scroll-provider";
 
 const menuItems = [
   { href: "/about", label: "ABOUT", number: "01" },
@@ -27,6 +28,7 @@ function getServerScrollSnapshot() {
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const { setScrollLocked } = useSmoothScroll();
   const [isOpen, setIsOpen] = useState(false);
   const hasScrolled = useSyncExternalStore(subscribeToScroll, getScrollSnapshot, getServerScrollSnapshot);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -39,6 +41,11 @@ export function SiteHeader() {
   };
 
   const isHome = pathname === "/";
+
+  useEffect(() => {
+    setScrollLocked(isOpen);
+    return () => setScrollLocked(false);
+  }, [isOpen, setScrollLocked]);
 
   useEffect(() => {
     if (!isOpen) {

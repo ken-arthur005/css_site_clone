@@ -9,9 +9,10 @@ import type { Group } from "three";
 type AboutModelSceneProps = {
   progressRef: MutableRefObject<number>;
   settleProgressRef: MutableRefObject<number>;
+  pathsDockRef: MutableRefObject<number>;
 };
 
-function CssMark({ progressRef, settleProgressRef }: AboutModelSceneProps) {
+function CssMark({ progressRef, settleProgressRef, pathsDockRef }: AboutModelSceneProps) {
   const groupRef = useRef<Group>(null);
   const { scene } = useGLTF("/CSS%20Logo%203d.glb");
   const model = useMemo(() => scene.clone(), [scene]);
@@ -32,11 +33,18 @@ function CssMark({ progressRef, settleProgressRef }: AboutModelSceneProps) {
     const eased = handoff * handoff * (3 - 2 * handoff);
     const settle = settleProgressRef.current;
 
-    group.position.x = startX * (1 - eased);
-    group.position.y = startY * (1 - eased) - viewport.height * 0.18 * eased * (1 - settle);
-    const settleScale = size.width < 768 ? 1 : 1 + settle * 0.14;
+    const prePathsX = startX * (1 - eased);
+    const prePathsY = startY * (1 - eased) - viewport.height * 0.18 * eased * (1 - settle);
+    const compass = document.querySelector<HTMLElement>(".home-about__compass");
+    const compassBounds = compass?.getBoundingClientRect();
+    const dockX = compassBounds ? ((compassBounds.left + compassBounds.width / 2 - size.width / 2) / size.width) * viewport.width : 0;
+    const dockY = compassBounds ? -((compassBounds.top + compassBounds.height / 2 - size.height / 2) / size.height) * viewport.height : 0;
+
+    group.position.x = prePathsX * (1 - pathsDockRef.current) + dockX * pathsDockRef.current;
+    group.position.y = prePathsY * (1 - pathsDockRef.current) + dockY * pathsDockRef.current;
+    const settleScale = size.width < 768 ? 0.55 : 1 + settle * 0.14;
     group.scale.setScalar((0.16 + eased * 0.94) * settleScale);
-    group.rotation.y += delta * 0.62 * (1 - settle);
+    group.rotation.y += delta * 0.38;
     group.rotation.x = Math.sin(performance.now() * 0.00055) * 0.12;
   });
 
@@ -49,7 +57,7 @@ function CssMark({ progressRef, settleProgressRef }: AboutModelSceneProps) {
   );
 }
 
-export function AboutModelScene({ progressRef, settleProgressRef }: AboutModelSceneProps) {
+export function AboutModelScene({ progressRef, settleProgressRef, pathsDockRef }: AboutModelSceneProps) {
   return (
     <Canvas
       camera={{ position: [0, 0, 6], fov: 42 }}
@@ -60,7 +68,7 @@ export function AboutModelScene({ progressRef, settleProgressRef }: AboutModelSc
     >
       <ambientLight intensity={2.2} />
       <directionalLight intensity={2.6} position={[3, 4, 5]} />
-      <CssMark progressRef={progressRef} settleProgressRef={settleProgressRef} />
+      <CssMark progressRef={progressRef} settleProgressRef={settleProgressRef} pathsDockRef={pathsDockRef} />
     </Canvas>
   );
 }
