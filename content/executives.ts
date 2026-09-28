@@ -2,17 +2,18 @@ import type { Executive } from "@/types/executive";
 
 export const executives = [
   {
-    id: "exec-kane-nana-francis",
-    slug: "kane-nana-francis",
-    name: "Kane Nana Francis",
+    id: "exec-albert-kodua-frimpong",
+    slug: "albert-kodua-frimpong",
+    name: "Albert Kodua Frimpong",
     role: "President",
     order: 1,
     contentStatus: "verified",
     portrait: {
-      src: "/kane_president.png",
-      alt: "Kane Nana Francis, President of CSS KNUST",
+      src: "/albert_president.png",
+      alt: "Albert Kodua Frimpong, President of CSS KNUST",
       contentStatus: "verified",
     },
+    quote: "We are what we repeatedly do, greatness therefore is not an act but a habit",
   },
   {
     id: "exec-eliah-abormegah",
@@ -26,6 +27,7 @@ export const executives = [
       alt: "Eliah Abormegah, Vice President of CSS KNUST",
       contentStatus: "verified",
     },
+    quote: "In brightest day in blackest night",
   },
   {
     id: "exec-carey-churchill-ken-arthur",
@@ -39,6 +41,7 @@ export const executives = [
       alt: "Carey Churchill Ken-Arthur, Financial Secretary of CSS KNUST",
       contentStatus: "verified",
     },
+    quote: "Roses are red, violets are blue, I love shawarma and so do you",
   },
   {
     id: "exec-emmanuella",
@@ -47,6 +50,12 @@ export const executives = [
     role: "General Secretary",
     order: 4,
     contentStatus: "verified",
+    portrait: {
+      src: "/ella general sec.png",
+      alt: "Emmanuella, General Secretary of CSS KNUST",
+      contentStatus: "verified",
+    },
+    quote: "The Lord is my sherperd, i shall not want",
   },
   {
     id: "exec-charles-kwame-bediakoh",
@@ -55,6 +64,12 @@ export const executives = [
     role: "Organizing Secretary",
     order: 5,
     contentStatus: "verified",
+    portrait: {
+      src: "/charles org sec.png",
+      alt: "Charles Kwame Bediakoh, Organizing Secretary of CSS KNUST",
+      contentStatus: "verified",
+    },
+    quote: "DIE DIE DIEEEE",
   },
   {
     id: "exec-rosequeen-cudjoe",
@@ -63,5 +78,11 @@ export const executives = [
     role: "Women's Commissioner",
     order: 6,
     contentStatus: "verified",
+    portrait: {
+      src: "/rosequeen wocom.png",
+      alt: "RoseQueen Cudjoe, Women's Commissioner of CSS KNUST",
+      contentStatus: "verified",
+    },
+    quote: "I like Roses and I'm a Queen.",
   },
 ] satisfies readonly Executive[];

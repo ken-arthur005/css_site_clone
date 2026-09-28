@@ -49,7 +49,14 @@ export function HomeAboutExperience() {
     }
 
     const observer = new IntersectionObserver(
-      ([entry]) => setSceneActive(entry.isIntersecting),
+      ([entry]) => {
+        setSceneActive(entry.isIntersecting);
+
+        if (!entry.isIntersecting) {
+          root.dataset.pathsActive = "false";
+          gsap.set(root.querySelector(".home-about__paths-overlay"), { autoAlpha: 0 });
+        }
+      },
       { rootMargin: "100% 0px" },
     );
     observer.observe(root);

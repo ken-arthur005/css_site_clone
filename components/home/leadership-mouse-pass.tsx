@@ -57,7 +57,7 @@ export function LeadershipMousePass() {
   const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
-    const media = window.matchMedia("(min-width: 48rem) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)");
+    const media = window.matchMedia("(prefers-reduced-motion: no-preference)");
     const update = () => setEnabled(media.matches);
 
     update();
@@ -98,9 +98,10 @@ export function LeadershipMousePass() {
         <Canvas
           camera={{ position: [0, 0, 6], fov: 42 }}
           className="leadership-mouse-pass__canvas"
-          dpr={[1, 1.5]}
+          dpr={[1, 1.25]}
           frameloop="demand"
           gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+          style={{ pointerEvents: "none" }}
         >
           <ambientLight intensity={2.1} />
           <directionalLight intensity={2.7} position={[3, 4, 5]} />

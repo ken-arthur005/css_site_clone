@@ -6,7 +6,7 @@ import { TransitionLink } from "@/components/transitions/transition-link";
 import type { Executive } from "@/types/executive";
 
 export function HomeExecutiveGallery({ executives }: { executives: readonly Executive[] }) {
-  const [activeId, setActiveId] = useState(executives[0]?.id);
+  const [activeId, setActiveId] = useState<string | undefined>(executives[0]?.id);
 
   return (
     <div className="home-executive-gallery" role="list">
@@ -14,31 +14,31 @@ export function HomeExecutiveGallery({ executives }: { executives: readonly Exec
         const isActive = executive.id === activeId;
 
         return (
-          <article className="home-executive-card" data-active={isActive} key={executive.id} role="listitem">
-            <button
-              aria-pressed={isActive}
-              className="home-executive-card__trigger"
-              onClick={() => setActiveId(executive.id)}
-              type="button"
-            >
+          <article
+            aria-label={`${executive.name}, ${executive.role}`}
+            className="home-executive-card"
+            data-active={isActive}
+            key={executive.id}
+            onFocus={() => setActiveId(executive.id)}
+            onMouseEnter={() => setActiveId(executive.id)}
+            role="listitem"
+            tabIndex={0}
+          >
+            <span aria-hidden="true" className="home-executive-card__admin-mark" />
+            <div className="home-executive-card__identity">
               <span className="home-executive-card__number eyebrow">0{executive.order}</span>
-              <span className="home-executive-card__copy">
+              <strong>{executive.name}</strong>
+            </div>
+            <div className="home-executive-card__copy">
                 <span className="eyebrow">{executive.role}</span>
-                <strong>{executive.name}</strong>
                 {executive.quote && <em>{executive.quote}</em>}
-              </span>
-            </button>
-            {isActive && (
-              <TransitionLink className="home-executive-card__link" href="/executives" transitionLabel="EXECUTIVES">
-                Meet the team <span aria-hidden="true">/&gt;</span>
-              </TransitionLink>
-            )}
+            </div>
             <div className="home-executive-card__portrait" aria-hidden={!executive.portrait}>
               {executive.portrait ? (
                 <Image
                   alt={executive.portrait.alt}
                   fill
-                  sizes="(max-width: 767px) 75vw, 44vw"
+                  sizes="(max-width: 767px) 100vw, 58vw"
                   src={executive.portrait.src}
                 />
               ) : (
@@ -51,8 +51,16 @@ export function HomeExecutiveGallery({ executives }: { executives: readonly Exec
           </article>
         );
       })}
-      <TransitionLink className="home-executive-gallery__all button button-secondary angular-cut" href="/executives" transitionLabel="EXECUTIVES">
-        View all executives <span aria-hidden="true">/&gt;</span>
+      <TransitionLink
+        className="home-executive-gallery__all"
+        href="/executives"
+        onFocus={() => setActiveId(undefined)}
+        onMouseEnter={() => setActiveId(undefined)}
+        transitionLabel="EXECUTIVES"
+      >
+        <span className="eyebrow">2026 / 27</span>
+        <strong>View all<br />executives</strong>
+        <span className="home-executive-gallery__all-arrow" aria-hidden="true">/&gt;</span>
       </TransitionLink>
     </div>
   );
