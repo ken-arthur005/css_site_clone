@@ -2,6 +2,7 @@ import { HomeAbout } from "@/components/home/home-about";
 import { HomeEvents } from "@/components/home/home-events";
 import { HomeExecutives } from "@/components/home/home-executives";
 import { HomeHero } from "@/components/home/home-hero";
+import { LeadershipMousePass } from "@/components/home/leadership-mouse-pass";
 import { HomeMerch } from "@/components/home/home-merch";
 import { getExecutives } from "@/lib/content/executives";
 import { getFeaturedEvents, getUpcomingEvents } from "@/lib/content/events";
@@ -24,6 +25,7 @@ export default async function Home() {
     <main>
       <HomeHero site={site} />
       <HomeAbout />
+      <LeadershipMousePass />
       <HomeExecutives executives={executives} />
       <HomeEvents events={selectedEvents} />
       <HomeMerch product={featuredProducts[0] ?? null} />

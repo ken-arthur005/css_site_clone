@@ -932,12 +932,37 @@
 
 
   .home-executives {
+    --leadership-edge: min(26svh, 15.625rem);
+    position: relative;
+    min-height: 100svh;
+    overflow: clip;
     background: var(--foreground);
     color: var(--background);
+    padding-top: calc(var(--leadership-edge) + var(--space-7));
     padding-bottom: var(--section-space);
+    clip-path: polygon(0 var(--leadership-edge), 100% 0, 100% 100%, 0 100%);
   }
 
   .home-executives .text-accent-strong { color: var(--accent); }
+
+  .home-executives__content {
+    position: relative;
+    z-index: 2;
+    min-height: calc(100svh - var(--section-space));
+  }
+
+  .leadership-mouse-pass {
+    position: fixed;
+    z-index: 42;
+    inset: 0;
+    height: 100svh;
+    pointer-events: none;
+  }
+
+  .leadership-mouse-pass__canvas {
+    position: absolute !important;
+    inset: 0;
+  }
 
   .home-section-heading__note {
     align-self: end;
@@ -1175,6 +1200,7 @@
   .home-merch-selector__swatch > span { width: 0.9rem; height: 0.9rem; border: var(--border-width) solid color-mix(in oklch, var(--foreground) 25%, transparent); border-radius: 50%; background: var(--swatch); }
   .home-merch-selector__swatch[aria-pressed="true"] { border-color: var(--accent-strong); background: var(--accent-soft); }
   .home-merch-selector__price { color: var(--foreground-muted); }
+
 }
 
 @media (min-width: 48rem) {
@@ -1413,5 +1439,10 @@
 
   .home-executive-gallery__all:hover {
     background: color-mix(in oklch, var(--background) 12%, transparent);
+  }
+
+  .home-executives {
+    --leadership-edge: 7rem;
+    padding-top: calc(var(--leadership-edge) + var(--space-6));
   }
 }

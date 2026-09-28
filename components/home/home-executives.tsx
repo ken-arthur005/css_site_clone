@@ -4,7 +4,7 @@ import { HomeExecutiveGallery } from "./home-executive-gallery";
 export function HomeExecutives({ executives }: { executives: readonly Executive[] }) {
   return (
     <section className="home-executives" aria-labelledby="executives-title">
-      <div className="page-shell">
+      <div className="page-shell home-executives__content">
         <div className="home-section-heading">
           <div>
             <p className="eyebrow text-accent-strong">02 / Leadership</p>
