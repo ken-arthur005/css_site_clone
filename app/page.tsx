@@ -30,7 +30,6 @@ export default async function Home() {
       <HomeExecutives executives={executives} />
       <HomeQuoteBridge author="Linus Torvalds" quote="Talk is cheap. Show me the code." />
       <HomeEvents events={selectedEvents} />
-      <HomeQuoteBridge author="Steve Jobs" quote="Everybody in this country should learn how to program a computer, because it teaches you how to think." />
       <HomeMerch product={featuredProducts[0] ?? null} />
     </main>
   );

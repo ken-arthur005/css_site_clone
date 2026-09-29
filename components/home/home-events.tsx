@@ -46,19 +46,32 @@ export function HomeEvents({ events }: { events: readonly Event[] }) {
     const slices = Array.from(root.querySelectorAll<HTMLElement>(".home-events__slice"));
     const track = root.querySelector<HTMLElement>(".home-events__track");
     const cards = Array.from(root.querySelectorAll<HTMLElement>(".home-event-card"));
+    const outro = root.querySelector<HTMLElement>(".home-events__outro");
+    const allEvents = root.querySelector<HTMLElement>(".home-events__all");
 
-    if (!stage || !hero || !heading || !description || !slices.length || !cards.length || !track) {
+    if (!stage || !hero || !heading || !description || !slices.length || !cards.length || !track || !outro || !allEvents) {
       return;
     }
 
     const media = gsap.matchMedia();
-    media.add("(min-width: 48rem) and (prefers-reduced-motion: no-preference)", () => {
-      gsap.set(hero, { scale: 0.7, transformOrigin: "center center" });
+    media.add("(prefers-reduced-motion: no-preference)", () => {
+      const compact = window.matchMedia("(max-width: 47.99rem)").matches;
+      gsap.set(hero, { scale: compact ? 0.76 : 0.7, transformOrigin: "center center" });
       gsap.set([heading, description], { autoAlpha: 0, y: 32 });
       gsap.set(slices, { scaleX: 0, transformOrigin: "left center", visibility: "hidden" });
       gsap.set(track, { x: () => window.innerWidth, visibility: "hidden" });
 
       const cardStep = () => cards[0].getBoundingClientRect().width + Number.parseFloat(getComputedStyle(track).gap);
+      const ctaCenteredTrackPosition = () => {
+        const cardWidth = cards[0].getBoundingClientRect().width;
+        return -cardStep() * 3 + (cardWidth - allEvents.getBoundingClientRect().width) / 2;
+      };
+      const syncOutroToCta = () => {
+        const bounds = allEvents.getBoundingClientRect();
+        gsap.set(outro, { xPercent: ((bounds.left + bounds.width / 2) / window.innerWidth) * 100 });
+      };
+
+      gsap.set(outro, { visibility: "hidden", xPercent: 100 });
 
       const timeline = gsap.timeline({
         defaults: { ease: "none" },
@@ -82,7 +95,19 @@ export function HomeEvents({ events }: { events: readonly Event[] }) {
         .set(track, { visibility: "visible" }, "slices+=0.5")
         .to(track, { x: 0, duration: 0.58 }, "slices+=0.5")
         .to(track, { x: () => -cardStep(), duration: 0.82 }, "+=0.1")
-        .to(track, { x: () => -cardStep() * 2, duration: 0.82 }, "+=0.1");
+        .to(track, { x: () => -cardStep() * 2, duration: 0.82 }, "+=0.1")
+        .addLabel("outro", "+=0.1")
+        .set(outro, { visibility: "visible", onComplete: syncOutroToCta }, "outro")
+        .to(track, {
+          x: ctaCenteredTrackPosition,
+          duration: 0.82,
+          onUpdate: syncOutroToCta,
+        }, "outro")
+        .to(track, {
+          x: () => ctaCenteredTrackPosition() - window.innerWidth / 2,
+          duration: 0.95,
+          onUpdate: syncOutroToCta,
+        });
     });
 
     return () => media.revert();
@@ -141,6 +166,15 @@ export function HomeEvents({ events }: { events: readonly Event[] }) {
             </TransitionLink>
           </div>
         </div>
+
+        <section className="home-events__outro" aria-label="Programming quote">
+          <div className="page-shell home-events__outro-inner">
+            <figure>
+              <blockquote>Everybody in this country should learn how to program a computer, because it teaches you how to think.</blockquote>
+              <figcaption>Steve Jobs</figcaption>
+            </figure>
+          </div>
+        </section>
       </div>
     </section>
   );
