@@ -1,8 +1,8 @@
 "use client";
 
 import { Center, OrbitControls, useGLTF, useTexture } from "@react-three/drei";
-import { Canvas, useThree } from "@react-three/fiber";
-import { Component, Suspense, useEffect, useMemo, useRef, useState, type ErrorInfo, type ReactNode } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Component, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ErrorInfo, type ReactNode } from "react";
 import { Mesh, MeshStandardMaterial, SRGBColorSpace } from "three";
 import type { MerchVariant } from "@/types/merch";
 import type { ContentAsset } from "@/types/content";
@@ -41,9 +41,10 @@ class ViewerErrorBoundary extends Component<ViewerErrorBoundaryProps, ViewerErro
   }
 }
 
-function ShirtModel({ modelSource, textureSource, onReady }: Pick<HomeMerchViewerProps, "onReady"> & {
+function ShirtModel({ modelSource, textureSource, onModelReady }: {
   modelSource: string;
   textureSource: string;
+  onModelReady: () => void;
 }) {
   const { scene } = useGLTF(modelSource, false, true);
   const { invalidate } = useThree();
@@ -86,9 +87,9 @@ function ShirtModel({ modelSource, textureSource, onReady }: Pick<HomeMerchViewe
     });
 
     invalidate();
-    onReady();
+    onModelReady();
     return () => texture.dispose();
-  }, [invalidate, model, onReady, texture]);
+  }, [invalidate, model, onModelReady, texture]);
 
   useEffect(() => {
     return () => {
@@ -103,6 +104,32 @@ function ShirtModel({ modelSource, textureSource, onReady }: Pick<HomeMerchViewe
   }, [model]);
 
   return <primitive object={model} />;
+}
+
+function CanvasWarmup({ onReady }: Pick<HomeMerchViewerProps, "onReady">) {
+  const { camera, gl, invalidate, scene } = useThree();
+  const renderedFrames = useRef(0);
+  const hasCompleted = useRef(false);
+
+  useEffect(() => {
+    gl.compile(scene, camera);
+    invalidate();
+  }, [camera, gl, invalidate, scene]);
+
+  useFrame(() => {
+    if (hasCompleted.current) return;
+
+    renderedFrames.current += 1;
+    if (renderedFrames.current < 2) {
+      invalidate();
+      return;
+    }
+
+    hasCompleted.current = true;
+    onReady();
+  });
+
+  return null;
 }
 
 function ViewerScene({
@@ -121,6 +148,8 @@ function ViewerScene({
 }) {
   const { size } = useThree();
   const modelScale = size.width < 768 ? 0.45 : 0.65;
+  const [isModelReady, setIsModelReady] = useState(false);
+  const handleModelReady = useCallback(() => setIsModelReady(true), []);
 
   return (
     <>
@@ -130,10 +159,11 @@ function ViewerScene({
       <Suspense fallback={null}>
         <Center>
           <group position={[0, -0.1, 0]} scale={modelScale}>
-            <ShirtModel modelSource={modelSource} onReady={onReady} textureSource={textureSource} />
+            <ShirtModel modelSource={modelSource} onModelReady={handleModelReady} textureSource={textureSource} />
           </group>
         </Center>
       </Suspense>
+      {isModelReady && <CanvasWarmup onReady={onReady} />}
       <OrbitControls
         autoRotate={autoRotate}
         autoRotateSpeed={0.32}
