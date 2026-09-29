@@ -68,7 +68,7 @@ export function HomeEvents({ events }: { events: readonly Event[] }) {
       };
       const syncOutroToCta = () => {
         const bounds = allEvents.getBoundingClientRect();
-        gsap.set(outro, { xPercent: ((bounds.left + bounds.width / 2) / window.innerWidth) * 100 });
+        gsap.set(outro, { xPercent: ((bounds.left + bounds.width * 0.9) / window.innerWidth) * 100 });
       };
 
       gsap.set(outro, { visibility: "hidden", xPercent: 100 });
@@ -104,7 +104,7 @@ export function HomeEvents({ events }: { events: readonly Event[] }) {
           onUpdate: syncOutroToCta,
         }, "outro")
         .to(track, {
-          x: () => ctaCenteredTrackPosition() - window.innerWidth / 2,
+          x: () => ctaCenteredTrackPosition() - window.innerWidth / 2 - allEvents.getBoundingClientRect().width * 0.4,
           duration: 0.95,
           onUpdate: syncOutroToCta,
         });

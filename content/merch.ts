@@ -11,7 +11,7 @@ export const merchProducts = [
   {
     id: "product-css-core-tee",
     slug: "css-core-tee",
-    name: "CSS Core Tee",
+    name: "css tshirt",
     description: "Development placeholder for the first CSS KNUST apparel product.",
     contentStatus: "placeholder",
     price: { contentStatus: "placeholder" },
@@ -44,6 +44,12 @@ export const merchProducts = [
       {
         id: "css-core-tee-blue-white",
         baseColor: blue,
+        printColor: white,
+        availability: "unknown",
+      },
+      {
+        id: "css-core-tee-pink-white",
+        baseColor: pink,
         printColor: white,
         availability: "unknown",
       },
