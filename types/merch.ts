@@ -9,8 +9,9 @@ export type MerchVariant = {
   baseColor: Color;
   printColor: Color;
   availability: "available" | "out-of-stock" | "unknown";
+  texture: ContentAsset;
+  fallbackImage: ContentAsset;
   sizes?: string[];
-  image?: ContentAsset;
 };
 
 export type MerchProduct = {

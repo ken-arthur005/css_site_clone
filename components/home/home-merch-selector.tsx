@@ -1,13 +1,21 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
+import dynamic from "next/dynamic";
+import Image from "next/image";
+import { useMemo, useState, type CSSProperties } from "react";
 import { TransitionLink } from "@/components/transitions/transition-link";
 import {
   getAvailableBaseColors,
   getValidPrintColors,
+  resolveMerchVariant,
   selectVariantForBase,
 } from "@/lib/content/merch";
 import type { MerchProduct } from "@/types/merch";
+
+const HomeMerchViewer = dynamic(
+  () => import("./home-merch-viewer").then(({ HomeMerchViewer: Viewer }) => Viewer),
+  { ssr: false },
+);
 
 export function HomeMerchSelector({ product }: { product: MerchProduct }) {
   const baseColors = getAvailableBaseColors(product);
@@ -18,6 +26,10 @@ export function HomeMerchSelector({ product }: { product: MerchProduct }) {
   );
   const printColors = getValidPrintColors(product, selectedBaseId);
   const selectedPrint = printColors.find((color) => color.id === selectedPrintId) ?? printColors[0];
+  const selectedVariant = resolveMerchVariant(product, selectedBaseId, selectedPrint?.id ?? "") ??
+    selectVariantForBase(product, selectedBaseId, selectedPrintId);
+  const textureSources = useMemo(() => product.variants.map((variant) => variant.texture.src), [product.variants]);
+  const [viewerReady, setViewerReady] = useState(false);
 
   const selectBase = (baseColorId: string) => {
     const variant = selectVariantForBase(product, baseColorId, selectedPrintId);
@@ -28,6 +40,7 @@ export function HomeMerchSelector({ product }: { product: MerchProduct }) {
   return (
     <div
       className="home-merch-stage"
+      data-accent-id={selectedPrint?.id}
       style={
         {
           "--merch-accent": selectedPrint?.value ?? "var(--accent)",
@@ -40,7 +53,33 @@ export function HomeMerchSelector({ product }: { product: MerchProduct }) {
         <p>Welcome to the family</p>
       </div>
 
-      <div aria-label="3D CSS tshirt viewer" className="home-merch-stage__viewer" role="img" />
+      {selectedVariant && (
+        <div
+          aria-label={`Interactive 3D preview: ${selectedVariant.baseColor.name} CSS tshirt with ${selectedVariant.printColor.name} print. Drag to rotate.`}
+          className="home-merch-stage__viewer"
+          data-ready={viewerReady}
+          role="img"
+        >
+          <Image
+            alt=""
+            className="home-merch-stage__viewer-fallback"
+            fill
+            priority={false}
+            sizes="(max-width: 767px) 100vw, 80vw"
+            src={selectedVariant.fallbackImage.src}
+          />
+          {!viewerReady && <span className="home-merch-stage__viewer-loading eyebrow">Loading shirt</span>}
+          {product.model && (
+            <HomeMerchViewer
+              model={product.model}
+              onFailure={() => setViewerReady(false)}
+              onReady={() => setViewerReady(true)}
+              textureSources={textureSources}
+              variant={selectedVariant}
+            />
+          )}
+        </div>
+      )}
 
       <div className="home-merch-stage__product">
         <p className="eyebrow">Featured garment</p>

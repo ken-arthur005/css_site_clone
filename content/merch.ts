@@ -16,42 +16,107 @@ export const merchProducts = [
     contentStatus: "placeholder",
     price: { contentStatus: "placeholder" },
     featured: true,
+    model: {
+      src: "/css_shirt_3dmodel/models/css_shirt.web.glb",
+      alt: "Interactive 3D CSS tshirt",
+      contentStatus: "verified",
+    },
     variants: [
       {
         id: "css-core-tee-black-white",
         baseColor: black,
         printColor: white,
         availability: "unknown",
+        texture: {
+          src: "/css_shirt_3dmodel/merch/textures/css%20shirt%20white%20on%20black.png",
+          alt: "Black CSS tshirt with white print texture",
+          contentStatus: "verified",
+        },
+        fallbackImage: {
+          src: "/css_shirt_3dmodel/merch/static%20renders/black_on_white.png",
+          alt: "Black CSS tshirt with white print",
+          contentStatus: "verified",
+        },
       },
       {
         id: "css-core-tee-black-pink",
         baseColor: black,
         printColor: pink,
         availability: "unknown",
+        texture: {
+          src: "/css_shirt_3dmodel/merch/textures/css%20shirt%20pink%20on%20black.png",
+          alt: "Black CSS tshirt with pink print texture",
+          contentStatus: "verified",
+        },
+        fallbackImage: {
+          src: "/css_shirt_3dmodel/merch/static%20renders/black_on_pink.png",
+          alt: "Black CSS tshirt with pink print",
+          contentStatus: "verified",
+        },
       },
       {
         id: "css-core-tee-white-black",
         baseColor: white,
         printColor: black,
         availability: "unknown",
+        texture: {
+          src: "/css_shirt_3dmodel/merch/textures/css%20shirt%20black%20on%20white.png",
+          alt: "White CSS tshirt with black print texture",
+          contentStatus: "verified",
+        },
+        fallbackImage: {
+          src: "/css_shirt_3dmodel/merch/static%20renders/white_on_black.png",
+          alt: "White CSS tshirt with black print",
+          contentStatus: "verified",
+        },
       },
       {
         id: "css-core-tee-white-blue",
         baseColor: white,
         printColor: blue,
         availability: "unknown",
+        texture: {
+          src: "/css_shirt_3dmodel/merch/textures/css%20shirt%20blue%20on%20white.png",
+          alt: "White CSS tshirt with blue print texture",
+          contentStatus: "verified",
+        },
+        fallbackImage: {
+          src: "/css_shirt_3dmodel/merch/static%20renders/white_on_blue.png",
+          alt: "White CSS tshirt with blue print",
+          contentStatus: "verified",
+        },
       },
       {
         id: "css-core-tee-blue-white",
         baseColor: blue,
         printColor: white,
         availability: "unknown",
+        texture: {
+          src: "/css_shirt_3dmodel/merch/textures/css%20shirt%20white%20on%20blue.png",
+          alt: "Blue CSS tshirt with white print texture",
+          contentStatus: "verified",
+        },
+        fallbackImage: {
+          src: "/css_shirt_3dmodel/merch/static%20renders/blue_on_white.png",
+          alt: "Blue CSS tshirt with white print",
+          contentStatus: "verified",
+        },
       },
       {
         id: "css-core-tee-pink-white",
         baseColor: pink,
         printColor: white,
         availability: "unknown",
+        texture: {
+          src: "/css_shirt_3dmodel/merch/textures/css%20shirt%20white%20on%20pink.png",
+          alt: "Pink CSS tshirt with white print texture",
+          contentStatus: "verified",
+        },
+        fallbackImage: {
+          src: "/css_shirt_3dmodel/merch/static%20renders/pink_on_white.png",
+          alt: "Pink CSS tshirt with white print",
+          contentStatus: "verified",
+        },
       },
     ],
   },

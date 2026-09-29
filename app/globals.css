@@ -1501,11 +1501,67 @@
     transform: translateX(-50%);
   }
 
-  .home-merch-stage__intro h2 { max-width: 10ch; font-family: var(--font-bricolage), sans-serif; font-size: clamp(2.75rem, 5vw, 5.5rem); font-weight: 650; letter-spacing: var(--tracking-display); line-height: 0.82; }
+  .home-merch-stage__intro h2 { width: max-content; max-width: 100%; font-family: var(--font-bricolage), sans-serif; font-size: clamp(2.75rem, 5vw, 5.5rem); font-weight: 650; letter-spacing: var(--tracking-display); line-height: 0.82; white-space: nowrap; }
   .home-merch-stage__intro h2 em { color: var(--merch-accent); font-style: normal; }
+  .home-merch-stage[data-accent-id="white"] .home-merch-stage__intro h2 em { color: var(--foreground-muted); }
   .home-merch-stage__intro > p:last-child { color: var(--foreground-muted); font-family: var(--font-biorhyme), serif; font-size: var(--text-body-lg); }
 
-  .home-merch-stage__viewer { position: absolute; z-index: 0; inset: 0; }
+  .home-merch-stage__viewer {
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    overflow: hidden;
+  }
+
+  .home-merch-stage__viewer-fallback {
+    z-index: 0;
+    width: min(52rem, 72vw) !important;
+    height: min(36rem, 67svh) !important;
+    inset: auto !important;
+    top: 48% !important;
+    left: 50% !important;
+    object-fit: contain;
+    opacity: 1;
+    pointer-events: none;
+    transform: translate(-50%, -43%);
+    transition: opacity 260ms var(--ease-out);
+  }
+
+  .home-merch-stage__viewer[data-ready="true"] .home-merch-stage__viewer-fallback,
+  .home-merch-stage__viewer[data-ready="true"] .home-merch-stage__viewer-loading {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .home-merch-stage__viewer-loading {
+    position: absolute;
+    z-index: 2;
+    top: 50%;
+    left: 50%;
+    padding: var(--space-2) var(--space-3);
+    background: color-mix(in oklch, var(--background) 88%, transparent);
+    color: var(--foreground-muted);
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    transition: opacity 180ms var(--ease-out);
+  }
+
+  .home-merch-viewer,
+  .home-merch-viewer canvas {
+    position: absolute !important;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .home-merch-viewer canvas {
+    cursor: grab;
+    touch-action: pan-y pinch-zoom;
+  }
+
+  .home-merch-viewer canvas:active {
+    cursor: grabbing;
+  }
 
   .home-merch-stage__product { top: var(--space-6); left: var(--page-gutter); display: grid; gap: var(--space-2); }
   .home-merch-stage__product .eyebrow { color: var(--foreground-muted); }
@@ -1923,7 +1979,7 @@
   }
 
   .home-merch-stage__intro h2 {
-    font-size: clamp(2.75rem, 13vw, 4.25rem);
+    font-size: clamp(1.72rem, 8.3vw, 4.25rem);
   }
 
   .home-merch-stage__intro > p:last-child {
@@ -1970,6 +2026,13 @@
     flex: 1;
     padding-inline: 0.6rem;
     font-size: 0.7rem;
+  }
+
+  .home-merch-stage__viewer-fallback {
+    width: min(31rem, 96vw) !important;
+    height: min(27rem, 49svh) !important;
+    top: 49% !important;
+    transform: translate(-50%, -39%);
   }
 
 }
