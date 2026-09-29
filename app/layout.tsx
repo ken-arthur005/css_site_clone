@@ -35,6 +35,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "CSS KNUST",
   description: "Computer Science Society, KNUST.",
+  icons: {
+    icon: "/css_logo-nobg.png",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

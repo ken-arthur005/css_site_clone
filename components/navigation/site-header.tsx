@@ -1,10 +1,14 @@
 "use client";
 
+import { useGSAP } from "@gsap/react";
+import gsap from "gsap";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { TransitionLink } from "@/components/transitions/transition-link";
 import { useSmoothScroll } from "@/components/providers/smooth-scroll-provider";
+
+gsap.registerPlugin(useGSAP);
 
 const menuItems = [
   { href: "/about", label: "ABOUT", number: "01" },
@@ -30,30 +34,37 @@ export function SiteHeader() {
   const pathname = usePathname();
   const { setScrollLocked } = useSmoothScroll();
   const [isOpen, setIsOpen] = useState(false);
+  const [isMenuMounted, setIsMenuMounted] = useState(false);
   const hasScrolled = useSyncExternalStore(subscribeToScroll, getScrollSnapshot, getServerScrollSnapshot);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const returnFocusRef = useRef(true);
+  const menuWasMountedRef = useRef(false);
 
   const closeMenu = (returnFocus = true) => {
     returnFocusRef.current = returnFocus;
     setIsOpen(false);
   };
 
+  const openMenu = () => {
+    returnFocusRef.current = true;
+    setIsMenuMounted(true);
+    setIsOpen(true);
+  };
+
   const isHome = pathname === "/";
 
   useEffect(() => {
-    setScrollLocked(isOpen);
-    return () => setScrollLocked(false);
-  }, [isOpen, setScrollLocked]);
-
-  useEffect(() => {
-    if (!isOpen) {
-      if (returnFocusRef.current) {
+    if (!isMenuMounted) {
+      if (menuWasMountedRef.current && returnFocusRef.current) {
         triggerRef.current?.focus();
       }
+      menuWasMountedRef.current = false;
       return;
     }
+
+    menuWasMountedRef.current = true;
+    setScrollLocked(true);
 
     const previousOverflow = document.body.style.overflow;
     const previousPaddingRight = document.body.style.paddingRight;
@@ -64,7 +75,7 @@ export function SiteHeader() {
     const firstFocusable = menuRef.current?.querySelector<HTMLElement>(
       "a[href], button:not([disabled])",
     );
-    firstFocusable?.focus();
+    const focusFrame = window.requestAnimationFrame(() => firstFocusable?.focus());
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -100,11 +111,48 @@ export function SiteHeader() {
 
     document.addEventListener("keydown", handleKeyDown);
     return () => {
+      window.cancelAnimationFrame(focusFrame);
+      setScrollLocked(false);
       document.body.style.overflow = previousOverflow;
       document.body.style.paddingRight = previousPaddingRight;
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen]);
+  }, [isMenuMounted, setScrollLocked]);
+
+  useGSAP(() => {
+    const menu = menuRef.current;
+    if (!menu) return;
+
+    const wipe = menu.querySelector<HTMLElement>(".fullscreen-menu__wipe");
+    const topLine = menu.querySelector<HTMLElement>(".fullscreen-menu__topline");
+    const links = Array.from(menu.querySelectorAll<HTMLElement>(".fullscreen-menu__link"));
+    const context = menu.querySelector<HTMLElement>(".fullscreen-menu__context");
+    const content = [topLine, ...links, context].filter((element): element is HTMLElement => element !== null);
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (!wipe) return;
+
+    const timeline = gsap.timeline();
+
+    if (isOpen) {
+      timeline
+        .set(menu, { autoAlpha: 1 })
+        .set(wipe, { xPercent: 0 })
+        .set(content, { autoAlpha: 0, y: 28 })
+        .to(wipe, { xPercent: -112, duration: reduceMotion ? 0 : 0.58, ease: "power4.inOut" })
+        .to(topLine, { autoAlpha: 1, y: 0, duration: reduceMotion ? 0 : 0.28, ease: "power3.out" }, "<0.12")
+        .to(links, { autoAlpha: 1, y: 0, duration: reduceMotion ? 0 : 0.42, ease: "power3.out", stagger: reduceMotion ? 0 : 0.055 }, "<0.05")
+        .to(context, { autoAlpha: 1, y: 0, duration: reduceMotion ? 0 : 0.3, ease: "power3.out" }, "<0.12");
+    } else {
+      timeline
+        .to(content, { autoAlpha: 0, y: -18, duration: reduceMotion ? 0 : 0.18, ease: "power2.in" })
+        .to(wipe, { xPercent: 0, duration: reduceMotion ? 0 : 0.4, ease: "power4.inOut" }, "<0.04")
+        .set(menu, { autoAlpha: 0 })
+        .call(() => setIsMenuMounted(false));
+    }
+
+    return () => timeline.kill();
+  }, { scope: menuRef, dependencies: [isMenuMounted, isOpen], revertOnUpdate: false });
 
   return (
     <>
@@ -125,7 +173,7 @@ export function SiteHeader() {
           aria-controls="site-menu"
           aria-expanded={isOpen}
           className="menu-trigger"
-          onClick={() => (isOpen ? closeMenu() : setIsOpen(true))}
+          onClick={() => (isOpen ? closeMenu() : openMenu())}
           type="button"
         >
           <span>{isOpen ? "CLOSE" : "MENU"}</span>
@@ -136,7 +184,7 @@ export function SiteHeader() {
         </button>
       </header>
 
-      {isOpen && (
+      {isMenuMounted && (
         <div
           ref={menuRef}
           aria-label="Site navigation"
@@ -145,6 +193,7 @@ export function SiteHeader() {
           id="site-menu"
           role="dialog"
         >
+          <div aria-hidden="true" className="fullscreen-menu__wipe" />
           <div className="fullscreen-menu__inner">
             <div className="fullscreen-menu__topline">
               <p className="eyebrow">Navigate</p>

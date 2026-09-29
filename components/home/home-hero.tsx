@@ -3,6 +3,7 @@
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { hasSeenHomeIntro, markHomeIntroSeen } from "@/lib/home-intro";
 import type { SiteInfo } from "@/types/site";
@@ -27,6 +28,7 @@ export function HomeHero({ site }: { site: SiteInfo }) {
   const [introMode, setIntroMode] = useState<IntroMode>(() => (
     typeof window === "undefined" || !hasSeenHomeIntro() ? null : "returning"
   ));
+  const [introProgress, setIntroProgress] = useState(0);
   const [introComplete, setIntroComplete] = useState(false);
   const [typeCard, setTypeCard] = useState(false);
 
@@ -52,8 +54,12 @@ export function HomeHero({ site }: { site: SiteInfo }) {
 
     const waitForCriticalHero = async () => {
       const images = Array.from(hero?.querySelectorAll<HTMLImageElement>("img") ?? []);
-      const fonts = document.fonts?.ready ?? Promise.resolve();
-      const ready = Promise.all([fonts, ...images.map(waitForImage)]).then(() => undefined);
+      const tasks = [document.fonts?.ready ?? Promise.resolve(), ...images.map(waitForImage)];
+      let complete = 0;
+      const ready = Promise.all(tasks.map((task) => task.then(() => {
+        complete += 1;
+        setIntroProgress(Math.round((complete / tasks.length) * 100));
+      }))).then(() => undefined);
       const failSafeReady = new Promise<void>((resolve) => {
         failSafe = window.setTimeout(resolve, 1500);
       });
@@ -62,6 +68,7 @@ export function HomeHero({ site }: { site: SiteInfo }) {
       window.clearTimeout(failSafe);
 
       if (!cancelled) {
+        setIntroProgress(100);
         setIntroMode("full");
       }
     };
@@ -94,8 +101,9 @@ export function HomeHero({ site }: { site: SiteInfo }) {
 
     const loader = hero.querySelector<HTMLElement>(".home-intro");
     const loaderPanel = hero.querySelector<HTMLElement>(".home-intro__panel");
-    const loaderRule = hero.querySelector<HTMLElement>(".home-intro__rule-fill");
-    const titleLines = Array.from(hero.querySelectorAll<HTMLElement>(":scope .home-hero__title > span"));
+    const titleLines = Array.from(hero.querySelectorAll<HTMLElement>(".home-hero__title-line"));
+    const typedText = titleLines.map((line) => line.querySelector<HTMLElement>(".home-hero__typed-text"));
+    const titlePeriods = titleLines.map((line) => line.querySelector<HTMLElement>(".home-hero__title-period"));
     const iconEntries = Array.from(hero.querySelectorAll<HTMLElement>(".hero-tech-field__entry"));
     const mobileIconEntries = iconEntries.filter((entry) => entry.closest("[data-mobile]")?.getAttribute("data-mobile") === "true");
     const identityEntry = hero.querySelector<HTMLElement>(".home-hero__identity-entry");
@@ -109,7 +117,16 @@ export function HomeHero({ site }: { site: SiteInfo }) {
       ? mobileIconEntries
       : iconEntries;
 
-    gsap.set(titleLines, { yPercent: 112, rotate: 1.5 });
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (introMode === "full" && !reduceMotion) {
+      typedText.forEach((text) => {
+        if (text) text.textContent = "";
+      });
+      gsap.set(titlePeriods, { autoAlpha: 0 });
+    }
+
+    gsap.set(titleLines, { autoAlpha: introMode === "full" && !reduceMotion ? 0 : 1, yPercent: introMode === "full" && !reduceMotion ? 14 : 0 });
     gsap.set(stagedIcons, { autoAlpha: 0, scale: 0.88, x: (index) => (index % 2 ? -18 : 16), y: (index) => (index % 3 - 1) * 15, rotate: (index) => (index % 2 ? -7 : 6) });
     gsap.set(identityEntry, { autoAlpha: 0, x: 26, y: 18 });
 
@@ -146,17 +163,38 @@ export function HomeHero({ site }: { site: SiteInfo }) {
 
     const entrance = gsap.timeline({ defaults: { ease: "power3.out" }, onComplete: settleHero });
 
-    if (introMode === "full" && loader && loaderPanel && loaderRule) {
+    if (introMode === "full" && loader && loaderPanel) {
       entrance
-        .fromTo(loaderRule, { scaleX: 0 }, { scaleX: 1, duration: 0.42, ease: "power2.inOut" })
-        .to(loaderPanel, { xPercent: -112, duration: 0.58, ease: "power4.inOut" }, "+=0.08")
+        .to(loaderPanel, { xPercent: -108, duration: 0.68, ease: "power4.inOut" }, "+=0.12")
         .set(loader, { autoAlpha: 0, pointerEvents: "none" });
     }
 
+    if (introMode === "full" && !reduceMotion) {
+      titleLines.forEach((line, index) => {
+        const text = typedText[index];
+        const period = titlePeriods[index];
+        const word = line.dataset.word ?? "";
+        const typing = { progress: 0 };
+
+        entrance
+          .to(line, { autoAlpha: 1, yPercent: 0, duration: 0.18 }, index === 0 ? "<0.06" : "+=0.12")
+          .to(typing, {
+            progress: word.length,
+            duration: Math.max(0.28, word.length * 0.085),
+            ease: "none",
+            onUpdate: () => {
+              if (text) text.textContent = word.slice(0, Math.floor(typing.progress));
+            },
+          })
+          .to(period, { autoAlpha: 1, duration: 0.08, ease: "none" });
+      });
+    } else {
+      entrance.to(titleLines, { autoAlpha: 1, yPercent: 0, duration: reduceMotion ? 0 : 0.34, stagger: 0.055 }, introMode === "full" ? "<0.06" : 0);
+    }
+
     entrance
-      .to(titleLines, { yPercent: 0, rotate: 0, duration: introMode === "full" ? 0.54 : 0.34, stagger: introMode === "full" ? 0.1 : 0.055 }, introMode === "full" ? "<0.08" : 0)
-      .to(stagedIcons, { autoAlpha: 1, scale: 1, x: 0, y: 0, rotate: 0, duration: introMode === "full" ? 0.5 : 0.32, stagger: introMode === "full" ? 0.035 : 0.02 }, "<0.05")
-      .to(identityEntry, { autoAlpha: 1, x: 0, y: 0, duration: introMode === "full" ? 0.42 : 0.28 }, "<0.12");
+      .to(stagedIcons, { autoAlpha: 1, scale: 1, x: 0, y: 0, rotate: 0, duration: reduceMotion ? 0 : 0.68, ease: "back.out(1.7)", stagger: reduceMotion ? 0 : 0.045 }, "+=0.04")
+      .to(identityEntry, { autoAlpha: 1, x: 0, y: 0, duration: reduceMotion ? 0 : 0.42 }, "<0.16");
 
     return () => {
       exitTimeline.scrollTrigger?.kill();
@@ -169,7 +207,11 @@ export function HomeHero({ site }: { site: SiteInfo }) {
       <div aria-hidden="true" className="home-intro">
         <div className="home-intro__panel">
           <div className="home-intro__content">
-            <div className="home-intro__rule"><span className="home-intro__rule-fill" /></div>
+            <p className="home-intro__progress">{introProgress}%</p>
+            <div className="home-intro__lockup">
+              <Image alt="" className="home-intro__logo" height={200} priority src="/css_logo-nobg.png" width={365} />
+              <p>Computer Science Society</p>
+            </div>
           </div>
         </div>
       </div>
@@ -177,10 +219,10 @@ export function HomeHero({ site }: { site: SiteInfo }) {
       <HeroTechField />
 
       <div className="page-shell home-hero__inner">
-        <h1 className="home-hero__title" id="home-title">
-          <span>THINK.</span>
-          <span>BUILD.</span>
-          <span>BECOME<span className="home-hero__title-period">.</span></span>
+        <h1 aria-label="Think. Build. Become." className="home-hero__title" id="home-title">
+          <span className="home-hero__title-line" data-word="THINK"><span aria-hidden="true" className="home-hero__typed-text">THINK</span><span aria-hidden="true" className="home-hero__title-period">.</span></span>
+          <span className="home-hero__title-line" data-word="BUILD"><span aria-hidden="true" className="home-hero__typed-text">BUILD</span><span aria-hidden="true" className="home-hero__title-period">.</span></span>
+          <span className="home-hero__title-line" data-word="BECOME"><span aria-hidden="true" className="home-hero__typed-text">BECOME</span><span aria-hidden="true" className="home-hero__title-period">.</span></span>
         </h1>
         <div className="home-hero__identity-entry">
           <HeroIdentityCard site={site} typeOnReveal={typeCard} />
