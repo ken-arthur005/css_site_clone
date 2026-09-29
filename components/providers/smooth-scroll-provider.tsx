@@ -9,6 +9,7 @@ gsap.registerPlugin(ScrollTrigger);
 
 type SmoothScrollContextValue = {
   setScrollLocked: (locked: boolean) => void;
+  scrollToElement: (element: HTMLElement) => void;
 };
 
 const SmoothScrollContext = createContext<SmoothScrollContextValue | null>(null);
@@ -35,6 +36,20 @@ export function SmoothScrollProvider({ children }: { children: ReactNode }) {
     } else {
       lenisRef.current?.start();
     }
+  }, []);
+
+  const scrollToElement = useCallback((element: HTMLElement) => {
+    const lenis = lenisRef.current;
+
+    if (lenis) {
+      lenis.scrollTo(element, {
+        duration: 0.9,
+        easing: (progress) => 1 - (1 - progress) ** 4,
+      });
+      return;
+    }
+
+    element.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
   useEffect(() => {
@@ -87,7 +102,7 @@ export function SmoothScrollProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <SmoothScrollContext.Provider value={{ setScrollLocked }}>
+    <SmoothScrollContext.Provider value={{ scrollToElement, setScrollLocked }}>
       {children}
     </SmoothScrollContext.Provider>
   );

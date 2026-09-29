@@ -12,6 +12,11 @@ export const siteInfo = {
     value: process.env.NEXT_PUBLIC_SITE_ORIGIN ?? planningOrigin,
     contentStatus: "placeholder",
   },
-  socials: [],
+  socials: [
+    { platform: "Instagram", url: "https://www.instagram.com/thecssknust" },
+    { platform: "TikTok", url: "https://www.tiktok.com/@thecssknust" },
+    { platform: "X", url: "https://x.com/thecssknust" },
+    { platform: "YouTube", url: "https://www.youtube.com/@thecssknust" },
+  ],
   contact: {},
 } satisfies SiteInfo;
