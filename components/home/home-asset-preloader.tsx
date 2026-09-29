@@ -8,6 +8,8 @@ export function HomeAssetPreloader({ active }: { active: boolean }) {
   useEffect(() => {
     if (!active) return;
 
+    document.documentElement.dataset.homeAssetsWarming = "true";
+    window.dispatchEvent(new Event("css-home-assets-warming"));
     void import("./home-three-preloader").then(({ preloadHomeThreeAssets }) => {
       preloadHomeThreeAssets();
     });

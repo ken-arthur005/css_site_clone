@@ -103,7 +103,6 @@ export function HomeHero({ site }: { site: SiteInfo }) {
     const loaderPanel = hero.querySelector<HTMLElement>(".home-intro__panel");
     const titleLines = Array.from(hero.querySelectorAll<HTMLElement>(".home-hero__title-line"));
     const typedText = titleLines.map((line) => line.querySelector<HTMLElement>(".home-hero__typed-text"));
-    const titlePeriods = titleLines.map((line) => line.querySelector<HTMLElement>(".home-hero__title-period"));
     const iconEntries = Array.from(hero.querySelectorAll<HTMLElement>(".hero-tech-field__entry"));
     const mobileIconEntries = iconEntries.filter((entry) => entry.closest("[data-mobile]")?.getAttribute("data-mobile") === "true");
     const identityEntry = hero.querySelector<HTMLElement>(".home-hero__identity-entry");
@@ -123,7 +122,6 @@ export function HomeHero({ site }: { site: SiteInfo }) {
       typedText.forEach((text) => {
         if (text) text.textContent = "";
       });
-      gsap.set(titlePeriods, { autoAlpha: 0 });
     }
 
     gsap.set(titleLines, { autoAlpha: introMode === "full" && !reduceMotion ? 0 : 1, yPercent: introMode === "full" && !reduceMotion ? 14 : 0 });
@@ -172,7 +170,6 @@ export function HomeHero({ site }: { site: SiteInfo }) {
     if (introMode === "full" && !reduceMotion) {
       titleLines.forEach((line, index) => {
         const text = typedText[index];
-        const period = titlePeriods[index];
         const word = line.dataset.word ?? "";
         const typing = { progress: 0 };
 
@@ -185,8 +182,7 @@ export function HomeHero({ site }: { site: SiteInfo }) {
             onUpdate: () => {
               if (text) text.textContent = word.slice(0, Math.floor(typing.progress));
             },
-          })
-          .to(period, { autoAlpha: 1, duration: 0.08, ease: "none" });
+          });
       });
     } else {
       entrance.to(titleLines, { autoAlpha: 1, yPercent: 0, duration: reduceMotion ? 0 : 0.34, stagger: 0.055 }, introMode === "full" ? "<0.06" : 0);
@@ -220,9 +216,9 @@ export function HomeHero({ site }: { site: SiteInfo }) {
 
       <div className="page-shell home-hero__inner">
         <h1 aria-label="Think. Build. Become." className="home-hero__title" id="home-title">
-          <span className="home-hero__title-line" data-word="THINK"><span aria-hidden="true" className="home-hero__typed-text">THINK</span><span aria-hidden="true" className="home-hero__title-period">.</span></span>
-          <span className="home-hero__title-line" data-word="BUILD"><span aria-hidden="true" className="home-hero__typed-text">BUILD</span><span aria-hidden="true" className="home-hero__title-period">.</span></span>
-          <span className="home-hero__title-line" data-word="BECOME"><span aria-hidden="true" className="home-hero__typed-text">BECOME</span><span aria-hidden="true" className="home-hero__title-period">.</span></span>
+          <span className="home-hero__title-line" data-word="THINK"><span aria-hidden="true" className="home-hero__typed-text">THINK</span></span>
+          <span className="home-hero__title-line" data-word="BUILD"><span aria-hidden="true" className="home-hero__typed-text">BUILD</span></span>
+          <span className="home-hero__title-line" data-word="BECOME"><span aria-hidden="true" className="home-hero__typed-text">BECOME</span></span>
         </h1>
         <div className="home-hero__identity-entry">
           <HeroIdentityCard site={site} typeOnReveal={typeCard} />

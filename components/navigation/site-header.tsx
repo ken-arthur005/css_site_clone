@@ -123,30 +123,26 @@ export function SiteHeader() {
     const menu = menuRef.current;
     if (!menu) return;
 
-    const wipe = menu.querySelector<HTMLElement>(".fullscreen-menu__wipe");
     const topLine = menu.querySelector<HTMLElement>(".fullscreen-menu__topline");
     const links = Array.from(menu.querySelectorAll<HTMLElement>(".fullscreen-menu__link"));
     const context = menu.querySelector<HTMLElement>(".fullscreen-menu__context");
     const content = [topLine, ...links, context].filter((element): element is HTMLElement => element !== null);
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    if (!wipe) return;
-
     const timeline = gsap.timeline();
 
     if (isOpen) {
       timeline
-        .set(menu, { autoAlpha: 1 })
-        .set(wipe, { xPercent: 0 })
+        .set(menu, { autoAlpha: 1, clipPath: "polygon(0 0, 0 0, 0 100%, 0 100%)" })
         .set(content, { autoAlpha: 0, y: 28 })
-        .to(wipe, { xPercent: -112, duration: reduceMotion ? 0 : 0.58, ease: "power4.inOut" })
+        .to(menu, { clipPath: "polygon(0 0, 100% 0, 94% 100%, 0 100%)", duration: reduceMotion ? 0 : 0.58, ease: "power4.inOut" })
         .to(topLine, { autoAlpha: 1, y: 0, duration: reduceMotion ? 0 : 0.28, ease: "power3.out" }, "<0.12")
         .to(links, { autoAlpha: 1, y: 0, duration: reduceMotion ? 0 : 0.42, ease: "power3.out", stagger: reduceMotion ? 0 : 0.055 }, "<0.05")
         .to(context, { autoAlpha: 1, y: 0, duration: reduceMotion ? 0 : 0.3, ease: "power3.out" }, "<0.12");
     } else {
       timeline
         .to(content, { autoAlpha: 0, y: -18, duration: reduceMotion ? 0 : 0.18, ease: "power2.in" })
-        .to(wipe, { xPercent: 0, duration: reduceMotion ? 0 : 0.4, ease: "power4.inOut" }, "<0.04")
+        .to(menu, { clipPath: "polygon(0 0, 0 0, 0 100%, 0 100%)", duration: reduceMotion ? 0 : 0.4, ease: "power4.inOut" }, "<0.04")
         .set(menu, { autoAlpha: 0 })
         .call(() => setIsMenuMounted(false));
     }
@@ -193,7 +189,6 @@ export function SiteHeader() {
           id="site-menu"
           role="dialog"
         >
-          <div aria-hidden="true" className="fullscreen-menu__wipe" />
           <div className="fullscreen-menu__inner">
             <div className="fullscreen-menu__topline">
               <p className="eyebrow">Navigate</p>

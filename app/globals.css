@@ -231,15 +231,6 @@
     isolation: isolate;
   }
 
-  .fullscreen-menu__wipe {
-    position: absolute;
-    z-index: 2;
-    inset: 0;
-    background: var(--accent);
-    clip-path: polygon(0 0, 100% 0, 94% 100%, 0 100%);
-    will-change: transform;
-  }
-
   .fullscreen-menu::before {
     position: absolute;
     inset: 0 0 auto;
@@ -714,10 +705,6 @@
 
   .home-hero__typed-text {
     display: inline;
-  }
-
-  .home-hero__title-period {
-    color: var(--accent-strong);
   }
 
   .home-hero__identity {

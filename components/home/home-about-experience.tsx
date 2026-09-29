@@ -314,7 +314,7 @@ export function HomeAboutExperience() {
         <div className="home-about__paths-stage" />
       </section>
       <div aria-hidden="true" className="home-about__paths-overlay">
-        <h2>you choose your path</h2>
+        <h2>choose your path</h2>
         <div className="home-about__compass">
           <div className="home-about__compass-clock">
             <svg className="home-about__compass-ring" viewBox="0 0 100 100">

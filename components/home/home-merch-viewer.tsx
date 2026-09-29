@@ -46,6 +46,7 @@ function ShirtModel({ modelSource, textureSource, onReady }: Pick<HomeMerchViewe
   textureSource: string;
 }) {
   const { scene } = useGLTF(modelSource, false, true);
+  const { invalidate } = useThree();
   const sourceTexture = useTexture(textureSource);
   const texture = useMemo(() => {
     const clone = sourceTexture.clone();
@@ -84,9 +85,10 @@ function ShirtModel({ modelSource, textureSource, onReady }: Pick<HomeMerchViewe
       material.needsUpdate = true;
     });
 
+    invalidate();
     onReady();
     return () => texture.dispose();
-  }, [model, onReady, texture]);
+  }, [invalidate, model, onReady, texture]);
 
   useEffect(() => {
     return () => {
@@ -153,6 +155,7 @@ export function HomeMerchViewer({ model, variant, textureSources, onReady, onFai
   const rootRef = useRef<HTMLDivElement>(null);
   const resumeTimerRef = useRef<number | null>(null);
   const [isNear, setIsNear] = useState(false);
+  const [shouldPreMount, setShouldPreMount] = useState(false);
   const [isPageVisible, setIsPageVisible] = useState(true);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [isInteracting, setIsInteracting] = useState(false);
@@ -167,6 +170,17 @@ export function HomeMerchViewer({ model, variant, textureSources, onReady, onFai
     );
     observer.observe(root);
     return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const preMount = () => setShouldPreMount(true);
+
+    if (document.documentElement.dataset.homeAssetsWarming === "true") {
+      preMount();
+    }
+
+    window.addEventListener("css-home-assets-warming", preMount);
+    return () => window.removeEventListener("css-home-assets-warming", preMount);
   }, []);
 
   useEffect(() => {
@@ -185,11 +199,11 @@ export function HomeMerchViewer({ model, variant, textureSources, onReady, onFai
   }, []);
 
   useEffect(() => {
-    if (!isNear) return;
+    if (!isNear && !shouldPreMount) return;
 
     useGLTF.preload(model.src, false, true);
     textureSources.forEach((source) => useTexture.preload(source));
-  }, [isNear, model.src, textureSources, variant.texture.src]);
+  }, [isNear, model.src, shouldPreMount, textureSources]);
 
   useEffect(() => {
     return () => {
@@ -222,12 +236,12 @@ export function HomeMerchViewer({ model, variant, textureSources, onReady, onFai
 
   return (
     <div className="home-merch-viewer" ref={rootRef}>
-      {isNear && (
+      {(isNear || shouldPreMount) && (
         <ViewerErrorBoundary onFailure={onFailure}>
           <Canvas
             camera={{ fov: 36, position: [0, 0, 7.2] }}
             dpr={[1, 1.5]}
-            frameloop={isActive ? "always" : "never"}
+            frameloop={isActive ? "always" : "demand"}
             gl={{ alpha: true, antialias: true, powerPreference: "high-performance" }}
             onCreated={({ gl }) => gl.setClearColor(0x000000, 0)}
           >
