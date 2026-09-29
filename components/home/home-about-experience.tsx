@@ -70,7 +70,6 @@ export function HomeAboutExperience() {
       return;
     }
 
-    const statement = root.querySelector<HTMLElement>(".home-about__chapter--statement");
     const community = root.querySelector<HTMLElement>(".home-about__chapter--community");
     const communityStage = root.querySelector<HTMLElement>(".home-about__community-stage");
     const communityHeading = communityStage?.querySelector<HTMLElement>("h2");
@@ -81,7 +80,7 @@ export function HomeAboutExperience() {
       .map((card) => ({ card, entry: card?.querySelector<HTMLElement>(".home-about__collage-card-inner") }))
       .filter((item): item is { card: HTMLDivElement; entry: HTMLElement } => item.card !== null && item.entry !== null);
 
-    if (!statement || !community || !communityStage || !communityHeading || !pathsStage || !pathsOverlay || !clock) {
+    if (!community || !communityStage || !communityHeading || !pathsStage || !pathsOverlay || !clock) {
       return;
     }
 
@@ -90,22 +89,6 @@ export function HomeAboutExperience() {
       setAboutActive(active);
       document.documentElement.classList.toggle("about-model-active", active);
     };
-
-    const handoffTrigger = ScrollTrigger.create({
-      trigger: statement,
-      start: "top top",
-      end: "+=70%",
-      pin: true,
-      pinSpacing: true,
-      scrub: 0.35,
-      invalidateOnRefresh: true,
-      onEnter: () => setAboutState(true),
-      onEnterBack: () => setAboutState(true),
-      onLeaveBack: () => setAboutState(false),
-      onUpdate: (self) => {
-        progressRef.current = self.progress;
-      },
-    });
 
     const collapsedOffset = (index: number) => {
       const bounds = cardEntries[index].card.getBoundingClientRect();
@@ -126,8 +109,9 @@ export function HomeAboutExperience() {
 
     settleProgressRef.current = 0;
     pathsDockRef.current = 0;
-    const headingText = "this is us";
+    const headingText = "A society shaped by computing";
     const typingState = { progress: 0 };
+    progressRef.current = 0;
     communityHeading.textContent = "";
     const communityTimeline = gsap.timeline({
       scrollTrigger: {
@@ -217,6 +201,7 @@ export function HomeAboutExperience() {
     });
 
     communityTimeline
+      .to(progressRef, { current: 1, duration: 0.2, ease: "none" }, 0)
       .to(settleProgressRef, { current: 1, duration: 0.2, ease: "none" }, 0)
       .to(communityHeading, { autoAlpha: 1, xPercent: -50, y: 0, duration: 0.01, ease: "none" }, 0.2)
       .to(typingState, {
@@ -241,7 +226,6 @@ export function HomeAboutExperience() {
       }, 0.84);
 
     return () => {
-      handoffTrigger.kill();
       communityTimeline.scrollTrigger?.kill();
       travelTrigger.kill();
       pathsTrigger.kill();
@@ -321,12 +305,9 @@ export function HomeAboutExperience() {
       <div className="home-about__model-layer">
         {sceneActive && <AboutModelScene progressRef={progressRef} settleProgressRef={settleProgressRef} pathsDockRef={pathsDockRef} />}
       </div>
-      <section className="home-about__chapter home-about__chapter--statement">
-          <h2>A society shaped by computing.</h2>
-      </section>
       <section className="home-about__chapter home-about__chapter--community">
         <div className="home-about__community-stage">
-          <h2 aria-label="this is us">this is us</h2>
+          <h2 aria-label="A society shaped by computing">A society shaped by computing</h2>
         </div>
       </section>
       <section className="home-about__chapter home-about__chapter--paths" aria-label="Computer science career paths">

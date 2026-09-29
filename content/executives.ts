@@ -55,7 +55,7 @@ export const executives = [
       alt: "Emmanuella, General Secretary of CSS KNUST",
       contentStatus: "verified",
     },
-    quote: "The Lord is my sherperd, i shall not want",
+    quote: "Cast all your anxiety on Jesus because He cares for you",
   },
   {
     id: "exec-charles-kwame-bediakoh",

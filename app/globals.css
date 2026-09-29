@@ -799,11 +799,11 @@
     position: absolute;
     top: calc(4.5rem + var(--space-3));
     left: 50%;
-    width: max-content;
-    max-width: none;
+    width: min(90vw, 13ch);
+    max-width: 13ch;
     margin: 0;
     font-size: clamp(3rem, 6vw, 7rem);
-    white-space: nowrap;
+    white-space: normal;
     opacity: 0;
     transform: translate(-50%, 1.75rem);
   }
