@@ -1,51 +1,43 @@
 import type { Event } from "@/types/event";
 
-// Development-only event records. Dates, locations, copy, and registration details need approval.
 export const events = [
   {
-    id: "event-css-build-night-2026",
-    slug: "css-build-night",
-    title: "CSS Build Night",
-    summary: "An evening placeholder event for making and sharing student projects.",
+    id: "event-freshers-orientation-2026",
+    slug: "freshers-orientation",
+    title: "Fresher's Orientation",
+    summary: "A starting point for new CSS students to meet the society, understand the community, and find their place in computing.",
     description:
-      "Development-only copy to exercise a featured upcoming event without presenting unverified plans as public information.",
-    contentStatus: "placeholder",
-    start: { dateTime: "2026-10-24T15:00:00+00:00", timeZone: "Africa/Accra" },
-    end: { dateTime: "2026-10-24T19:00:00+00:00", timeZone: "Africa/Accra" },
+      "A first gathering for incoming Computer Science students to connect with the CSS community and get oriented for the year ahead.",
+    contentStatus: "verified",
+    start: { dateTime: "2026-10-19T00:00:00+00:00", timeZone: "Africa/Accra" },
     featured: true,
     registration: { required: true, status: "upcoming" },
+    heroImage: { src: "/orientation.jpg", alt: "Students attending a CSS orientation session", contentStatus: "verified" },
   },
   {
-    id: "event-signals-student-tech-forum-2026",
-    slug: "signals-student-tech-forum",
-    title: "Signals: Student Tech Forum",
-    summary: "A placeholder forum record with optional speakers but no registration link.",
+    id: "event-alumni-homecoming-2026",
+    slug: "alumni-homecoming",
+    title: "Alumni Homecoming",
+    summary: "An alumni and student gathering for shared stories, community, and the next chapter for Computer Science at KNUST.",
     description:
-      "Development-only copy demonstrating an upcoming event that can render speakers when approved information exists.",
-    contentStatus: "placeholder",
-    start: { dateTime: "2026-11-14T10:00:00+00:00", timeZone: "Africa/Accra" },
+      "A homecoming moment that brings the Computer Science community together across generations.",
+    contentStatus: "verified",
+    start: { dateTime: "2026-11-02T00:00:00+00:00", timeZone: "Africa/Accra" },
     featured: false,
     registration: { required: true, status: "upcoming" },
-    speakers: [
-      {
-        name: "Nana Osei",
-        title: "Guest speaker placeholder",
-      },
-    ],
+    heroImage: { src: "/homecoming.jpg", alt: "Alumni Homecoming 2026 artwork", contentStatus: "verified" },
   },
   {
-    id: "event-code-and-community-2026",
-    slug: "code-and-community",
-    title: "Code & Community",
-    summary: "A concluded placeholder event with a recap and no optional event media.",
+    id: "event-future-of-tech-seminar-2026",
+    slug: "future-of-tech-seminar",
+    title: "Future of Tech Seminar",
+    summary: "A student-focused seminar on technology pathways, opportunity, and thoughtful preparation for the future of computing.",
     description:
-      "Development-only copy demonstrating a completed event whose optional sections are independently present or omitted.",
-    contentStatus: "placeholder",
-    start: { dateTime: "2026-08-15T11:00:00+00:00", timeZone: "Africa/Accra" },
+      "A focused conversation on where technology is moving and how students can prepare to participate in it.",
+    contentStatus: "verified",
+    start: { dateTime: "2026-11-07T00:00:00+00:00", timeZone: "Africa/Accra" },
     featured: false,
-    registration: { required: false },
-    recap: {
-      summary: "Placeholder recap content pending approved event material.",
-    },
+    registration: { required: true, status: "upcoming" },
+    heroImage: { src: "/future%20of%20tech.jpg", alt: "Future of Tech Seminar artwork", contentStatus: "verified" },
   },
 ] satisfies readonly Event[];

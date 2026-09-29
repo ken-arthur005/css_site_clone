@@ -1224,14 +1224,70 @@
   .home-executive-gallery__all:focus-visible .home-executive-gallery__all-arrow { opacity: 1; }
 
   .home-events {
-    overflow: hidden;
+    position: relative;
+    min-height: 650svh;
   }
 
-  .home-events__image-wrap {
-    position: relative;
-    height: min(48rem, 70svh);
+  .home-quote-bridge {
+    display: grid;
+    min-height: 72svh;
+    align-items: center;
+    padding: var(--section-space) 0;
+    background: var(--background);
+  }
+
+  .home-quote-bridge__inner {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+
+  .home-quote-bridge figure {
+    grid-column: 3 / span 8;
+    margin: 0;
+  }
+
+  .home-quote-bridge blockquote {
+    margin: 0;
+    font-family: var(--font-bricolage), sans-serif;
+    font-size: clamp(2rem, 4.2vw, 5.25rem);
+    font-style: italic;
+    font-weight: 500;
+    letter-spacing: var(--tracking-heading);
+    line-height: 0.98;
+  }
+
+  .home-quote-bridge figcaption {
+    margin-top: var(--space-5);
+    color: var(--foreground-muted);
+    font-family: var(--font-geist-mono), monospace;
+    font-size: var(--text-label);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .home-events__stage {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    overflow: hidden;
+    background: var(--background);
+  }
+
+  .home-events__hero-media {
+    position: absolute;
+    inset: 0;
     overflow: hidden;
     background: var(--foreground);
+  }
+
+  .home-events__hero-media::after {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    background: color-mix(in oklch, var(--foreground) 46%, transparent);
+    content: "";
+    pointer-events: none;
   }
 
   .home-events__image {
@@ -1239,55 +1295,85 @@
     object-position: center;
   }
 
-  .home-events__image-label {
-    position: absolute;
-    right: var(--space-4);
-    bottom: var(--space-4);
-    padding: var(--space-2) var(--space-3);
-    background: var(--background);
-    color: var(--foreground);
-  }
-
   .home-events__intro {
-    grid-template-columns: 1fr;
-    margin-top: var(--space-7);
+    position: absolute;
+    z-index: 3;
+    inset: 0;
+    color: var(--background);
   }
 
-  .home-events__intro .editorial-type { max-width: 28rem; color: var(--foreground-muted); }
+  .home-events__heading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin: 0;
+    font-family: var(--font-bricolage), sans-serif;
+    font-size: clamp(5.25rem, 13vw, 14rem);
+    font-weight: 600;
+    letter-spacing: var(--tracking-display);
+    line-height: 0.78;
+    transform: translate(-50%, -50%);
+  }
 
-  .home-events__cut {
-    width: 120%;
-    height: clamp(3rem, 8vw, 7rem);
-    margin-top: var(--space-7);
-    margin-left: -10%;
-    background: var(--accent);
-    clip-path: polygon(0 0, 100% 0, 92% 100%, 8% 100%);
+  .home-events__description {
+    position: absolute;
+    right: var(--page-gutter);
+    bottom: 18svh;
+    max-width: 19rem;
+    color: inherit;
+  }
+
+  .home-events__slices {
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0;
+    pointer-events: none;
+  }
+
+  .home-events__slice {
+    background-image: linear-gradient(color-mix(in oklch, var(--foreground) 46%, transparent), color-mix(in oklch, var(--foreground) 46%, transparent)), url("/Knust%20entrance.jpg");
+    background-position: center, var(--slice-position) center;
+    background-repeat: no-repeat;
+    background-size: 100% 100%, 500% 100%;
   }
 
   .home-events__rail {
-    display: grid;
-    gap: var(--space-3);
-    padding-top: var(--space-5);
+    position: absolute;
+    z-index: 4;
+    right: 0;
+    bottom: var(--space-6);
+    left: 0;
+    overflow: visible;
+    padding: 0;
   }
+
+  .home-events__track { --event-card-width: clamp(38rem, 52vw, 60rem); display: flex; align-items: end; gap: clamp(1rem, 2vw, 2.5rem); width: max-content; padding-left: calc((100vw - var(--event-card-width)) / 2); }
 
   .home-event-card {
     display: grid;
-    min-height: 23rem;
-    align-content: space-between;
-    gap: var(--space-6);
-    padding: var(--space-5);
+    width: var(--event-card-width);
+    min-width: var(--event-card-width);
+    min-height: min(42rem, 74svh);
+    grid-template-rows: minmax(16rem, 1.1fr) 1fr auto;
+    overflow: hidden;
     border: var(--border-width) solid var(--border-strong);
     background: var(--surface-raised);
   }
 
-  .home-event-card > .eyebrow { color: var(--foreground-subtle); }
-  .home-event-card__date { margin-bottom: var(--space-3); color: var(--accent-strong); font-family: var(--font-geist-mono), monospace; font-size: var(--text-small); }
+  .home-event-card__image { position: relative; overflow: hidden; background: var(--accent-soft); }
+  .home-event-card__image img { object-fit: cover; }
+  .home-event-card__content { padding: var(--space-4) var(--space-4) var(--space-3); }
+  .home-event-card__content > .eyebrow { color: var(--foreground-subtle); }
+  .home-event-card__date { margin: var(--space-2) 0 var(--space-3); color: var(--accent-strong); font-family: var(--font-geist-mono), monospace; font-size: var(--text-small); }
   .home-event-card h3 { max-width: 12ch; font-family: var(--font-bricolage), sans-serif; font-size: var(--text-h3); font-weight: 620; letter-spacing: var(--tracking-heading); line-height: 1; }
-  .home-event-card h3 + p { margin-top: var(--space-4); color: var(--foreground-muted); font-size: var(--text-small); }
-  .home-event-card__footer { display: flex; align-items: end; justify-content: space-between; gap: var(--space-3); }
+  .home-event-card h3 + p { margin-top: var(--space-3); color: var(--foreground-muted); font-size: var(--text-small); }
+  .home-event-card__footer { display: flex; align-items: end; justify-content: space-between; gap: var(--space-3); padding: 0 var(--space-4) var(--space-4); }
   .home-event-card__footer > .eyebrow { color: var(--foreground-muted); }
   .home-event-card__footer a { color: var(--foreground); font-family: var(--font-geist-mono), monospace; font-size: var(--text-label); font-weight: 600; letter-spacing: 0.04em; text-decoration: none; text-transform: uppercase; }
-  .home-events__all { width: fit-content; margin-top: var(--space-3); }
+  .home-events__all { align-self: center; width: fit-content; white-space: nowrap; }
 
   .home-merch {
     padding-bottom: var(--section-space);
@@ -1396,11 +1482,7 @@
   }
 
   .home-events__rail {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .home-events__all {
-    grid-column: 1 / -1;
+    justify-content: center;
   }
 
   .home-merch__layout {
@@ -1414,17 +1496,91 @@
 }
 
 @media (min-width: 75rem) {
-  .home-events__rail {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .home-events__all {
-    grid-column: auto;
-    align-self: end;
-  }
 }
 
 @media (max-width: 47.99rem) {
+  .home-events {
+    min-height: 0;
+  }
+
+  .home-quote-bridge {
+    min-height: 58svh;
+  }
+
+  .home-quote-bridge figure {
+    grid-column: 1 / -1;
+  }
+
+  .home-events__stage {
+    display: grid;
+    gap: var(--space-6);
+    min-height: 0;
+    padding-bottom: var(--space-6);
+    position: relative;
+    top: auto;
+    height: auto;
+  }
+
+  .home-events__hero-media {
+    position: relative;
+    min-height: 70svh;
+  }
+
+  .home-events__intro {
+    position: relative;
+    min-height: 0;
+    gap: var(--space-5);
+    padding-top: 0;
+    color: var(--foreground);
+  }
+
+  .home-events__heading {
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    font-size: clamp(4.5rem, 22vw, 7rem);
+  }
+
+  .home-events__description {
+    max-width: 24rem;
+    color: var(--foreground-muted);
+  }
+
+  .home-events__slices {
+    display: none;
+  }
+
+  .home-events__rail {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    left: auto;
+    width: 100%;
+    overflow-x: auto;
+    justify-content: start;
+    padding-top: 0;
+    padding-bottom: var(--space-3);
+    scroll-snap-type: x mandatory;
+  }
+
+  .home-events__track {
+    --event-card-width: min(82vw, 22rem);
+    gap: var(--space-3);
+    padding: 0 var(--page-gutter);
+  }
+
+  .home-event-card {
+    width: var(--event-card-width);
+    min-width: var(--event-card-width);
+    scroll-snap-align: start;
+  }
+
+  .home-events__all {
+    align-self: center;
+    white-space: nowrap;
+  }
+
   .home-hero {
     min-height: max(calc(100svh - 4.5rem), 38rem);
   }
