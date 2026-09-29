@@ -6,6 +6,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useEffect, useRef, useState } from "react";
 import { hasSeenHomeIntro, markHomeIntroSeen } from "@/lib/home-intro";
 import type { SiteInfo } from "@/types/site";
+import { HomeAssetPreloader } from "./home-asset-preloader";
 import { HeroIdentityCard } from "./hero-identity-card";
 import { HeroTechField } from "./hero-tech-field";
 
@@ -172,6 +173,7 @@ export function HomeHero({ site }: { site: SiteInfo }) {
           </div>
         </div>
       </div>
+      <HomeAssetPreloader active={introComplete} />
       <HeroTechField />
 
       <div className="page-shell home-hero__inner">

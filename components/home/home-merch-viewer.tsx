@@ -188,13 +188,7 @@ export function HomeMerchViewer({ model, variant, textureSources, onReady, onFai
     if (!isNear) return;
 
     useGLTF.preload(model.src, false, true);
-    useTexture.preload(variant.texture.src);
-    const remainingTextures = textureSources.filter((source) => source !== variant.texture.src);
-    const timer = window.setTimeout(() => {
-      remainingTextures.forEach((source) => useTexture.preload(source));
-    }, 800);
-
-    return () => window.clearTimeout(timer);
+    textureSources.forEach((source) => useTexture.preload(source));
   }, [isNear, model.src, textureSources, variant.texture.src]);
 
   useEffect(() => {

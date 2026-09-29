@@ -68,7 +68,6 @@ export function HomeMerchSelector({ product }: { product: MerchProduct }) {
             sizes="(max-width: 767px) 100vw, 80vw"
             src={selectedVariant.fallbackImage.src}
           />
-          {!viewerReady && <span className="home-merch-stage__viewer-loading eyebrow">Loading shirt</span>}
           {product.model && (
             <HomeMerchViewer
               model={product.model}
