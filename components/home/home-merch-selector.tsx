@@ -13,7 +13,7 @@ import {
 import type { MerchProduct } from "@/types/merch";
 
 const HomeMerchViewer = dynamic(
-  () => import("./home-merch-viewer").then(({ HomeMerchViewer: Viewer }) => Viewer),
+  () => import("@/components/merch/merch-shirt-viewer").then(({ MerchShirtViewer: Viewer }) => Viewer),
   { ssr: false },
 );
 
@@ -153,9 +153,9 @@ export function HomeMerchSelector({ product }: { product: MerchProduct }) {
         <TransitionLink className="button button-secondary angular-cut" href="/merch" transitionLabel="MERCH">
           View more merch <span aria-hidden="true">/&gt;</span>
         </TransitionLink>
-        <button className="button button-primary angular-cut" disabled type="button">
-          Checkout coming soon
-        </button>
+        <TransitionLink className="button button-primary angular-cut" href="/merch/shop" transitionLabel="SHOP">
+          Start your order <span aria-hidden="true">↗</span>
+        </TransitionLink>
       </div>
     </div>
   );

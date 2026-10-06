@@ -2,13 +2,14 @@
 
 import { Center, OrbitControls, useGLTF, useTexture } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Component, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ErrorInfo, type ReactNode } from "react";
+import { Component, Suspense, useEffect, useMemo, useRef, useState, type ErrorInfo, type ReactNode } from "react";
 import { Mesh, MeshStandardMaterial, SRGBColorSpace } from "three";
 import type { MerchVariant } from "@/types/merch";
 import type { ContentAsset } from "@/types/content";
 import { useNavigationState } from "@/components/providers/navigation-state-provider";
+import { WebGLContextGuard } from "@/components/three/webgl-context-guard";
 
-type HomeMerchViewerProps = {
+type MerchShirtViewerProps = {
   model: ContentAsset;
   variant: MerchVariant;
   textureSources: readonly string[];
@@ -42,10 +43,9 @@ class ViewerErrorBoundary extends Component<ViewerErrorBoundaryProps, ViewerErro
   }
 }
 
-function ShirtModel({ modelSource, textureSource, onModelReady }: {
+function ShirtModel({ modelSource, textureSource }: {
   modelSource: string;
   textureSource: string;
-  onModelReady: () => void;
 }) {
   const { scene } = useGLTF(modelSource, false, true);
   const { invalidate } = useThree();
@@ -68,6 +68,7 @@ function ShirtModel({ modelSource, textureSource, onModelReady }: {
 
       const sourceMaterial = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
       const material = sourceMaterial.clone() as MeshStandardMaterial;
+      material.color.set("#ffffff");
       material.metalness = 0;
       material.roughness = 0.82;
       material.needsUpdate = true;
@@ -88,9 +89,8 @@ function ShirtModel({ modelSource, textureSource, onModelReady }: {
     });
 
     invalidate();
-    onModelReady();
     return () => texture.dispose();
-  }, [invalidate, model, onModelReady, texture]);
+  }, [invalidate, model, texture]);
 
   useEffect(() => {
     return () => {
@@ -107,7 +107,7 @@ function ShirtModel({ modelSource, textureSource, onModelReady }: {
   return <primitive object={model} />;
 }
 
-function CanvasWarmup({ active, onReady }: Pick<HomeMerchViewerProps, "onReady"> & { active: boolean }) {
+function CanvasWarmup({ active, onReady }: Pick<MerchShirtViewerProps, "onReady"> & { active: boolean }) {
   const { camera, gl, invalidate, scene } = useThree();
   const renderedFrames = useRef(0);
   const hasCompleted = useRef(false);
@@ -144,7 +144,7 @@ function ViewerScene({
   onInteractionStart,
   onInteractionEnd,
   onReady,
-}: Pick<HomeMerchViewerProps, "onReady"> & {
+}: Pick<MerchShirtViewerProps, "onReady"> & {
   modelSource: string;
   textureSource: string;
   active: boolean;
@@ -154,8 +154,6 @@ function ViewerScene({
 }) {
   const { size } = useThree();
   const modelScale = size.width < 768 ? 0.8 : 0.65;
-  const [isModelReady, setIsModelReady] = useState(false);
-  const handleModelReady = useCallback(() => setIsModelReady(true), []);
 
   return (
     <>
@@ -165,11 +163,11 @@ function ViewerScene({
       <Suspense fallback={null}>
         <Center>
           <group position={[0, -0.1, 0]} scale={modelScale}>
-            <ShirtModel modelSource={modelSource} onModelReady={handleModelReady} textureSource={textureSource} />
+            <ShirtModel modelSource={modelSource} textureSource={textureSource} />
           </group>
         </Center>
+        <CanvasWarmup key={textureSource} active={active} onReady={onReady} />
       </Suspense>
-      {isModelReady && <CanvasWarmup active={active} onReady={onReady} />}
       <OrbitControls
         autoRotate={autoRotate}
         autoRotateSpeed={0.32}
@@ -188,7 +186,7 @@ function ViewerScene({
   );
 }
 
-export function HomeMerchViewer({ model, variant, textureSources, onReady, onFailure }: HomeMerchViewerProps) {
+export function MerchShirtViewer({ model, variant, onReady, onFailure }: MerchShirtViewerProps) {
   const { isMenuActive } = useNavigationState();
   const rootRef = useRef<HTMLDivElement>(null);
   const resumeTimerRef = useRef<number | null>(null);
@@ -240,8 +238,8 @@ export function HomeMerchViewer({ model, variant, textureSources, onReady, onFai
     if (!isNear) return;
 
     useGLTF.preload(model.src, false, true);
-    textureSources.forEach((source) => useTexture.preload(source));
-  }, [isNear, model.src, textureSources]);
+    useTexture.preload(variant.texture.src);
+  }, [isNear, model.src, variant.texture.src]);
 
   useEffect(() => {
     return () => {
@@ -273,7 +271,7 @@ export function HomeMerchViewer({ model, variant, textureSources, onReady, onFai
   const autoRotate = isActive && !reducedMotion && !isInteracting;
 
   return (
-    <div className="home-merch-viewer" ref={rootRef}>
+    <div className="home-merch-viewer" ref={rootRef} data-active={isActive}>
       {hasBeenNear && (
         <ViewerErrorBoundary onFailure={onFailure}>
           <Canvas
@@ -283,6 +281,7 @@ export function HomeMerchViewer({ model, variant, textureSources, onReady, onFai
             gl={{ alpha: true, antialias: true, powerPreference: "high-performance" }}
             onCreated={({ gl }) => gl.setClearColor(0x000000, 0)}
           >
+            <WebGLContextGuard onFailure={onFailure} />
             <ViewerScene
               active={isActive}
               autoRotate={autoRotate}

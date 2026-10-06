@@ -1,0 +1,670 @@
+openapi: 3.0.3
+info:
+  title: CSS KNUST Website API
+  version: 1.0.0
+  description: 'Public, read-only REST API serving published content (about, executives,
+    events, and merchandise) to the CSS KNUST Next.js website. Content is created
+    and managed through Django Admin. All error responses use the structured envelope:
+    {"error": {"code": "...", "message": "..."}}.'
+paths:
+  /api/v1/about/:
+    get:
+      operationId: about_list
+      description: |-
+        List-only public viewset: no retrieve route. Use when the domain
+        directive defines no detail endpoint.
+      tags:
+      - about
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AboutResponse'
+          description: ''
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/events/:
+    get:
+      operationId: events_list
+      description: |-
+        Base for all public read-only API viewsets: AllowAny, published-only
+        results, get_queryset() overrides must call super().
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - events
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedEventList'
+          description: ''
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/events/{id}/:
+    get:
+      operationId: events_retrieve
+      description: |-
+        Base for all public read-only API viewsets: AllowAny, published-only
+        results, get_queryset() overrides must call super().
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this event.
+        required: true
+      tags:
+      - events
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+          description: ''
+        '404':
+          description: Resource not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/executives/:
+    get:
+      operationId: executives_list
+      description: |-
+        List-only public viewset: no retrieve route. Use when the domain
+        directive defines no detail endpoint.
+      tags:
+      - executives
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Executive'
+          description: ''
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/merchandise/:
+    get:
+      operationId: merchandise_list
+      description: |-
+        Base for all public read-only API viewsets: AllowAny, published-only
+        results, get_queryset() overrides must call super().
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - merchandise
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMerchandiseList'
+          description: ''
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/merchandise/{id}/:
+    get:
+      operationId: merchandise_retrieve
+      description: |-
+        Base for all public read-only API viewsets: AllowAny, published-only
+        results, get_queryset() overrides must call super().
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this merchandise.
+        required: true
+      tags:
+      - merchandise
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Merchandise'
+          description: ''
+        '404':
+          description: Resource not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/merchandise/categories/:
+    get:
+      operationId: merchandise_categories_list
+      description: |-
+        List-only public viewset: no retrieve route. Use when the domain
+        directive defines no detail endpoint.
+      tags:
+      - merchandise
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+          description: ''
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/orders/:
+    post:
+      operationId: orders_create
+      description: Reserve stock and initialise a Paystack mobile-money payment. Returns
+        an authorization_url; redirect the buyer there to complete payment. Requires
+        ONLINE_ORDERS_ENABLED. The stock hold expires after ORDER_HOLD_MINUTES if
+        not completed.
+      summary: Create an online order
+      tags:
+      - orders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OrderCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OrderCreateRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderCreateResponse'
+          description: ''
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/orders/{public_id}/:
+    get:
+      operationId: orders_retrieve
+      description: Returns current order status. pickup_code is only present once
+        the order is PAID or COLLECTED. Phone and email are never returned.
+      summary: Get order status
+      parameters:
+      - in: path
+        name: public_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - orders
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderStatus'
+          description: ''
+        '404':
+          description: Resource not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    AboutResponse:
+      type: object
+      properties:
+        overview:
+          type: string
+        mission:
+          type: string
+        vision:
+          type: string
+        objectives:
+          type: string
+        history:
+          type: string
+    Category:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 50
+        slug:
+          type: string
+          maxLength: 60
+          pattern: ^[-a-zA-Z0-9_]+$
+      required:
+      - name
+      - slug
+    Event:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        event_date:
+          type: string
+          format: date-time
+          description: Date and start time of the event.
+        venue:
+          type: string
+          maxLength: 255
+        image_url:
+          type: string
+          format: uri
+          nullable: true
+          readOnly: true
+        image_sizes:
+          type: object
+          nullable: true
+          properties:
+            thumb:
+              type: string
+              format: uri
+            card:
+              type: string
+              format: uri
+            full:
+              type: string
+              format: uri
+          readOnly: true
+        is_upcoming:
+          type: boolean
+          readOnly: true
+      required:
+      - event_date
+      - id
+      - image_sizes
+      - image_url
+      - is_upcoming
+      - title
+    Executive:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        position:
+          type: string
+          readOnly: true
+        biography:
+          type: string
+          readOnly: true
+        photo:
+          type: string
+          format: uri
+          nullable: true
+          readOnly: true
+        photo_sizes:
+          type: object
+          nullable: true
+          properties:
+            thumb:
+              type: string
+              format: uri
+            card:
+              type: string
+              format: uri
+            full:
+              type: string
+              format: uri
+          readOnly: true
+        academic_year:
+          type: string
+          readOnly: true
+          description: e.g. 2026/2027
+      required:
+      - academic_year
+      - biography
+      - id
+      - name
+      - photo
+      - photo_sizes
+      - position
+    Merchandise:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+          description: Leave empty to hide the price on the website.
+        image_url:
+          type: string
+          format: uri
+          nullable: true
+          readOnly: true
+        image_sizes:
+          type: object
+          nullable: true
+          properties:
+            thumb:
+              type: string
+              format: uri
+            card:
+              type: string
+              format: uri
+            full:
+              type: string
+              format: uri
+          readOnly: true
+        availability:
+          type: string
+          readOnly: true
+        in_stock:
+          type: boolean
+          readOnly: true
+        stock_quantity:
+          type: integer
+          readOnly: true
+          nullable: true
+        category:
+          allOf:
+          - $ref: '#/components/schemas/Category'
+          readOnly: true
+      required:
+      - availability
+      - category
+      - id
+      - image_sizes
+      - image_url
+      - in_stock
+      - name
+      - stock_quantity
+    OrderCreateRequest:
+      type: object
+      properties:
+        buyer_name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        buyer_phone:
+          type: string
+          minLength: 1
+        buyer_email:
+          type: string
+          format: email
+          minLength: 1
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItemInputRequest'
+      required:
+      - buyer_email
+      - buyer_name
+      - buyer_phone
+      - items
+    OrderCreateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          readOnly: true
+        subtotal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        authorization_url:
+          type: string
+          readOnly: true
+        expires_at:
+          type: string
+          readOnly: true
+      required:
+      - authorization_url
+      - expires_at
+      - fee
+      - id
+      - status
+      - subtotal
+      - total
+    OrderItemInputRequest:
+      type: object
+      properties:
+        product:
+          type: integer
+        quantity:
+          type: integer
+          maximum: 50
+          minimum: 1
+        note:
+          type: string
+          default: ''
+          maxLength: 100
+      required:
+      - product
+      - quantity
+    OrderStatus:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          readOnly: true
+        payment:
+          type: string
+          readOnly: true
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          readOnly: true
+        subtotal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        expires_at:
+          type: string
+          nullable: true
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+        pickup_code:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - created_at
+      - expires_at
+      - fee
+      - id
+      - items
+      - payment
+      - pickup_code
+      - status
+      - subtotal
+      - total
+    PaginatedEventList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Event'
+    PaginatedMerchandiseList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Merchandise'
+    Error:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: object
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object

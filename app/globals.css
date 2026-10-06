@@ -101,7 +101,8 @@
   }
 
   body {
-    min-width: 20rem;
+    /* A rem-based minimum must not widen the document during text zoom. */
+    min-width: min(20rem, 100%);
     background: var(--background);
     color: var(--foreground);
     font-size: var(--text-body);
@@ -162,7 +163,8 @@
     min-height: 4.5rem;
     align-items: center;
     justify-content: space-between;
-    padding-inline: var(--page-gutter);
+    gap: clamp(8px, 1vw, 16px);
+    padding-inline: clamp(16px, 3vw, 56px);
     border-bottom: var(--border-width) solid color-mix(in oklch, var(--foreground) 13%, transparent);
     background: color-mix(in oklch, var(--background) 76%, transparent);
     box-shadow: 0 0.3rem 1.4rem color-mix(in oklch, var(--foreground) 8%, transparent);
@@ -183,13 +185,23 @@
   .site-header__identity {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-3);
+    gap: clamp(8px, 1vw, 12px);
+    min-width: 0;
+    flex: 1;
     color: var(--foreground);
+  }
+
+  .site-header__identity > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 
   .site-header__logo {
     width: auto;
     height: 1.375rem;
+    max-width: 44px;
+    flex-shrink: 0;
+    object-fit: contain;
   }
 
   .site-header--hero {
@@ -210,6 +222,7 @@
 
   .menu-trigger {
     display: inline-flex;
+    flex-shrink: 0;
     min-height: 2.75rem;
     align-items: center;
     gap: var(--space-3);
