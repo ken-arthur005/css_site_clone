@@ -7,6 +7,7 @@ import {
 } from "next/font/google";
 import { SiteFooter } from "@/components/navigation/site-footer";
 import { SmoothScrollProvider } from "@/components/providers/smooth-scroll-provider";
+import { NavigationBackground, NavigationStateProvider } from "@/components/providers/navigation-state-provider";
 import { SiteHeader } from "@/components/navigation/site-header";
 import { RouteTransitionProvider } from "@/components/transitions/route-transition-provider";
 import "./globals.css";
@@ -44,15 +45,20 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${bricolage.variable} ${bioRhyme.variable} ${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <SmoothScrollProvider>
-          <RouteTransitionProvider>
-            <SiteHeader />
-            {children}
-            <SiteFooter />
-          </RouteTransitionProvider>
+          <NavigationStateProvider>
+            <RouteTransitionProvider>
+              <SiteHeader />
+              <NavigationBackground>
+                {children}
+                <SiteFooter />
+              </NavigationBackground>
+            </RouteTransitionProvider>
+          </NavigationStateProvider>
         </SmoothScrollProvider>
       </body>
     </html>

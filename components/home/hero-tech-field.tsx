@@ -23,6 +23,12 @@ type TechSymbol = {
   depth: number;
 };
 
+type FieldRect = { left: number; top: number; right: number; bottom: number };
+
+function intersects(a: FieldRect, b: FieldRect) {
+  return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+}
+
 const techSymbols: TechSymbol[] = [
   { file: "python-fill.svg", label: "Python", x: "18%", y: "25%", mobileX: "7%", mobileY: "18%", size: "clamp(2.5rem, 4.8vw, 5.3rem)", mobile: true, driftX: 28, driftY: -34, rotation: -15, duration: 4.8, depth: 0.72 },
   { file: "react.svg", label: "React", x: "60%", y: "16%", mobileX: "75%", mobileY: "13%", size: "clamp(2.5rem, 4.6vw, 5rem)", mobile: true, driftX: -32, driftY: 24, rotation: 17, duration: 5.6, depth: 0.5 },
@@ -51,27 +57,114 @@ export function HeroTechField() {
       return;
     }
 
-    techSymbols.forEach((symbol, index) => {
-      const float = icons[index]?.querySelector<HTMLElement>(".hero-tech-field__float");
+    const title = hero.querySelector<HTMLElement>(".home-hero__title");
+    const identity = hero.querySelector<HTMLElement>(".home-hero__identity-entry");
+    const header = document.querySelector<HTMLElement>(".site-header");
 
-      if (!float) {
-        return;
+    if (!title || !identity) return;
+
+    // Measure layout coordinates, not animated client rects, so intro/scroll
+    // transforms cannot move the exclusion zones while a resize is processed.
+    const layoutRect = (element: HTMLElement, padding: number): FieldRect => {
+      let left = 0;
+      let top = 0;
+      let parent: HTMLElement | null = element;
+
+      while (parent && parent !== hero) {
+        left += parent.offsetLeft;
+        top += parent.offsetTop;
+        parent = parent.offsetParent as HTMLElement | null;
       }
 
-      gsap.to(float, {
-        x: symbol.driftX,
-        y: symbol.driftY,
-        rotation: symbol.rotation,
-        duration: symbol.duration,
-        ease: "sine.inOut",
-        repeat: -1,
-        yoyo: true,
+      return { left: left - padding, top: top - padding, right: left + element.offsetWidth + padding, bottom: top + element.offsetHeight + padding };
+    };
+
+    let disposed = false;
+    let layoutFrame = 0;
+
+    const positionIcons = () => {
+      layoutFrame = 0;
+      const mobile = window.matchMedia("(max-width: 47.99rem)").matches;
+      const width = field.clientWidth;
+      const height = field.clientHeight;
+      const inset = mobile ? 8 : 16;
+      const zones = [layoutRect(title, 32), layoutRect(identity, 32)];
+      const headerBottom = (header?.offsetHeight ?? 72) + inset;
+      const sizes = icons.map((icon) => parseFloat(window.getComputedStyle(icon).width));
+      const placed: FieldRect[] = [];
+
+      icons.forEach((icon, index) => {
+        const symbol = techSymbols[index];
+        if (mobile && !symbol.mobile) return;
+
+        // Include rotation, float, pointer response and the scroll-exit offset
+        // in the footprint rather than protecting only the resting image.
+        const size = sizes[index];
+        const horizontalReach = mobile ? 12 : 36;
+        const verticalReach = horizontalReach + 24;
+        const halfSize = size * 0.65;
+        const reachX = halfSize + horizontalReach;
+        const reachY = halfSize + verticalReach;
+        const preferredX = parseFloat(mobile ? symbol.mobileX : symbol.x) / 100 * width + size / 2;
+        const preferredY = parseFloat(mobile ? symbol.mobileY : symbol.y) / 100 * height + size / 2;
+        const slots = mobile ? 4 : 8;
+        const xs = [...(mobile ? [] : [preferredX]), ...Array.from({ length: slots }, (_, slot) => inset + reachX + slot * (width - 2 * (inset + reachX)) / (slots - 1)), ...zones.flatMap((zone) => [zone.left - reachX, zone.right + reachX])];
+        const ys = [preferredY, headerBottom + reachY, height - inset - reachY, ...zones.flatMap((zone) => [zone.top - reachY, zone.bottom + reachY])];
+        let best: { x: number; y: number; rect: FieldRect; score: number } | undefined;
+
+        for (const x of xs) {
+          for (const y of ys) {
+            const rect = { left: x - reachX, top: y - reachY, right: x + reachX, bottom: y + reachY };
+            if (rect.left < inset || rect.right > width - inset || rect.top < headerBottom || rect.bottom > height - inset || [...zones, ...placed].some((zone) => intersects(rect, zone))) continue;
+            const score = Math.hypot(x - preferredX, y - preferredY);
+            if (!best || score < best.score) best = { x, y, rect, score };
+          }
+        }
+
+        icon.dataset.safeSpace = String(Boolean(best));
+        if (best) {
+          icon.style.left = `${best.x - size / 2}px`;
+          icon.style.top = `${best.y - size / 2}px`;
+          placed.push(best.rect);
+        }
       });
-    });
+    };
+
+    const scheduleLayout = () => {
+      if (!disposed && !layoutFrame) layoutFrame = window.requestAnimationFrame(positionIcons);
+    };
+    const observer = new ResizeObserver(scheduleLayout);
+    [hero, title, identity].forEach((element) => observer.observe(element));
+    positionIcons();
+    void document.fonts.ready.then(scheduleLayout);
+    window.addEventListener("resize", scheduleLayout, { passive: true });
 
     const media = gsap.matchMedia();
 
-    media.add("(hover: hover) and (pointer: fine)", () => {
+    media.add({ mobile: "(max-width: 47.99rem)", desktop: "(min-width: 48rem)", reduce: "(prefers-reduced-motion: reduce)" }, (mediaContext) => {
+      scheduleLayout();
+      if (mediaContext.conditions?.reduce) return;
+
+      techSymbols.forEach((symbol, index) => {
+        const float = icons[index]?.querySelector<HTMLElement>(".hero-tech-field__float");
+
+        if (!float) {
+          return;
+        }
+
+        gsap.to(float, {
+          x: Math.sign(symbol.driftX) * (mediaContext.conditions?.mobile ? 8 : 12),
+          y: Math.sign(symbol.driftY) * (mediaContext.conditions?.mobile ? 8 : 12),
+          rotation: Math.sign(symbol.rotation) * 8,
+          duration: symbol.duration,
+          ease: "sine.inOut",
+          repeat: -1,
+          yoyo: true,
+        });
+      });
+    });
+
+    media.add("(min-width: 48rem) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)", () => {
       const quickSetters = icons.map((icon) => ({
           x: gsap.quickTo(icon, "x", { duration: 0.75, ease: "power3.out" }),
           y: gsap.quickTo(icon, "y", { duration: 0.75, ease: "power3.out" }),
@@ -92,7 +185,7 @@ export function HeroTechField() {
           const distance = Math.hypot(deltaX, deltaY);
           const influence = Math.max(0, 1 - distance / 230);
           const symbol = techSymbols[index];
-          const push = influence * (17 + symbol.depth * 16);
+          const push = influence * (8 + symbol.depth * 12);
           const parallaxX = (pointerX / window.innerWidth - 0.5) * symbol.depth * 8;
           const parallaxY = (pointerY / window.innerHeight - 0.5) * symbol.depth * 8;
 
@@ -136,7 +229,18 @@ export function HeroTechField() {
       };
     });
 
-    return () => media.revert();
+    return () => {
+      disposed = true;
+      observer.disconnect();
+      window.removeEventListener("resize", scheduleLayout);
+      if (layoutFrame) window.cancelAnimationFrame(layoutFrame);
+      icons.forEach((icon) => {
+        icon.style.removeProperty("left");
+        icon.style.removeProperty("top");
+        delete icon.dataset.safeSpace;
+      });
+      media.revert();
+    };
   }, { scope: fieldRef });
 
   return (

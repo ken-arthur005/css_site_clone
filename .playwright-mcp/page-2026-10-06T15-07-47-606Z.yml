@@ -1,0 +1,170 @@
+- generic [active] [ref=f1e1]:
+  - banner [ref=f1e2]:
+    - link "COMPUTER SCIENCE SOCIETY" [ref=f1e3] [cursor=pointer]:
+      - /url: /
+    - button "MENU" [ref=f1e5] [cursor=pointer]
+  - main [ref=f1e10]:
+    - region [ref=f1e11]:
+      - generic [ref=f1e12]:
+        - heading "Think. Build. Become." [level=1] [ref=f1e13]:
+          - generic [ref=f1e14]: THINK
+          - generic [ref=f1e15]: BUILD
+          - generic [ref=f1e16]: BECOME
+        - complementary "Computer Science Society, KNUST. Kwame Nkrumah University of Science and Technology. College of Science. Kumasi, Ghana." [ref=f1e18]:
+          - generic [aria-hidden] [ref=f1e20]:
+            - generic [ref=f1e21]:
+              - paragraph [ref=f1e22]: Institutional identity
+              - generic [ref=f1e23]: CSS / KNUST
+            - paragraph [ref=f1e24]: Computer Science Society, KNUST
+            - generic [ref=f1e25]:
+              - paragraph [ref=f1e26]: Kwame Nkrumah University of Science and Technology
+              - paragraph [ref=f1e27]: College of Science
+              - paragraph [ref=f1e28]: Kumasi, Ghana
+    - region "About CSS" [ref=f1e29]:
+      - region "Computer science career paths" [ref=f1e31]
+    - region [ref=f1e32]:
+      - generic [ref=f1e33]:
+        - generic [ref=f1e34]:
+          - generic [ref=f1e35]:
+            - paragraph [ref=f1e36]: 02 / Leadership
+            - heading "The people moving CSS forward." [level=2] [ref=f1e37]
+          - paragraph [ref=f1e39]: Meet the 2026 / 27 administration.
+        - list [ref=f1e40]:
+          - listitem "Albert Kodua Frimpong, President" [ref=f1e41]:
+            - generic [ref=f1e43]:
+              - generic [ref=f1e44]: "01"
+              - strong [ref=f1e45]: Albert Kodua Frimpong
+            - generic [ref=f1e46]:
+              - generic [ref=f1e47]: President
+              - emphasis [ref=f1e48]: We are what we repeatedly do, greatness therefore is not an act but a habit
+            - img "Albert Kodua Frimpong, President of CSS KNUST" [ref=f1e50]
+          - listitem "Eliah Abormegah, Vice President" [ref=f1e51]:
+            - generic [ref=f1e53]:
+              - generic [ref=f1e54]: "02"
+              - strong [ref=f1e55]: Eliah Abormegah
+            - generic [ref=f1e56]:
+              - generic [ref=f1e57]: Vice President
+              - emphasis [ref=f1e58]: In brightest day in blackest night
+            - img "Eliah Abormegah, Vice President of CSS KNUST" [ref=f1e60]
+          - listitem "Carey Churchill Ken-Arthur, Financial Secretary" [ref=f1e61]:
+            - generic [ref=f1e63]:
+              - generic [ref=f1e64]: "03"
+              - strong [ref=f1e65]: Carey Churchill Ken-Arthur
+            - generic [ref=f1e66]:
+              - generic [ref=f1e67]: Financial Secretary
+              - emphasis [ref=f1e68]: Roses are red, violets are blue, I love shawarma and so do you
+            - img "Carey Churchill Ken-Arthur, Financial Secretary of CSS KNUST" [ref=f1e70]
+          - listitem "Emmanuella, General Secretary" [ref=f1e71]:
+            - generic [ref=f1e73]:
+              - generic [ref=f1e74]: "04"
+              - strong [ref=f1e75]: Emmanuella
+            - generic [ref=f1e76]:
+              - generic [ref=f1e77]: General Secretary
+              - emphasis [ref=f1e78]: Cast all your anxiety on Jesus because He cares for you
+            - img "Emmanuella, General Secretary of CSS KNUST" [ref=f1e80]
+          - listitem "Charles Kwame Bediakoh, Organizing Secretary" [ref=f1e81]:
+            - generic [ref=f1e83]:
+              - generic [ref=f1e84]: "05"
+              - strong [ref=f1e85]: Charles Kwame Bediakoh
+            - generic [ref=f1e86]:
+              - generic [ref=f1e87]: Organizing Secretary
+              - emphasis [ref=f1e88]: DIE DIE DIEEEE
+            - img "Charles Kwame Bediakoh, Organizing Secretary of CSS KNUST" [ref=f1e90]
+          - listitem "RoseQueen Cudjoe, Women's Commissioner" [ref=f1e91]:
+            - generic [ref=f1e93]:
+              - generic [ref=f1e94]: "06"
+              - strong [ref=f1e95]: RoseQueen Cudjoe
+            - generic [ref=f1e96]:
+              - generic [ref=f1e97]: Women's Commissioner
+              - emphasis [ref=f1e98]: I like Roses and I'm a Queen.
+            - img "RoseQueen Cudjoe, Women's Commissioner of CSS KNUST" [ref=f1e100]
+          - link [ref=f1e101] [cursor=pointer]:
+            - /url: /executives
+            - strong [ref=f1e102]: View allexecutives
+            - generic [aria-hidden] [ref=f1e103]: />
+    - figure "Linus Torvalds" [ref=f1e106]:
+      - blockquote [ref=f1e107]: Talk is cheap. Show me the code.
+    - region "Events" [ref=f1e109]:
+      - generic [ref=f1e110]:
+        - img "CSS students gathered at a society event" [ref=f1e112]
+        - generic "Selected events" [ref=f1e114]
+    - region [ref=f1e115]:
+      - generic [ref=f1e116]:
+        - generic [ref=f1e118]:
+          - heading [level=2] [ref=f1e119]:
+            - text: Wear CSS,
+            - emphasis [ref=f1e120]: Be CSS
+          - paragraph [ref=f1e121]: Welcome to the family
+        - 'img "Interactive 3D preview: Black CSS tshirt with White print. Drag to rotate." [ref=f1e122]'
+        - generic [ref=f1e123]:
+          - paragraph [ref=f1e124]: Featured garment
+          - heading "css tshirt" [level=3] [ref=f1e125]
+        - generic [ref=f1e126]:
+          - paragraph [ref=f1e127]: Pick a colour
+          - group "Primary colour" [ref=f1e128]:
+            - 'button "Primary colour: Black" [pressed] [ref=f1e129] [cursor=pointer]':
+              - generic [ref=f1e131]: Black
+            - 'button "Primary colour: White" [ref=f1e132] [cursor=pointer]':
+              - generic [ref=f1e134]: White
+            - 'button "Primary colour: Blue" [ref=f1e135] [cursor=pointer]':
+              - generic [ref=f1e137]: Blue
+            - 'button "Primary colour: Pink" [ref=f1e138] [cursor=pointer]':
+              - generic [ref=f1e140]: Pink
+        - generic [ref=f1e141]:
+          - paragraph [ref=f1e142]: Accent colour
+          - group "Accent colour" [ref=f1e143]:
+            - 'button "Accent colour: White" [pressed] [ref=f1e144] [cursor=pointer]':
+              - generic [ref=f1e146]: White
+            - 'button "Accent colour: Pink" [ref=f1e147] [cursor=pointer]':
+              - generic [ref=f1e149]: Pink
+        - generic [ref=f1e150]:
+          - paragraph [ref=f1e151]: Price
+          - paragraph [ref=f1e152]: Price pending verification
+        - generic [ref=f1e153]:
+          - link "View more merch" [ref=f1e154] [cursor=pointer]:
+            - /url: /merch
+            - text: View more merch
+            - generic [aria-hidden] [ref=f1e155]: />
+          - button "Checkout coming soon" [disabled] [ref=f1e156]
+  - contentinfo [ref=f1e157]:
+    - generic [ref=f1e158]:
+      - region "Computer Science Society, KNUST" [ref=f1e159]:
+        - paragraph [ref=f1e160]: Computer ScienceSociety
+        - img "CSS KNUST logo" [ref=f1e162]
+        - paragraph [ref=f1e163]: KNUST / College of ScienceKumasi, Ghana
+      - generic [ref=f1e164]:
+        - paragraph [ref=f1e165]: Explore CSS
+        - navigation "Footer navigation" [ref=f1e166]:
+          - link "01 About" [ref=f1e167] [cursor=pointer]:
+            - /url: /about
+            - generic [ref=f1e168]: "01"
+            - generic [ref=f1e169]: About
+            - generic [aria-hidden] [ref=f1e170]: ↗
+          - link "02 Executives" [ref=f1e171] [cursor=pointer]:
+            - /url: /executives
+            - generic [ref=f1e172]: "02"
+            - generic [ref=f1e173]: Executives
+            - generic [aria-hidden] [ref=f1e174]: ↗
+          - link "03 Events" [ref=f1e175] [cursor=pointer]:
+            - /url: /events
+            - generic [ref=f1e176]: "03"
+            - generic [ref=f1e177]: Events
+            - generic [aria-hidden] [ref=f1e178]: ↗
+          - link "04 Merch" [ref=f1e179] [cursor=pointer]:
+            - /url: /merch
+            - generic [ref=f1e180]: "04"
+            - generic [ref=f1e181]: Merch
+            - generic [aria-hidden] [ref=f1e182]: ↗
+        - generic [ref=f1e183]: A visual preview accompanies the focused destination.
+      - generic [ref=f1e184]:
+        - paragraph [ref=f1e185]: © 2026 Computer Science Society, KNUST
+        - generic "CSS KNUST social media" [ref=f1e186]:
+          - link "Follow CSS KNUST on Instagram" [ref=f1e187] [cursor=pointer]:
+            - /url: https://www.instagram.com/thecssknust
+          - link "Follow CSS KNUST on TikTok" [ref=f1e192] [cursor=pointer]:
+            - /url: https://www.tiktok.com/@thecssknust
+          - link "Follow CSS KNUST on X" [ref=f1e195] [cursor=pointer]:
+            - /url: https://x.com/thecssknust
+          - link "Follow CSS KNUST on YouTube" [ref=f1e196] [cursor=pointer]:
+            - /url: https://www.youtube.com/@thecssknust
+  - alert [ref=f1e197]

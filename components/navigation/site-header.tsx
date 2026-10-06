@@ -4,9 +4,11 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { TransitionLink } from "@/components/transitions/transition-link";
+import { useRouteTransition } from "@/components/transitions/route-transition-provider";
 import { useSmoothScroll } from "@/components/providers/smooth-scroll-provider";
+import { useNavigationState } from "@/components/providers/navigation-state-provider";
 
 gsap.registerPlugin(useGSAP);
 
@@ -30,34 +32,48 @@ function getServerScrollSnapshot() {
   return false;
 }
 
+function getFocusableControls(menu: HTMLElement) {
+  return Array.from(menu.querySelectorAll<HTMLElement>(
+    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+  )).filter((element) => element.tabIndex >= 0 && !element.closest("[inert]") && element.getClientRects().length > 0 && getComputedStyle(element).visibility === "visible");
+}
+
 export function SiteHeader() {
   const pathname = usePathname();
   const { setScrollLocked } = useSmoothScroll();
+  const { isMenuActive, setMenuActive } = useNavigationState();
+  const { isTransitioning } = useRouteTransition();
   const [isOpen, setIsOpen] = useState(false);
-  const [isMenuMounted, setIsMenuMounted] = useState(false);
   const hasScrolled = useSyncExternalStore(subscribeToScroll, getScrollSnapshot, getServerScrollSnapshot);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const returnFocusRef = useRef(true);
   const menuWasMountedRef = useRef(false);
+  const menuReadyRef = useRef(false);
+  const pendingNavigationRef = useRef<{ from: string; href: string } | null>(null);
+  const previousPathnameRef = useRef(pathname);
+  const menuScrollRef = useRef<{ x: number; y: number } | null>(null);
 
-  const closeMenu = (returnFocus = true) => {
+  const closeMenu = useCallback((returnFocus = true) => {
     returnFocusRef.current = returnFocus;
+    menuReadyRef.current = false;
     setIsOpen(false);
-  };
+  }, []);
 
   const openMenu = () => {
     returnFocusRef.current = true;
-    setIsMenuMounted(true);
+    pendingNavigationRef.current = null;
+    menuScrollRef.current = { x: window.scrollX, y: window.scrollY };
+    setMenuActive(true);
     setIsOpen(true);
   };
 
   const isHome = pathname === "/";
 
   useEffect(() => {
-    if (!isMenuMounted) {
+    if (!isMenuActive) {
       if (menuWasMountedRef.current && returnFocusRef.current) {
-        triggerRef.current?.focus();
+        triggerRef.current?.focus({ preventScroll: true });
       }
       menuWasMountedRef.current = false;
       return;
@@ -68,19 +84,15 @@ export function SiteHeader() {
 
     const previousOverflow = document.body.style.overflow;
     const previousPaddingRight = document.body.style.paddingRight;
+    const scrollPosition = menuScrollRef.current;
     const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
     document.body.style.overflow = "hidden";
     document.body.style.paddingRight = `${scrollbarWidth}px`;
 
-    const firstFocusable = menuRef.current?.querySelector<HTMLElement>(
-      "a[href], button:not([disabled])",
-    );
-    const focusFrame = window.requestAnimationFrame(() => firstFocusable?.focus());
-
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
-        closeMenu();
+        closeMenu(!pendingNavigationRef.current);
         return;
       }
 
@@ -88,38 +100,95 @@ export function SiteHeader() {
         return;
       }
 
-      const focusable = Array.from(
-        menuRef.current.querySelectorAll<HTMLElement>(
-          "a[href], button:not([disabled])",
-        ),
-      );
+      const menu = menuRef.current;
+      const focusable = menuReadyRef.current ? getFocusableControls(menu) : [];
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
 
       if (!first || !last) {
+        event.preventDefault();
+        menu.focus({ preventScroll: true });
         return;
       }
 
-      if (event.shiftKey && document.activeElement === first) {
+      if (!menu.contains(document.activeElement) || document.activeElement === menu) {
         event.preventDefault();
-        last.focus();
+        (event.shiftKey ? last : first).focus({ preventScroll: true });
+      } else if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus({ preventScroll: true });
       } else if (!event.shiftKey && document.activeElement === last) {
         event.preventDefault();
-        first.focus();
+        first.focus({ preventScroll: true });
       }
     };
 
+    const containFocus = (event: FocusEvent) => {
+      const menu = menuRef.current;
+      if (!menu || !(event.target instanceof Node) || menu.contains(event.target)) return;
+      const target = menuReadyRef.current ? menu.querySelector<HTMLElement>(".fullscreen-menu__link") : menu;
+      (target ?? menu).focus({ preventScroll: true });
+    };
+
     document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("focusin", containFocus);
     return () => {
-      window.cancelAnimationFrame(focusFrame);
-      setScrollLocked(false);
       document.body.style.overflow = previousOverflow;
       document.body.style.paddingRight = previousPaddingRight;
+      if (returnFocusRef.current && scrollPosition) {
+        window.scrollTo({ left: scrollPosition.x, top: scrollPosition.y, behavior: "instant" });
+      }
+      setScrollLocked(false);
       document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("focusin", containFocus);
     };
-  }, [isMenuMounted, setScrollLocked]);
+  }, [isMenuActive, setScrollLocked, closeMenu]);
 
-  useGSAP(() => {
+  useEffect(() => {
+    const previousPathname = previousPathnameRef.current;
+    previousPathnameRef.current = pathname;
+    if (pathname !== previousPathname && isMenuActive) {
+      pendingNavigationRef.current ??= { from: previousPathname, href: pathname };
+      closeMenu(false);
+    }
+
+    const pending = pendingNavigationRef.current;
+    if (!pending || isMenuActive || isTransitioning) return;
+
+    if (pathname === pending.from) {
+      // Release focus after the transition's slow-route fail-safe, but keep the
+      // destination pending so a later successful commit can receive focus.
+      triggerRef.current?.focus({ preventScroll: true });
+      return;
+    }
+
+    pendingNavigationRef.current = null;
+    const main = document.querySelector<HTMLElement>("main");
+    const target = main?.querySelector<HTMLElement>("h1") ?? main;
+    if (!target) {
+      triggerRef.current?.focus({ preventScroll: true });
+      return;
+    }
+
+    const previousTabIndex = target.getAttribute("tabindex");
+    target.tabIndex = -1;
+    target.focus({ preventScroll: true });
+    const restoreTabIndex = () => {
+      if (previousTabIndex === null) target.removeAttribute("tabindex");
+      else target.setAttribute("tabindex", previousTabIndex);
+    };
+    target.addEventListener("blur", restoreTabIndex, { once: true });
+    return () => {
+      target.removeEventListener("blur", restoreTabIndex);
+      restoreTabIndex();
+    };
+  }, [pathname, isMenuActive, isTransitioning, closeMenu]);
+
+  useGSAP((gsapContext) => {
+    // Release previous tweens without resetting an interrupted reveal. The hook
+    // still reverts the current scoped context on unmount.
+    gsapContext.kill(false);
+    menuReadyRef.current = false;
     const menu = menuRef.current;
     if (!menu) return;
 
@@ -132,29 +201,40 @@ export function SiteHeader() {
     const timeline = gsap.timeline();
 
     if (isOpen) {
+      gsap.set(menu, { autoAlpha: 1, clipPath: "polygon(0 0, 0 0, 0 100%, 0 100%)" });
+      gsap.set(content, { autoAlpha: 0, y: 28 });
+      // A visible dialog shell holds focus while its controls are being revealed.
+      menu.focus({ preventScroll: true });
       timeline
-        .set(menu, { autoAlpha: 1, clipPath: "polygon(0 0, 0 0, 0 100%, 0 100%)" })
-        .set(content, { autoAlpha: 0, y: 28 })
         .to(menu, { clipPath: "polygon(0 0, 100% 0, 94% 100%, 0 100%)", duration: reduceMotion ? 0 : 0.58, ease: "power4.inOut" })
-        .to(topLine, { autoAlpha: 1, y: 0, duration: reduceMotion ? 0 : 0.28, ease: "power3.out" }, "<0.12")
-        .to(links, { autoAlpha: 1, y: 0, duration: reduceMotion ? 0 : 0.42, ease: "power3.out", stagger: reduceMotion ? 0 : 0.055 }, "<0.05")
-        .to(context, { autoAlpha: 1, y: 0, duration: reduceMotion ? 0 : 0.3, ease: "power3.out" }, "<0.12");
+        .to(topLine, { autoAlpha: 1, y: 0, duration: reduceMotion ? 0 : 0.28, ease: "power3.out" }, reduceMotion ? 0 : "<0.12")
+        .to(links, { autoAlpha: 1, y: 0, duration: reduceMotion ? 0 : 0.42, ease: "power3.out", stagger: reduceMotion ? 0 : 0.055 }, reduceMotion ? 0 : "<0.05")
+        .to(context, { autoAlpha: 1, y: 0, duration: reduceMotion ? 0 : 0.3, ease: "power3.out" }, reduceMotion ? 0 : "<0.12")
+        .set(menu, { clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%)" })
+        .call(() => {
+          menuReadyRef.current = true;
+          if (document.activeElement === menu || !menu.contains(document.activeElement)) {
+            links[0]?.focus({ preventScroll: true });
+          }
+        });
     } else {
+      menu.focus({ preventScroll: true });
       timeline
         .to(content, { autoAlpha: 0, y: -18, duration: reduceMotion ? 0 : 0.18, ease: "power2.in" })
-        .to(menu, { clipPath: "polygon(0 0, 0 0, 0 100%, 0 100%)", duration: reduceMotion ? 0 : 0.4, ease: "power4.inOut" }, "<0.04")
+        .to(menu, { clipPath: "polygon(0 0, 0 0, 0 100%, 0 100%)", duration: reduceMotion ? 0 : 0.4, ease: "power4.inOut" }, reduceMotion ? 0 : "<0.04")
         .set(menu, { autoAlpha: 0 })
-        .call(() => setIsMenuMounted(false));
+        .call(() => setMenuActive(false));
     }
 
     return () => timeline.kill();
-  }, { scope: menuRef, dependencies: [isMenuMounted, isOpen], revertOnUpdate: false });
+  }, { scope: menuRef, dependencies: [isMenuActive, isOpen], revertOnUpdate: false });
 
   return (
     <>
       <header
         className={`site-header${isHome ? " site-header--hero" : ""}`}
         data-scrolled={hasScrolled}
+        inert={isMenuActive}
       >
         <TransitionLink
           className="site-header__identity"
@@ -167,7 +247,7 @@ export function SiteHeader() {
         <button
           ref={triggerRef}
           aria-controls="site-menu"
-          aria-expanded={isOpen}
+          aria-expanded={isMenuActive}
           className="menu-trigger"
           onClick={() => (isOpen ? closeMenu() : openMenu())}
           type="button"
@@ -180,7 +260,7 @@ export function SiteHeader() {
         </button>
       </header>
 
-      {isMenuMounted && (
+      {isMenuActive && (
         <div
           ref={menuRef}
           aria-label="Site navigation"
@@ -188,6 +268,8 @@ export function SiteHeader() {
           className="fullscreen-menu"
           id="site-menu"
           role="dialog"
+          tabIndex={-1}
+          data-lenis-prevent
         >
           <div className="fullscreen-menu__inner">
             <div className="fullscreen-menu__topline">
@@ -202,7 +284,11 @@ export function SiteHeader() {
                   className="fullscreen-menu__link"
                   href={item.href}
                   key={item.href}
-                  onClick={() => closeMenu(false)}
+                  onClick={(event) => {
+                    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || isTransitioning) return;
+                    if (item.href !== pathname) pendingNavigationRef.current = { from: pathname, href: item.href };
+                    closeMenu(item.href === pathname);
+                  }}
                   transitionLabel={item.label}
                 >
                   <span className="fullscreen-menu__index">{item.number}</span>

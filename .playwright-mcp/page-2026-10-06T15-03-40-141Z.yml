@@ -1,0 +1,158 @@
+- generic [ref=e1]:
+  - banner [ref=e2]:
+    - link "COMPUTER SCIENCE SOCIETY" [ref=e3] [cursor=pointer]:
+      - /url: /
+    - button "CLOSE" [expanded] [active] [ref=e253] [cursor=pointer]
+  - dialog "Site navigation" [ref=e254]:
+    - generic [ref=e255]:
+      - generic [ref=e256]:
+        - paragraph [ref=e257]: Navigate
+        - button "Close menu" [ref=e258]
+      - navigation "Primary" [ref=e259]:
+        - link "01 ABOUT" [ref=e260] [cursor=pointer]:
+          - /url: /about
+          - generic [ref=e261]: "01"
+          - generic [ref=e262]: ABOUT
+          - generic [aria-hidden] [ref=e263]: />
+        - link "02 EXECUTIVES" [ref=e264] [cursor=pointer]:
+          - /url: /executives
+          - generic [ref=e265]: "02"
+          - generic [ref=e266]: EXECUTIVES
+          - generic [aria-hidden] [ref=e267]: />
+        - link "03 EVENTS" [ref=e268] [cursor=pointer]:
+          - /url: /events
+          - generic [ref=e269]: "03"
+          - generic [ref=e270]: EVENTS
+          - generic [aria-hidden] [ref=e271]: />
+        - link "04 MERCH" [ref=e272] [cursor=pointer]:
+          - /url: /merch
+          - generic [ref=e273]: "04"
+          - generic [ref=e274]: MERCH
+          - generic [aria-hidden] [ref=e275]: />
+      - generic [ref=e276]:
+        - paragraph [ref=e277]: Computer Science Society
+        - paragraph [ref=e278]: KNUST / College of Science / Kumasi, Ghana
+  - main [ref=e10]:
+    - region [ref=e11]:
+      - generic [ref=e18]:
+        - heading "Think. Build. Become." [level=1] [ref=e19]:
+          - generic [ref=e20]: THINK
+          - generic [ref=e21]: BUILD
+          - generic [ref=e22]: BECOME
+        - complementary "Computer Science Society, KNUST. Kwame Nkrumah University of Science and Technology. College of Science. Kumasi, Ghana." [ref=e24]:
+          - generic [aria-hidden] [ref=e26]:
+            - generic [ref=e27]:
+              - paragraph [ref=e28]: Institutional identity
+              - generic [ref=e29]: CSS / KNUST
+            - paragraph [ref=e30]: Computer Science Society, KNUST
+            - generic [ref=e31]:
+              - paragraph [ref=e32]: Kwame Nkrumah University of Science and Technology
+              - paragraph [ref=e33]: College of Science
+              - paragraph [ref=e34]: Kumasi, Ghana
+    - region "About CSS" [ref=e35]:
+      - heading "A society shaped by computing" [level=2] [ref=e37]
+      - region "Computer science career paths" [ref=e38]
+      - generic [aria-hidden]:
+        - heading [level=2]: choose your path
+        - generic:
+          - generic: Cybersecurity
+          - generic: Data Science
+          - generic: UI/UX Design
+          - generic: Software Engineering
+          - generic: AI/ML Engineering
+          - generic: Cloud Engineering
+          - generic: DevOps
+    - region "The people moving CSS forward." [ref=e39]:
+      - generic [ref=e40]:
+        - generic [ref=e41]:
+          - generic [ref=e42]:
+            - paragraph [ref=e43]: 02 / Leadership
+            - heading "The people moving CSS forward." [level=2]
+          - paragraph [ref=e46]: Meet the 2026 / 27 administration.
+        - list [ref=e47]
+    - figure "Linus Torvalds" [ref=e114]:
+      - blockquote [ref=e115]: Talk is cheap. Show me the code.
+    - region "Events" [ref=e117]:
+      - generic [ref=e118]:
+        - img "CSS students gathered at a society event" [ref=e120]
+        - generic "Selected events" [ref=e124]
+    - region [ref=e166]:
+      - generic [ref=e167]:
+        - generic [ref=e169]:
+          - heading [level=2] [ref=e170]:
+            - text: Wear CSS,
+            - emphasis [ref=e171]: Be CSS
+          - paragraph [ref=e172]: Welcome to the family
+        - 'img "Interactive 3D preview: Black CSS tshirt with White print. Drag to rotate." [ref=e173]'
+        - generic [ref=e174]:
+          - paragraph [ref=e175]: Featured garment
+          - heading "css tshirt" [level=3] [ref=e176]
+        - generic [ref=e177]:
+          - paragraph [ref=e178]: Pick a colour
+          - group "Primary colour" [ref=e179]:
+            - 'button "Primary colour: Black" [pressed] [ref=e180] [cursor=pointer]':
+              - generic [ref=e182]: Black
+            - 'button "Primary colour: White" [ref=e183] [cursor=pointer]':
+              - generic [ref=e185]: White
+            - 'button "Primary colour: Blue" [ref=e186] [cursor=pointer]':
+              - generic [ref=e188]: Blue
+            - 'button "Primary colour: Pink" [ref=e189] [cursor=pointer]':
+              - generic [ref=e191]: Pink
+        - generic [ref=e192]:
+          - paragraph [ref=e193]: Accent colour
+          - group "Accent colour" [ref=e194]:
+            - 'button "Accent colour: White" [pressed] [ref=e195] [cursor=pointer]':
+              - generic [ref=e197]: White
+            - 'button "Accent colour: Pink" [ref=e198] [cursor=pointer]':
+              - generic [ref=e200]: Pink
+        - generic [ref=e201]:
+          - paragraph [ref=e202]: Price
+          - paragraph [ref=e203]: Price pending verification
+        - generic [ref=e204]:
+          - link "View more merch" [ref=e205] [cursor=pointer]:
+            - /url: /merch
+            - text: View more merch
+            - generic [aria-hidden] [ref=e206]: />
+          - button "Checkout coming soon" [disabled] [ref=e207]
+  - contentinfo [ref=e208]:
+    - generic [ref=e209]:
+      - region "Computer Science Society, KNUST" [ref=e210]:
+        - paragraph [ref=e211]: Computer ScienceSociety
+        - img "CSS KNUST logo" [ref=e213]
+        - paragraph [ref=e214]: KNUST / College of ScienceKumasi, Ghana
+      - generic [ref=e215]:
+        - paragraph [ref=e216]: Explore CSS
+        - navigation "Footer navigation" [ref=e217]:
+          - link "01 About" [ref=e218] [cursor=pointer]:
+            - /url: /about
+            - generic [ref=e219]: "01"
+            - generic [ref=e220]: About
+            - generic [aria-hidden] [ref=e221]: ↗
+          - link "02 Executives" [ref=e222] [cursor=pointer]:
+            - /url: /executives
+            - generic [ref=e223]: "02"
+            - generic [ref=e224]: Executives
+            - generic [aria-hidden] [ref=e225]: ↗
+          - link "03 Events" [ref=e226] [cursor=pointer]:
+            - /url: /events
+            - generic [ref=e227]: "03"
+            - generic [ref=e228]: Events
+            - generic [aria-hidden] [ref=e229]: ↗
+          - link "04 Merch" [ref=e230] [cursor=pointer]:
+            - /url: /merch
+            - generic [ref=e231]: "04"
+            - generic [ref=e232]: Merch
+            - generic [aria-hidden] [ref=e233]: ↗
+        - generic [ref=e234]: A visual preview accompanies the focused destination.
+      - generic [ref=e235]:
+        - paragraph [ref=e236]: © 2026 Computer Science Society, KNUST
+        - generic "CSS KNUST social media" [ref=e237]:
+          - link "Follow CSS KNUST on Instagram" [ref=e238] [cursor=pointer]:
+            - /url: https://www.instagram.com/thecssknust
+          - link "Follow CSS KNUST on TikTok" [ref=e243] [cursor=pointer]:
+            - /url: https://www.tiktok.com/@thecssknust
+          - link "Follow CSS KNUST on X" [ref=e246] [cursor=pointer]:
+            - /url: https://x.com/thecssknust
+          - link "Follow CSS KNUST on YouTube" [ref=e247] [cursor=pointer]:
+            - /url: https://www.youtube.com/@thecssknust
+  - alert [ref=e252]

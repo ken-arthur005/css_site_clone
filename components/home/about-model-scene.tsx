@@ -2,17 +2,20 @@
 
 import { Center, useGLTF } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import Image from "next/image";
 import { useMemo, useRef, type MutableRefObject } from "react";
 import type { Group } from "three";
+import { WebGLContextGuard } from "@/components/three/webgl-context-guard";
+import { useNavigationState } from "@/components/providers/navigation-state-provider";
 
 type AboutModelSceneProps = {
+  active: boolean;
   progressRef: MutableRefObject<number>;
   settleProgressRef: MutableRefObject<number>;
   pathsDockRef: MutableRefObject<number>;
+  onFailure: () => void;
 };
 
-function CssMark({ progressRef, settleProgressRef, pathsDockRef }: AboutModelSceneProps) {
+function CssMark({ progressRef, settleProgressRef, pathsDockRef }: Omit<AboutModelSceneProps, "active" | "onFailure">) {
   const groupRef = useRef<Group>(null);
   const { scene } = useGLTF("/CSS%20Logo%203d.glb");
   const model = useMemo(() => scene.clone(), [scene]);
@@ -57,17 +60,20 @@ function CssMark({ progressRef, settleProgressRef, pathsDockRef }: AboutModelSce
   );
 }
 
-export function AboutModelScene({ progressRef, settleProgressRef, pathsDockRef }: AboutModelSceneProps) {
+export function AboutModelScene({ active, progressRef, settleProgressRef, pathsDockRef, onFailure }: AboutModelSceneProps) {
+  const { isMenuActive } = useNavigationState();
+
   return (
     <Canvas
       camera={{ position: [0, 0, 6], fov: 42 }}
       className="home-about__canvas"
       dpr={[1, 1.5]}
-      fallback={<div className="home-about__canvas-fallback"><Image alt="CSS KNUST logo" height={192} src="/css_logo.svg" width={370} /></div>}
+      frameloop={isMenuActive || !active ? "never" : "always"}
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
     >
       <ambientLight intensity={2.2} />
       <directionalLight intensity={2.6} position={[3, 4, 5]} />
+      <WebGLContextGuard onFailure={onFailure} />
       <CssMark progressRef={progressRef} settleProgressRef={settleProgressRef} pathsDockRef={pathsDockRef} />
     </Canvas>
   );

@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { TransitionLink } from "@/components/transitions/transition-link";
 import {
   getAvailableBaseColors,
@@ -18,6 +18,8 @@ const HomeMerchViewer = dynamic(
 );
 
 export function HomeMerchSelector({ product }: { product: MerchProduct }) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [viewerNear, setViewerNear] = useState(false);
   const baseColors = getAvailableBaseColors(product);
   const firstBase = baseColors[0];
   const [selectedBaseId, setSelectedBaseId] = useState(firstBase?.id ?? "");
@@ -31,6 +33,18 @@ export function HomeMerchSelector({ product }: { product: MerchProduct }) {
   const textureSources = useMemo(() => product.variants.map((variant) => variant.texture.src), [product.variants]);
   const [viewerReady, setViewerReady] = useState(false);
 
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      setViewerNear(true);
+      observer.disconnect();
+    }, { rootMargin: "100% 0px" });
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, []);
+
   const selectBase = (baseColorId: string) => {
     const variant = selectVariantForBase(product, baseColorId, selectedPrintId);
     setSelectedBaseId(baseColorId);
@@ -40,6 +54,7 @@ export function HomeMerchSelector({ product }: { product: MerchProduct }) {
   return (
     <div
       className="home-merch-stage"
+      ref={rootRef}
       data-accent-id={selectedPrint?.id}
       style={
         {
@@ -51,6 +66,11 @@ export function HomeMerchSelector({ product }: { product: MerchProduct }) {
       <div className="home-merch-stage__intro">
         <h2 id="merch-title">Wear CSS, <em>Be CSS</em></h2>
         <p>Welcome to the family</p>
+      </div>
+
+      <div className="home-merch-stage__product">
+        <p className="eyebrow">Featured garment</p>
+        <h3>{product.name}</h3>
       </div>
 
       {selectedVariant && (
@@ -68,7 +88,7 @@ export function HomeMerchSelector({ product }: { product: MerchProduct }) {
             sizes="(max-width: 767px) 100vw, 80vw"
             src={selectedVariant.fallbackImage.src}
           />
-          {product.model && (
+          {product.model && viewerNear && (
             <HomeMerchViewer
               model={product.model}
               onFailure={() => setViewerReady(false)}
@@ -79,11 +99,6 @@ export function HomeMerchSelector({ product }: { product: MerchProduct }) {
           )}
         </div>
       )}
-
-      <div className="home-merch-stage__product">
-        <p className="eyebrow">Featured garment</p>
-        <h3>{product.name}</h3>
-      </div>
 
       <div className="home-merch-stage__primary-picker">
         <p className="eyebrow">Pick a colour</p>

@@ -18,13 +18,13 @@ export const executives = [
   {
     id: "exec-eliah-abormegah",
     slug: "eliah-abormegah",
-    name: "Eliah Abormegah",
+    name: "Eliah Kodjo Abormegah",
     role: "Vice President",
     order: 2,
     contentStatus: "verified",
     portrait: {
       src: "/eli_vicepres.png",
-      alt: "Eliah Abormegah, Vice President of CSS KNUST",
+      alt: "Eliah Kodjo Abormegah, Vice President of CSS KNUST",
       contentStatus: "verified",
     },
     quote: "In brightest day in blackest night",
@@ -46,13 +46,13 @@ export const executives = [
   {
     id: "exec-emmanuella",
     slug: "emmanuella",
-    name: "Emmanuella",
+    name: "Emmanuella Asantewaa Addo",
     role: "General Secretary",
     order: 4,
     contentStatus: "verified",
     portrait: {
       src: "/ella general sec.png",
-      alt: "Emmanuella, General Secretary of CSS KNUST",
+      alt: "Emmanuella Asantewaa Addo, General Secretary of CSS KNUST",
       contentStatus: "verified",
     },
     quote: "Cast all your anxiety on Jesus because He cares for you",
@@ -60,13 +60,13 @@ export const executives = [
   {
     id: "exec-charles-kwame-bediakoh",
     slug: "charles-kwame-bediakoh",
-    name: "Charles Kwame Bediakoh",
-    role: "Organizing Secretary",
+    name: "Kwame Mensa Bediakoh",
+    role: "Organising Secretary",
     order: 5,
     contentStatus: "verified",
     portrait: {
       src: "/charles org sec.png",
-      alt: "Charles Kwame Bediakoh, Organizing Secretary of CSS KNUST",
+      alt: "Kwame Mensa Bediakoh, Organising Secretary of CSS KNUST",
       contentStatus: "verified",
     },
     quote: "DIE DIE DIEEEE",

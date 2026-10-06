@@ -6,6 +6,7 @@ import { Component, Suspense, useCallback, useEffect, useMemo, useRef, useState,
 import { Mesh, MeshStandardMaterial, SRGBColorSpace } from "three";
 import type { MerchVariant } from "@/types/merch";
 import type { ContentAsset } from "@/types/content";
+import { useNavigationState } from "@/components/providers/navigation-state-provider";
 
 type HomeMerchViewerProps = {
   model: ContentAsset;
@@ -147,7 +148,7 @@ function ViewerScene({
   onInteractionEnd: () => void;
 }) {
   const { size } = useThree();
-  const modelScale = size.width < 768 ? 0.45 : 0.65;
+  const modelScale = size.width < 768 ? 0.8 : 0.65;
   const [isModelReady, setIsModelReady] = useState(false);
   const handleModelReady = useCallback(() => setIsModelReady(true), []);
 
@@ -182,10 +183,11 @@ function ViewerScene({
 }
 
 export function HomeMerchViewer({ model, variant, textureSources, onReady, onFailure }: HomeMerchViewerProps) {
+  const { isMenuActive } = useNavigationState();
   const rootRef = useRef<HTMLDivElement>(null);
   const resumeTimerRef = useRef<number | null>(null);
   const [isNear, setIsNear] = useState(false);
-  const [shouldPreMount, setShouldPreMount] = useState(false);
+  const [hasBeenNear, setHasBeenNear] = useState(false);
   const [isPageVisible, setIsPageVisible] = useState(true);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [isInteracting, setIsInteracting] = useState(false);
@@ -195,22 +197,14 @@ export function HomeMerchViewer({ model, variant, textureSources, onReady, onFai
     if (!root) return;
 
     const observer = new IntersectionObserver(
-      ([entry]) => setIsNear(entry.isIntersecting),
+      ([entry]) => {
+        setIsNear(entry.isIntersecting);
+        if (entry.isIntersecting) setHasBeenNear(true);
+      },
       { rootMargin: "110% 0px" },
     );
     observer.observe(root);
     return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const preMount = () => setShouldPreMount(true);
-
-    if (document.documentElement.dataset.homeAssetsWarming === "true") {
-      preMount();
-    }
-
-    window.addEventListener("css-home-assets-warming", preMount);
-    return () => window.removeEventListener("css-home-assets-warming", preMount);
   }, []);
 
   useEffect(() => {
@@ -229,11 +223,11 @@ export function HomeMerchViewer({ model, variant, textureSources, onReady, onFai
   }, []);
 
   useEffect(() => {
-    if (!isNear && !shouldPreMount) return;
+    if (!isNear) return;
 
     useGLTF.preload(model.src, false, true);
     textureSources.forEach((source) => useTexture.preload(source));
-  }, [isNear, model.src, shouldPreMount, textureSources]);
+  }, [isNear, model.src, textureSources]);
 
   useEffect(() => {
     return () => {
@@ -261,17 +255,17 @@ export function HomeMerchViewer({ model, variant, textureSources, onReady, onFai
     }, 2400);
   };
 
-  const isActive = isNear && isPageVisible;
+  const isActive = isNear && isPageVisible && !isMenuActive;
   const autoRotate = isActive && !reducedMotion && !isInteracting;
 
   return (
     <div className="home-merch-viewer" ref={rootRef}>
-      {(isNear || shouldPreMount) && (
+      {hasBeenNear && (
         <ViewerErrorBoundary onFailure={onFailure}>
           <Canvas
             camera={{ fov: 36, position: [0, 0, 7.2] }}
             dpr={[1, 1.5]}
-            frameloop={isActive ? "always" : "demand"}
+            frameloop={isMenuActive ? "never" : isActive ? "always" : "demand"}
             gl={{ alpha: true, antialias: true, powerPreference: "high-performance" }}
             onCreated={({ gl }) => gl.setClearColor(0x000000, 0)}
           >

@@ -4,6 +4,7 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useRef, useState, type ReactNode } from "react";
+import { HOME_DESKTOP_MOTION } from "@/lib/animations/home-media";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -21,7 +22,7 @@ export function LeadershipArrival({ children }: { children: ReactNode }) {
     if (!root || !section || !cards?.length) return;
 
     const media = gsap.matchMedia();
-    media.add("(min-width: 48rem) and (prefers-reduced-motion: no-preference)", () => {
+    media.add(HOME_DESKTOP_MOTION, () => {
       const typing = { progress: 0 };
       const galleryItems = [...cards, ...(allLink ? [allLink] : [])];
       gsap.set(galleryItems, { autoAlpha: 0, y: 28 });
@@ -30,11 +31,15 @@ export function LeadershipArrival({ children }: { children: ReactNode }) {
       const timeline = gsap.timeline({ paused: true })
         .to(typing, {
           progress: title.length,
-          duration: 1.55,
+           duration: 0.65,
           ease: "none",
-          onUpdate: () => setTypedTitle(title.slice(0, Math.floor(typing.progress))),
+           onUpdate: () => {
+             if (window.matchMedia(HOME_DESKTOP_MOTION).matches) {
+               setTypedTitle(title.slice(0, Math.floor(typing.progress)));
+             }
+           },
         })
-        .to(cards, { autoAlpha: 1, y: 0, duration: 0.42, ease: "power3.out", stagger: 0.1 }, "+=0.12");
+         .to(cards, { autoAlpha: 1, y: 0, duration: 0.32, ease: "power3.out", stagger: 0.035 }, 0.12);
 
       if (allLink) {
         timeline.to(allLink, { autoAlpha: 1, y: 0, duration: 0.32, ease: "power3.out" }, "<0.24");
@@ -50,6 +55,7 @@ export function LeadershipArrival({ children }: { children: ReactNode }) {
       return () => {
         trigger.kill();
         timeline.kill();
+        setTypedTitle(title);
       };
     });
 

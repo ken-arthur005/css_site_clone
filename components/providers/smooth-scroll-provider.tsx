@@ -7,9 +7,11 @@ import { createContext, useCallback, useContext, useEffect, useRef, type ReactNo
 
 gsap.registerPlugin(ScrollTrigger);
 
+type ScrollOptions = { offset?: number; immediate?: boolean };
+
 type SmoothScrollContextValue = {
   setScrollLocked: (locked: boolean) => void;
-  scrollToElement: (element: HTMLElement) => void;
+  scrollToElement: (element: HTMLElement, options?: ScrollOptions) => void;
 };
 
 const SmoothScrollContext = createContext<SmoothScrollContextValue | null>(null);
@@ -38,18 +40,27 @@ export function SmoothScrollProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const scrollToElement = useCallback((element: HTMLElement) => {
+  const scrollToElement = useCallback((element: HTMLElement, options: ScrollOptions = {}) => {
     const lenis = lenisRef.current;
+    const immediate = options.immediate || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     if (lenis) {
-      lenis.scrollTo(element, {
+      // Lenis 1.3 already subtracts CSS scroll-margin for element targets.
+      // An explicit offset uses an absolute coordinate to avoid applying both.
+      const target = options.offset === undefined ? element : window.scrollY + element.getBoundingClientRect().top + options.offset;
+      lenis.scrollTo(target, {
+        immediate,
         duration: 0.9,
         easing: (progress) => 1 - (1 - progress) ** 4,
       });
       return;
     }
 
-    element.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (options.offset !== undefined) {
+      window.scrollTo({ top: window.scrollY + element.getBoundingClientRect().top + options.offset, behavior: immediate ? "instant" : "smooth" });
+    } else {
+      element.scrollIntoView({ behavior: immediate ? "instant" : "smooth", block: "start" });
+    }
   }, []);
 
   useEffect(() => {

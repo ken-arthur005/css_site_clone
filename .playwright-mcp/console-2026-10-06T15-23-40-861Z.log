@@ -1,0 +1,10 @@
+[   10715ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://thecssknust.vercel.app/gaming_mouse_-_free_low_poly.glb:0
+[   10760ms] [WARNING] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead. @ https://thecssknust.vercel.app/_next/static/immutable/chunks/211vmsv0xbi7h.js:0
+[   10844ms] Error: Could not load /gaming_mouse_-_free_low_poly.glb: Failed to fetch
+    at https://thecssknust.vercel.app/_next/static/immutable/chunks/211vmsv0xbi7h.js:342:68613
+    at Object.o [as onError] (https://thecssknust.vercel.app/_next/static/immutable/chunks/211vmsv0xbi7h.js:353:35341)
+    at https://thecssknust.vercel.app/_next/static/immutable/chunks/211vmsv0xbi7h.js:1:259350
+[   10898ms] Error: Could not load /gaming_mouse_-_free_low_poly.glb: Failed to fetch
+    at https://thecssknust.vercel.app/_next/static/immutable/chunks/211vmsv0xbi7h.js:342:68613
+    at Object.o [as onError] (https://thecssknust.vercel.app/_next/static/immutable/chunks/211vmsv0xbi7h.js:353:35341)
+    at https://thecssknust.vercel.app/_next/static/immutable/chunks/211vmsv0xbi7h.js:1:259350

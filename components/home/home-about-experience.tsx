@@ -5,14 +5,36 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { SceneErrorBoundary } from "@/components/three/scene-error-boundary";
+import { useNavigationState } from "@/components/providers/navigation-state-provider";
+import { HOME_DESKTOP_MOTION } from "@/lib/animations/home-media";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
+function createIndependentScrollTrigger(config: ScrollTrigger.StaticVars) {
+  let trigger!: ScrollTrigger;
+  const create = () => { trigger = ScrollTrigger.create(config); };
+  // A global refresh can invoke one scene's callbacks inside another scene's
+  // GSAP context. Keep these triggers independent and kill them explicitly.
+  const context = gsap.context();
+  if (context) context.ignore(create);
+  else create();
+  return trigger;
+}
+
 const AboutModelScene = dynamic(
   () => import("./about-model-scene").then(({ AboutModelScene: Scene }) => Scene),
-  { ssr: false },
+  { ssr: false, loading: () => <AboutModelFallback /> },
 );
+
+function AboutModelFallback() {
+  return (
+    <div className="home-about__canvas-fallback">
+      <Image alt="CSS KNUST logo" height={192} src="/css_logo.svg" width={370} />
+    </div>
+  );
+}
 
 const communityImages = [
   { src: "/this%20is%20css/REP%20YOUR%20JERSEY-9.jpg", alt: "CSS members at CSS Week", position: "north-west" },
@@ -33,13 +55,20 @@ const careerPaths = [
 ];
 
 export function HomeAboutExperience() {
+  const { isMenuActive } = useNavigationState();
   const rootRef = useRef<HTMLElement>(null);
+  const clockTimelineRef = useRef<gsap.core.Timeline | null>(null);
+  const scrollTriggersRef = useRef<ScrollTrigger[]>([]);
+  const sceneSuspendedRef = useRef(false);
+  const clockShouldPlayRef = useRef(false);
   const progressRef = useRef(0);
   const settleProgressRef = useRef(0);
   const pathsDockRef = useRef(0);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [sceneActive, setSceneActive] = useState(false);
   const [aboutActive, setAboutActive] = useState(false);
+  const [sceneFailed, setSceneFailed] = useState(false);
+  const onSceneFailure = useCallback(() => setSceneFailed(true), []);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -48,9 +77,13 @@ export function HomeAboutExperience() {
       return;
     }
 
+    const media = window.matchMedia(HOME_DESKTOP_MOTION);
+    let near = false;
+    const update = () => setSceneActive(near && media.matches);
     const observer = new IntersectionObserver(
       ([entry]) => {
-        setSceneActive(entry.isIntersecting);
+        near = entry.isIntersecting;
+        update();
 
         if (!entry.isIntersecting) {
           root.dataset.pathsActive = "false";
@@ -60,7 +93,11 @@ export function HomeAboutExperience() {
       { rootMargin: "100% 0px" },
     );
     observer.observe(root);
-    return () => observer.disconnect();
+    media.addEventListener("change", update);
+    return () => {
+      observer.disconnect();
+      media.removeEventListener("change", update);
+    };
   }, []);
 
   useGSAP(() => {
@@ -84,157 +121,206 @@ export function HomeAboutExperience() {
       return;
     }
 
-    const setAboutState = (active: boolean) => {
-      root.dataset.active = String(active);
-      setAboutActive(active);
-      document.documentElement.classList.toggle("about-model-active", active);
-    };
-
-    const collapsedOffset = (index: number) => {
-      const bounds = cardEntries[index].card.getBoundingClientRect();
-      return {
-        x: window.innerWidth / 2 - (bounds.left + bounds.width / 2),
-        y: window.innerHeight / 2 - (bounds.top + bounds.height / 2),
+    const media = gsap.matchMedia();
+    media.add(HOME_DESKTOP_MOTION, () => {
+      const setAboutState = (active: boolean) => {
+        root.dataset.active = String(active);
+        setAboutActive(active);
+        document.documentElement.classList.toggle("about-model-active", active);
       };
-    };
-    const entries = cardEntries.map(({ entry }) => entry);
 
-    gsap.set(entries, {
-      autoAlpha: 0,
-      scale: 0.16,
-      x: (index) => collapsedOffset(index).x,
-      y: (index) => collapsedOffset(index).y,
-      rotate: (index) => (index % 2 ? -12 : 12),
-    });
+      const collapsedOffset = (index: number) => {
+        const bounds = cardEntries[index].card.getBoundingClientRect();
+        return {
+          x: window.innerWidth / 2 - (bounds.left + bounds.width / 2),
+          y: window.innerHeight / 2 - (bounds.top + bounds.height / 2),
+        };
+      };
+      const entries = cardEntries.map(({ entry }) => entry);
 
-    settleProgressRef.current = 0;
-    pathsDockRef.current = 0;
-    const headingText = "A society shaped by computing";
-    const typingState = { progress: 0 };
-    progressRef.current = 0;
-    communityHeading.textContent = "";
-    const communityTimeline = gsap.timeline({
-      scrollTrigger: {
+      gsap.set(entries, {
+        autoAlpha: 0,
+        scale: 0.16,
+        x: (index) => collapsedOffset(index).x,
+        y: (index) => collapsedOffset(index).y,
+        rotate: (index) => (index % 2 ? -12 : 12),
+      });
+
+      settleProgressRef.current = 0;
+      pathsDockRef.current = 0;
+      const headingText = "A society shaped by computing";
+      root.dataset.compassEnabled = "true";
+      progressRef.current = 0;
+      communityHeading.textContent = headingText;
+      const communityTimeline = gsap.timeline();
+      const communityTrigger = createIndependentScrollTrigger({
+        animation: communityTimeline,
         trigger: communityStage,
         start: "top top",
-        end: "+=220%",
+        end: "+=150%",
         pin: true,
         pinSpacing: true,
         scrub: 0.35,
         invalidateOnRefresh: true,
         onEnter: () => setAboutState(true),
         onEnterBack: () => setAboutState(true),
-        // Keep the shared model alive after the collage pin ends so it can
-        // travel into the paths scene instead of disappearing between stages.
         onLeaveBack: () => setAboutState(false),
-      },
-    });
+      });
 
-    const setPathsVisible = (visible: boolean) => {
-      root.dataset.pathsActive = String(visible);
-      gsap.set(pathsOverlay, { autoAlpha: visible ? 1 : 0 });
-    };
+      const setPathsVisible = (visible: boolean) => {
+        root.dataset.pathsActive = String(visible);
+        gsap.set(pathsOverlay, { autoAlpha: visible ? 1 : 0 });
+      };
 
-    setPathsVisible(false);
+      communityTimeline
+        .to(progressRef, { current: 1, duration: 0.2, ease: "none" }, 0)
+        .to(settleProgressRef, { current: 1, duration: 0.2, ease: "none" }, 0)
+        .to(communityHeading, { autoAlpha: 1, xPercent: -50, y: 0, duration: 0.01, ease: "none" }, 0.2)
+        .to(entries, { autoAlpha: 1, scale: 1, x: 0, y: 0, rotate: 0, duration: 0.22, ease: "none", stagger: 0.035 }, 0.47)
+        .to(settleProgressRef, { current: 1, duration: 0.15, ease: "none" }, 0.69)
+        .to(entries, {
+          autoAlpha: 0,
+          scale: 0.16,
+          x: (index) => collapsedOffset(index).x,
+          y: (index) => collapsedOffset(index).y,
+          rotate: (index) => (index % 2 ? -12 : 12),
+          duration: 0.16,
+          ease: "none",
+          stagger: 0.035,
+        }, 0.84);
 
-    const clockTimeline = gsap.timeline({ paused: true, repeat: -1 });
-    const step = 360 / careerPaths.length;
-    careerPaths.forEach(() => {
-      clockTimeline
-        .to(clock, { rotation: `+=${step}`, duration: 0.65, ease: "power2.inOut", transformOrigin: "50% 50%" })
-        .to({}, { duration: 1.45 });
-    });
+      pathsDockRef.current = 0;
+      setPathsVisible(false);
+      setAboutState(Boolean(communityTimeline.scrollTrigger?.isActive));
+      scrollTriggersRef.current = [communityTimeline.scrollTrigger!];
 
-    const travelTrigger = ScrollTrigger.create({
-      trigger: pathsStage,
-      start: "top bottom",
-      end: "top top",
-      scrub: 0.3,
-      invalidateOnRefresh: true,
-      onEnter: () => setAboutState(true),
-      onEnterBack: () => setAboutState(true),
-      onUpdate: (self) => {
-        // Reserve the final part of the journey for the pinned compass scene.
-        pathsDockRef.current = self.progress * 0.72;
-        gsap.set(pathsOverlay, {
-          autoAlpha: gsap.utils.clamp(0, 1, (self.progress - 0.48) / 0.52),
-        });
-      },
-      onLeaveBack: () => {
-        pathsDockRef.current = 0;
-        gsap.set(pathsOverlay, { autoAlpha: 0 });
-      },
-    });
+      const clockTimeline = gsap.timeline({ paused: true, repeat: -1 });
+      clockTimelineRef.current = clockTimeline;
+      const setClockRunning = (running: boolean) => {
+        clockShouldPlayRef.current = running;
+        if (running && !sceneSuspendedRef.current) clockTimeline.play();
+        else clockTimeline.pause();
+      };
+      const step = 360 / careerPaths.length;
+      careerPaths.forEach(() => {
+        clockTimeline
+          .to(clock, { rotation: `+=${step}`, duration: 0.65, ease: "power2.inOut", transformOrigin: "50% 50%" })
+          .to({}, { duration: 1.45 });
+      });
 
-    const pathsTrigger = ScrollTrigger.create({
-      trigger: pathsStage,
-      start: "top top",
-      end: "+=120%",
-      pin: true,
-      pinSpacing: true,
-      scrub: 0.3,
-      invalidateOnRefresh: true,
-      onUpdate: (self) => {
-        pathsDockRef.current = 0.72 + self.progress * 0.28;
-      },
-      onEnter: () => {
-        setPathsVisible(true);
-        clockTimeline.play();
-        setAboutState(true);
-      },
-      onEnterBack: () => {
-        setPathsVisible(true);
-        clockTimeline.play();
-        setAboutState(true);
-      },
-      onLeave: () => {
-        setPathsVisible(false);
-        clockTimeline.pause();
-        setAboutState(false);
-      },
-      onLeaveBack: () => {
-        // Hand back to the bridge at its completed position when scrolling up.
-        pathsDockRef.current = 0.72;
-        setPathsVisible(true);
-        clockTimeline.pause(0);
-      },
-    });
-
-    communityTimeline
-      .to(progressRef, { current: 1, duration: 0.2, ease: "none" }, 0)
-      .to(settleProgressRef, { current: 1, duration: 0.2, ease: "none" }, 0)
-      .to(communityHeading, { autoAlpha: 1, xPercent: -50, y: 0, duration: 0.01, ease: "none" }, 0.2)
-      .to(typingState, {
-        progress: 1,
-        duration: 0.27,
-        ease: "none",
-        onUpdate: () => {
-          communityHeading.textContent = headingText.slice(0, Math.floor(typingState.progress * headingText.length));
+      const travelTrigger = createIndependentScrollTrigger({
+        trigger: pathsStage,
+        start: "top bottom",
+        end: "top top",
+        scrub: 0.3,
+        invalidateOnRefresh: true,
+        onEnter: () => setAboutState(true),
+        onEnterBack: () => setAboutState(true),
+        onUpdate: (self) => {
+          // Reserve the final part of the journey for the pinned compass scene.
+          pathsDockRef.current = self.progress * 0.72;
+          gsap.set(pathsOverlay, {
+            autoAlpha: gsap.utils.clamp(0, 1, (self.progress - 0.48) / 0.52),
+          });
         },
-      }, 0.2)
-      .to(entries, { autoAlpha: 1, scale: 1, x: 0, y: 0, rotate: 0, duration: 0.22, ease: "none", stagger: 0.035 }, 0.47)
-      .to(settleProgressRef, { current: 1, duration: 0.15, ease: "none" }, 0.69)
-      .to(entries, {
-        autoAlpha: 0,
-        scale: 0.16,
-        x: (index) => collapsedOffset(index).x,
-        y: (index) => collapsedOffset(index).y,
-        rotate: (index) => (index % 2 ? -12 : 12),
-        duration: 0.16,
-        ease: "none",
-        stagger: 0.035,
-      }, 0.84);
+        onLeaveBack: () => {
+          pathsDockRef.current = 0;
+          gsap.set(pathsOverlay, { autoAlpha: 0 });
+        },
+      });
+
+      const pathsTrigger = createIndependentScrollTrigger({
+        trigger: pathsStage,
+        start: "top top",
+        end: "+=80%",
+        pin: true,
+        pinSpacing: true,
+        scrub: 0.3,
+        invalidateOnRefresh: true,
+        onUpdate: (self) => {
+          pathsDockRef.current = 0.72 + self.progress * 0.28;
+        },
+        onEnter: () => {
+          setPathsVisible(true);
+          setClockRunning(true);
+          setAboutState(true);
+        },
+        onEnterBack: () => {
+          setPathsVisible(true);
+          setClockRunning(true);
+          setAboutState(true);
+        },
+        onLeave: () => {
+          setPathsVisible(false);
+          setClockRunning(false);
+          setAboutState(false);
+        },
+        onLeaveBack: () => {
+          // Hand back to the bridge at its completed position when scrolling up.
+          pathsDockRef.current = 0.72;
+          setPathsVisible(true);
+          setClockRunning(false);
+          clockTimeline.pause(0);
+        },
+      });
+
+      scrollTriggersRef.current.push(travelTrigger, pathsTrigger);
+
+      return () => {
+        travelTrigger.kill();
+        pathsTrigger.kill();
+        clockTimelineRef.current = null;
+        clockShouldPlayRef.current = false;
+        scrollTriggersRef.current = [];
+        communityTrigger.kill();
+        pathsDockRef.current = 0;
+        setPathsVisible(false);
+        setAboutState(false);
+        communityHeading.textContent = headingText;
+        // Independent triggers revert their timelines when killed, which can
+        // write the desktop start state after matchMedia has restored styles.
+        // Release those inline properties so the native layout owns them again.
+        [communityHeading, pathsOverlay, clock, ...entries].forEach((element) => {
+          ["transform", "translate", "rotate", "scale", "opacity", "visibility"].forEach((property) => {
+            element.style.removeProperty(property);
+          });
+        });
+        delete root.dataset.compassEnabled;
+        delete root.dataset.pathsActive;
+      };
+    });
 
     return () => {
-      communityTimeline.scrollTrigger?.kill();
-      travelTrigger.kill();
-      pathsTrigger.kill();
-      clockTimeline.kill();
+      media.revert();
+      clockTimelineRef.current = null;
+      clockShouldPlayRef.current = false;
+      scrollTriggersRef.current = [];
       gsap.set(pathsOverlay, { clearProps: "opacity,visibility" });
+      delete root.dataset.compassEnabled;
       delete root.dataset.pathsActive;
       document.documentElement.classList.remove("about-model-active");
     };
   }, { scope: rootRef });
+
+  useEffect(() => {
+    sceneSuspendedRef.current = isMenuActive;
+    if (!isMenuActive) return;
+
+    // Pause only this section's work; the navigation timeline must keep running.
+    const root = rootRef.current;
+    const clock = clockTimelineRef.current;
+    clock?.pause();
+    const scrubs = scrollTriggersRef.current
+      .map((trigger) => trigger.getTween())
+      .filter((tween): tween is gsap.core.Tween => Boolean(tween) && !tween.paused());
+    scrubs.forEach((tween) => tween.pause());
+
+    return () => {
+      if (!root?.isConnected) return;
+      scrubs.forEach((tween) => tween.resume());
+      if (clockShouldPlayRef.current) clockTimelineRef.current?.resume();
+    };
+  }, [isMenuActive]);
 
   useGSAP(() => {
     const root = rootRef.current;
@@ -245,7 +331,7 @@ export function HomeAboutExperience() {
     }
 
     const media = gsap.matchMedia();
-    media.add("(hover: hover) and (pointer: fine)", () => {
+    media.add(HOME_DESKTOP_MOTION, () => {
       const setters = cards.map((card) => ({
         x: gsap.quickTo(card, "x", { duration: 0.65, ease: "power3.out" }),
         y: gsap.quickTo(card, "y", { duration: 0.65, ease: "power3.out" }),
@@ -303,15 +389,30 @@ export function HomeAboutExperience() {
   return (
     <section className="home-about" data-active={aboutActive} ref={rootRef} aria-label="About CSS">
       <div className="home-about__model-layer">
-        {sceneActive && <AboutModelScene progressRef={progressRef} settleProgressRef={settleProgressRef} pathsDockRef={pathsDockRef} />}
+        <SceneErrorBoundary fallback={<AboutModelFallback />} onFailure={onSceneFailure}>
+          <Suspense fallback={<AboutModelFallback />}>
+            {sceneFailed ? <AboutModelFallback /> : sceneActive && (
+              <AboutModelScene active={aboutActive} progressRef={progressRef} settleProgressRef={settleProgressRef} pathsDockRef={pathsDockRef} onFailure={onSceneFailure} />
+            )}
+          </Suspense>
+        </SceneErrorBoundary>
       </div>
       <section className="home-about__chapter home-about__chapter--community">
         <div className="home-about__community-stage">
           <h2 aria-label="A society shaped by computing">A society shaped by computing</h2>
+          <Image alt="CSS KNUST logo" className="home-about__community-mark" height={192} sizes="192px" src="/css_logo.svg" width={370} />
         </div>
       </section>
-      <section className="home-about__chapter home-about__chapter--paths" aria-label="Computer science career paths">
-        <div className="home-about__paths-stage" />
+      <section className="home-about__chapter home-about__chapter--paths" aria-labelledby="home-career-paths-heading">
+        <div className="home-about__paths-stage">
+          <div className="home-about__paths-content">
+            <h2 id="home-career-paths-heading">choose your path</h2>
+            <Image alt="" className="home-about__paths-mark" height={192} sizes="192px" src="/css_logo.svg" width={370} />
+            <ul className="home-about__paths-list" role="list">
+              {careerPaths.map((path) => <li key={path}>{path}</li>)}
+            </ul>
+          </div>
+        </div>
       </section>
       <div aria-hidden="true" className="home-about__paths-overlay">
         <h2>choose your path</h2>

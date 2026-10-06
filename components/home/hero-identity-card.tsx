@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import type { SiteInfo } from "@/types/site";
 
-export function HeroIdentityCard({ site, typeOnReveal }: { site: SiteInfo; typeOnReveal: boolean }) {
+export function HeroIdentityCard({ site, typeOnReveal, settled }: { site: SiteInfo; typeOnReveal: boolean; settled: boolean }) {
   const getCompleteLines = () => [
     "Institutional identity",
     "CSS / KNUST",
@@ -16,51 +16,33 @@ export function HeroIdentityCard({ site, typeOnReveal }: { site: SiteInfo; typeO
   const [visibleLines, setVisibleLines] = useState(getCompleteLines);
 
   useEffect(() => {
-    if (!typeOnReveal) {
+    if (!typeOnReveal || settled) {
       return;
     }
 
-    let lineIndex = 0;
-    let characterIndex = 0;
-    let timeout = 0;
     let frame = 0;
+    const startedAt = performance.now();
+    const characterCount = completeLines.reduce((total, line) => total + line.length, 0);
 
-    const typeNextCharacter = () => {
-      if (lineIndex >= completeLines.length) {
-        return;
-      }
-
-      const activeLineIndex = lineIndex;
-      const completeLine = completeLines[activeLineIndex];
-      const nextLength = characterIndex + 1;
-      setVisibleLines((currentLines) =>
-        currentLines.map((line, index) =>
-          index === activeLineIndex ? completeLine.slice(0, nextLength) : line,
-        ),
-      );
-
-      if (nextLength >= completeLine.length) {
-        lineIndex = activeLineIndex + 1;
-        characterIndex = 0;
-        timeout = window.setTimeout(typeNextCharacter, 80);
-        return;
-      }
-
-      characterIndex = nextLength;
-      timeout = window.setTimeout(typeNextCharacter, 13);
+    const typeFrame = (now: number) => {
+      const progress = Math.min(1, (now - startedAt) / 800);
+      let remaining = Math.floor(characterCount * progress);
+      setVisibleLines(completeLines.map((line) => {
+        const visible = line.slice(0, Math.max(0, remaining));
+        remaining -= line.length;
+        return visible;
+      }));
+      if (progress < 1) frame = window.requestAnimationFrame(typeFrame);
     };
 
-    frame = window.requestAnimationFrame(() => {
-      setVisibleLines(completeLines.map(() => ""));
-      timeout = window.setTimeout(typeNextCharacter, 55);
-    });
+    frame = window.requestAnimationFrame(typeFrame);
 
     return () => {
       window.cancelAnimationFrame(frame);
-      window.clearTimeout(timeout);
     };
-  }, [completeLines, typeOnReveal]);
+  }, [completeLines, settled, typeOnReveal]);
 
+  const lines = typeOnReveal && !settled ? visibleLines : completeLines;
   const accessibleSummary = `${site.name}. ${site.institution}. ${site.college}. ${site.location}.`;
 
   return (
@@ -68,14 +50,14 @@ export function HeroIdentityCard({ site, typeOnReveal }: { site: SiteInfo; typeO
       <span className="sr-only">{accessibleSummary}</span>
       <div aria-hidden="true" className="home-hero__identity-typed">
         <div className="home-hero__identity-topline">
-          <p className="eyebrow"><span>{visibleLines[0]}</span></p>
-          <span>{visibleLines[1]}</span>
+          <p className="eyebrow"><span>{lines[0]}</span></p>
+          <span>{lines[1]}</span>
         </div>
-        <p className="home-hero__identity-name"><span>{visibleLines[2]}</span></p>
+        <p className="home-hero__identity-name"><span>{lines[2]}</span></p>
         <div className="home-hero__identity-details">
-          <p><span>{visibleLines[3]}</span></p>
-          <p><span>{visibleLines[4]}</span></p>
-          <p><span>{visibleLines[5]}</span></p>
+          <p><span>{lines[3]}</span></p>
+          <p><span>{lines[4]}</span></p>
+          <p><span>{lines[5]}</span></p>
         </div>
       </div>
     </aside>

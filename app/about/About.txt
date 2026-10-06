@@ -1,0 +1,179 @@
+Computer Science Society (CSS)
+KNUST
+The Official Student Body of the Department of Computer Science, College of
+Science, KNUST
+1. Who We Are
+Rooted in the Department of Computer Science within the College of Science at Kwame
+Nkrumah University of Science and Technology, the Computer Science Society (CSS) is the
+active hub of student technology culture on campus. We represent more than 3,500 students
+enrolled across both our Computer Science and Information Technology programmes.
+CSS operates as an inclusive, student-led collective bringing together software engineers,
+network architects, data analysts, security researchers, and builders at every stage of their
+academic journey. Whether someone is writing their first program in an introductory lab or
+deploying distributed cloud architectures late at night, our society exists to ensure they have
+the community, academic backing, and practical opportunities needed to succeed.
+2. Our Philosophy: Collaboration Over Competition
+Technical education can be demanding, but our culture is anchored on a straightforward
+principle: no member navigates the department alone.
+● Open Exchange of Knowledge: We actively push back against gatekeeping.
+Solutions to complex bugs, study materials, and practical design patterns are shared
+openly through peer tutorials, group repositories, and community discussion boards.
+● Continuous Mentorship: Senior cohorts actively invest in junior students. This
+happens in campus study spaces and systematically through organized code
+reviews, resume clinics, and career webinars featuring KNUST alumni working in
+global tech.
+● Curiosity with Direction: We encourage members to move beyond the boundaries
+of lecture slides. If a student is curious about an emerging framework, a new
+language, or an unaddressed local challenge, the society provides the peer network
+to explore and build it.
+3. Two Disciplines, One Community: CS and IT
+Our department brings together two closely related, equally critical academic tracks. While
+both share a foundation in computing principles and mathematics, they address distinct
+challenges in the technology landscape.
+BSc. Computer Science
+Computer Science focuses on the mathematical foundations of computation, algorithmic
+problem-solving, and large-scale software engineering. Students dive into how software
+functions from the metal up.
+● Core Areas of Study: Data Structures and Algorithms, Object-Oriented
+Programming, Computer Architecture, Operating Systems, Theory of Computation,
+Compiler Engineering, and Machine Learning.
+● Where It Leads: Software Engineering, Systems Architecture, Machine Learning and
+Data Science, Algorithmic Trading, Compiler Design, and Academic Research.
+BSc. Information Technology
+Information Technology focuses on designing, deploying, securing, and maintaining the
+digital infrastructure that modern organizations rely upon. It emphasizes systems integration,
+communication networks, and operational resilience.
+● Core Areas of Study: Network Engineering and Protocols, Cloud Infrastructure
+(AWS, Azure, GCP), Database Administration, Cybersecurity and Threat Mitigation,
+Enterprise Systems Administration, and Web Technologies.
+● Where It Leads: Cloud Solutions Architecture, DevOps Engineering, Information
+Security and Penetration Testing, Network Engineering, and Enterprise Database
+Administration.
+4. Academic Leadership and Faculty
+Our society works hand in hand with the lecturers and academic staff of the Department of
+Computer Science.
+The faculty members are researchers, industry advisors, and mentors who bring practical
+experience into the lecture theatre. Their work spans artificial intelligence focused on local
+challenges, applied cryptographic systems, data governance, and mobile computing.
+Beyond delivering the formal curriculum, faculty members maintain open-door access during
+office hours, support student-led research initiatives, and encourage departmental projects
+that go on to compete in national and continental innovation challenges.
+5. CSS by the Numbers: The Cohorts
+Our student body is divided across seven distinct year groups and programmes, each with
+its own character and current academic milestone:
+Class Approximate
+Population
+The Reality on the Ground
+CS 1 ~520 Fresh arrivals, high optimism, and still under the
+impression that syntax errors are the hardest part of
+a degree in computing.
+IT 1 ~280 Armed with bootable USB drives and ready to
+reconfigure everyone's home router whether asked
+or not.
+CS 2 ~419 Data Structures have arrived. Pointers are pointing
+nowhere, recursion is running infinitely, and
+resilience is being forged daily.
+IT 2 ~317 Deep into subnetting, IP routing, and having quiet
+reflections on the nature of packet loss.
+CS 3 ~645 Fuelled by instant coffee, Stack Overflow, and the
+collective adrenaline of third-year project
+submissions.
+IT 3 ~395 Managing virtual machines and Docker containers
+with comfort while balancing complex system
+designs.
+CS 4 ~655 Experienced seniors running final integration tests
+and hoping their capstone project behaves during
+the defence.
+6. Navigating the Department: Essential Offices &
+Where to Go
+When administrative or academic questions arise, knowing exactly where to go saves time
+and avoids frustration. Below is the operational map and detailed guide for key departmental
+offices:
+Head of Department (HOD) — Room FF4 (First Floor)
+The Head of Department serves as the chief academic and administrative authority for the
+Department of Computer Science, overseeing faculty operations, academic standards, and
+high-level student governance.
+● When to consult this office: Official introductory and recommendation letters for
+internships, national service, or graduate school applications; formal requests for
+programme transfers, deferments, or leave of absence; final appeal channel for
+academic and administrative issues; endorsement of official student club or society
+activities; and serious student welfare or disciplinary matters.
+Department Examinations Officer — Room FF14 (First Floor)
+The Examinations Officer coordinates mid-semester tests, end-of-semester examinations,
+assessment records, and official academic performance evaluations for all undergraduate
+cohorts.
+● When to consult this office: Missing mid-semester or continuous assessment (CA)
+marks on your portal; timetable clashes during mid-semester or final examination
+periods; official petitions for paper re-marking; registration inquiries for deferred,
+supplementary, or trail examinations; and verification or correction of semester grade
+entries.
+General Department Secretary — Room FF4 (First Floor Secretariat)
+The General Secretary’s office functions as the primary administrative hub and front-desk
+reception for all general student and visitor inquiries.
+● When to consult this office: Submitting official letters, petitions, or forms intended
+for the HOD; picking up approved recommendation or introductory letters; general
+inquiries about departmental notices, events, and schedules; processing student
+clearance forms; verifying departmental course registration; and booking
+appointments with the HOD.
+CSS Office - FF2
+The administrative home of your elected student leaders.
+● When to consult this office: Enquiries about peer-led subject clinics, hackathon
+team registrations, society dues and financial receipts, official society merchandise,
+and suggestions for student welfare.
+Quick Reference: "Where Should I Go?" Guide
+● Introductory/Recommendation Letter: Request at the General Secretary (FF4) →
+Signed by HOD (FF4).
+● Missing Exam / Assessment Marks: First report to Course Lecturer → Escalated to
+Exams Officer (FF14).
+● Exam Timetable Clash: Department Examinations Officer (FF14) immediately upon
+release of the timetable.
+● Programme Deferment / Transfer: Formal letter addressed to HOD, submitted
+through General Secretary (FF4).
+● Peer Support & Tutorials: CSS Office (FF2) or reach out to executives.
+● Society Dues & Receipts: Financial Secretary at the CSS Office (FF2).
+7. Beyond the Lecture Hall: Technical Initiatives
+We believe technical confidence comes from applying classroom theory to working projects
+before graduation.
+● Subject Clinics and Peer Tutorials: Weekly peer-guided revision sessions
+organized ahead of mid-semester and final exams, tackling foundational math,
+programming, and system modules.
+● Code Quest and Code Fest: Our flagship 24-to-48-hour development sprints and
+hackathons where student teams build working solutions for practical local problems.
+● Technical Workshops and Bootcamps: Hands-on weekend masterclasses
+covering modern tools and frameworks not always detailed in standard curricula,
+including full-stack development, mobile development with Flutter, containerization
+with Docker, and foundational cybersecurity.
+● CSS Media Network: Student-run media outlets, including the CSS official YouTube
+channel, spotlighting student projects and journeys, and department events.
+8. Sports and Camaraderie: The CSS Games
+A balanced engineer is a better engineer. Physical competition and inter-year sports remain
+central to our community culture, offering an outlet from terminal windows and tedious labs.
+The annual CSS Games bring together all cohorts in a structured tournament spanning
+football, basketball, volleyball, athletics, and indoor games.
+Roll of Honour (Recent Champions)
+● 2025/2026: IT ‘28
+● 2024/2025: IT ‘28 (Went undefeated across the inter-year soccer tournament)
+● 2023/2024: CS ‘26 (An upset victory across athletics and table tennis)
+● 2022/2023: CS ‘26(Dominated the basketball court and finished gold in football)
+● Kalykap 1.0: CS ‘25 (Atonsu)
+● Kalykap 2.0: CS ‘26 (Kotei)
+● Kalykap 3.0: CS ‘26 (St. Louis)
+● CSS Tournament 1.0: CS ‘27 (St. Louis)
+Beyond the games, student life includes the annual CSS Week Celebration, outdoor movie
+nights, technical exhibitions, our annual alumni homecoming and not forgetting the exciting
+annual department dinner where our tech warriors put down their laptops,ditch the hoodies
+and dress up for a night of glamour and fun.
+10. Executive Council (2026/2027)
+The society's operations and representation are managed by an elected executive council
+for the 2026/2027 academic session:
+● President: Albert Kodua Frimpong (Computer Science 4)
+● Vice President: Eliah Kodjo Abormegah (Computer Science 4)
+● General Secretary: Emmanuella Asantewaa Addo (Computer Science 4)
+● Financial Secretary: Carey Churchill Ken-Arthur (Information Technology 3)
+● Organising Secretary: Kwame Mensa Bediakoh (Computer Science 4)
+● Women's Commissioner: Rosequeen Cudjoe (Computer Science 4)
+Find Us
+Department of Computer Science, College of Science, KNUST, FF2
+● Website: thecssknust.com
+● Email: info@thecssknust.com / cs@knust.edu.gh
+● Social Media: @thecssknust (LinkedIn, X, Instagram, YouTube)

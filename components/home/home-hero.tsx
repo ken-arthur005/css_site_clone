@@ -7,7 +7,6 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { hasSeenHomeIntro, markHomeIntroSeen } from "@/lib/home-intro";
 import type { SiteInfo } from "@/types/site";
-import { HomeAssetPreloader } from "./home-asset-preloader";
 import { HeroIdentityCard } from "./hero-identity-card";
 import { HeroTechField } from "./hero-tech-field";
 
@@ -28,7 +27,6 @@ export function HomeHero({ site }: { site: SiteInfo }) {
   const [introMode, setIntroMode] = useState<IntroMode>(() => (
     typeof window === "undefined" || !hasSeenHomeIntro() ? null : "returning"
   ));
-  const [introProgress, setIntroProgress] = useState(0);
   const [introComplete, setIntroComplete] = useState(false);
   const [typeCard, setTypeCard] = useState(false);
 
@@ -37,62 +35,15 @@ export function HomeHero({ site }: { site: SiteInfo }) {
       return;
     }
 
-    const hero = heroRef.current;
-    let cancelled = false;
-    let failSafe = 0;
-
-    const waitForImage = (image: HTMLImageElement) => {
-      if (image.complete) {
-        return Promise.resolve();
-      }
-
-      return new Promise<void>((resolve) => {
-        image.addEventListener("load", () => resolve(), { once: true });
-        image.addEventListener("error", () => resolve(), { once: true });
-      });
-    };
-
-    const waitForCriticalHero = async () => {
-      const images = Array.from(hero?.querySelectorAll<HTMLImageElement>("img") ?? []);
-      const tasks = [document.fonts?.ready ?? Promise.resolve(), ...images.map(waitForImage)];
-      let complete = 0;
-      const ready = Promise.all(tasks.map((task) => task.then(() => {
-        complete += 1;
-        setIntroProgress(Math.round((complete / tasks.length) * 100));
-      }))).then(() => undefined);
-      const failSafeReady = new Promise<void>((resolve) => {
-        failSafe = window.setTimeout(resolve, 1500);
-      });
-
-      await Promise.race([ready, failSafeReady]);
-      window.clearTimeout(failSafe);
-
-      if (!cancelled) {
-        setIntroProgress(100);
-        setIntroMode("full");
-      }
-    };
-
-    void waitForCriticalHero();
-    return () => {
-      cancelled = true;
-      window.clearTimeout(failSafe);
-    };
+    // The opening is a brief visual beat, never a gate on fonts or icons.
+    const frame = window.requestAnimationFrame(() => {
+      setIntroMode(hasSeenHomeIntro() || window.scrollY > 0 ? "returning" : "full");
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [introMode]);
 
-  useEffect(() => {
-    if (introMode !== "full" || introComplete) {
-      return;
-    }
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [introComplete, introMode]);
-
-  useGSAP(() => {
+  useGSAP((_context, contextSafe) => {
+    if (!contextSafe) return;
     const hero = heroRef.current;
 
     if (!hero || !introMode) {
@@ -125,46 +76,47 @@ export function HomeHero({ site }: { site: SiteInfo }) {
     }
 
     gsap.set(titleLines, { autoAlpha: introMode === "full" && !reduceMotion ? 0 : 1, yPercent: introMode === "full" && !reduceMotion ? 14 : 0 });
-    gsap.set(stagedIcons, { autoAlpha: 0, scale: 0.88, x: (index) => (index % 2 ? -18 : 16), y: (index) => (index % 3 - 1) * 15, rotate: (index) => (index % 2 ? -7 : 6) });
+    gsap.set(stagedIcons, { autoAlpha: 0, scale: 0.88, x: 0, y: 0, rotate: 0 });
     gsap.set(identityEntry, { autoAlpha: 0, x: 26, y: 18 });
 
-    const exitTimeline = gsap.timeline({
-      paused: true,
-      scrollTrigger: {
-        trigger: hero,
-        start: "top top",
-        end: "bottom 58%",
-        scrub: window.matchMedia("(max-width: 47.99rem)").matches ? 0.15 : 0.35,
-        invalidateOnRefresh: true,
-      },
-    });
-
-    exitTimeline
-      .to(title, { y: -30, scale: 0.97, autoAlpha: 0.48, ease: "none" }, 0)
-      .to(stagedIcons, { y: (index) => (index % 2 ? -24 : 22), autoAlpha: 0.32, ease: "none", stagger: 0.01 }, 0)
-      .to(identityEntry, { y: 22, autoAlpha: 0.26, ease: "none" }, 0);
-    exitTimeline.scrollTrigger?.disable();
-
-    const enableExit = () => {
-      exitTimeline.scrollTrigger?.enable();
-      ScrollTrigger.refresh();
-    };
-
-    const settleHero = () => {
+    let settled = false;
+    const media = gsap.matchMedia();
+    const settleHero = contextSafe(() => {
+      if (settled) return;
+      settled = true;
       setIntroComplete(true);
-      setTypeCard(true);
+      typedText.forEach((text, index) => {
+        if (text) text.textContent = titleLines[index].dataset.word ?? "";
+      });
       if (introMode === "full") {
         markHomeIntroSeen();
       }
-      enableExit();
-    };
+
+      // Create the exit only after the entrance has stopped writing transforms.
+      media.add("(prefers-reduced-motion: no-preference)", () => {
+        gsap.timeline({
+          scrollTrigger: {
+            trigger: hero,
+            start: "top top",
+            end: "bottom 58%",
+            scrub: 0.15,
+            invalidateOnRefresh: true,
+          },
+        })
+          .to(title, { y: -30, scale: 0.97, autoAlpha: 0.48, ease: "none" }, 0)
+          .to(stagedIcons, { y: (index) => (index % 2 ? -24 : 22), autoAlpha: 0.32, ease: "none" }, 0)
+          .to(identityEntry, { y: 22, autoAlpha: 0.26, ease: "none" }, 0);
+      });
+    });
 
     const entrance = gsap.timeline({ defaults: { ease: "power3.out" }, onComplete: settleHero });
 
     if (introMode === "full" && loader && loaderPanel) {
       entrance
-        .to(loaderPanel, { xPercent: -108, duration: 0.68, ease: "power4.inOut" }, "+=0.12")
+        .to(loaderPanel, { xPercent: -108, duration: reduceMotion ? 0 : 0.3, ease: "power4.inOut" }, 0)
         .set(loader, { autoAlpha: 0, pointerEvents: "none" });
+    } else if (loader) {
+      gsap.set(loader, { autoAlpha: 0, pointerEvents: "none" });
     }
 
     if (introMode === "full" && !reduceMotion) {
@@ -174,26 +126,46 @@ export function HomeHero({ site }: { site: SiteInfo }) {
         const typing = { progress: 0 };
 
         entrance
-          .to(line, { autoAlpha: 1, yPercent: 0, duration: 0.18 }, index === 0 ? "<0.06" : "+=0.12")
+          .to(line, { autoAlpha: 1, yPercent: 0, duration: 0.12 }, 0.08 + index * 0.19)
           .to(typing, {
             progress: word.length,
-            duration: Math.max(0.28, word.length * 0.085),
+            duration: word.length * 0.04,
             ease: "none",
             onUpdate: () => {
               if (text) text.textContent = word.slice(0, Math.floor(typing.progress));
             },
-          });
+          }, 0.08 + index * 0.19);
       });
     } else {
-      entrance.to(titleLines, { autoAlpha: 1, yPercent: 0, duration: reduceMotion ? 0 : 0.34, stagger: 0.055 }, introMode === "full" ? "<0.06" : 0);
+      entrance.to(titleLines, { autoAlpha: 1, yPercent: 0, duration: reduceMotion ? 0 : 0.2 }, 0);
     }
 
     entrance
-      .to(stagedIcons, { autoAlpha: 1, scale: 1, x: 0, y: 0, rotate: 0, duration: reduceMotion ? 0 : 0.68, ease: "back.out(1.7)", stagger: reduceMotion ? 0 : 0.045 }, "+=0.04")
-      .to(identityEntry, { autoAlpha: 1, x: 0, y: 0, duration: reduceMotion ? 0 : 0.42 }, "<0.16");
+      .to(stagedIcons, { autoAlpha: 1, scale: 1, x: 0, y: 0, rotate: 0, duration: reduceMotion ? 0 : 0.32, stagger: reduceMotion ? 0 : 0.018 }, reduceMotion ? 0 : 0.12)
+      .to(identityEntry, { autoAlpha: 1, x: 0, y: 0, duration: reduceMotion ? 0 : 0.24 }, reduceMotion ? 0 : 0.1)
+      .call(() => setTypeCard(introMode === "full" && !reduceMotion), [], 0.1);
+
+    // Include card typing in the beat without sequencing it after the headline.
+    if (introMode === "full" && !reduceMotion) entrance.to({}, { duration: 0.8 }, 0.1);
+
+    const finishEntrance = contextSafe(() => {
+      if (!settled) entrance.progress(1).pause();
+    });
+    const handleScroll = () => {
+      if (hero.getBoundingClientRect().top < -8) finishEntrance();
+    };
+    const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const handleMotionChange = () => {
+      if (motionPreference.matches) finishEntrance();
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    motionPreference.addEventListener("change", handleMotionChange);
+    handleScroll();
 
     return () => {
-      exitTimeline.scrollTrigger?.kill();
+      window.removeEventListener("scroll", handleScroll);
+      motionPreference.removeEventListener("change", handleMotionChange);
+      media.revert();
     };
   }, { scope: heroRef, dependencies: [introMode], revertOnUpdate: true });
 
@@ -203,7 +175,6 @@ export function HomeHero({ site }: { site: SiteInfo }) {
       <div aria-hidden="true" className="home-intro">
         <div className="home-intro__panel">
           <div className="home-intro__content">
-            <p className="home-intro__progress">{introProgress}%</p>
             <div className="home-intro__lockup">
               <Image alt="" className="home-intro__logo" height={200} priority src="/css_logo-nobg.png" width={365} />
               <p>Computer Science Society</p>
@@ -211,7 +182,6 @@ export function HomeHero({ site }: { site: SiteInfo }) {
           </div>
         </div>
       </div>
-      <HomeAssetPreloader active={introComplete} />
       <HeroTechField />
 
       <div className="page-shell home-hero__inner">
@@ -221,7 +191,7 @@ export function HomeHero({ site }: { site: SiteInfo }) {
           <span className="home-hero__title-line" data-word="BECOME"><span aria-hidden="true" className="home-hero__typed-text">BECOME</span></span>
         </h1>
         <div className="home-hero__identity-entry">
-          <HeroIdentityCard site={site} typeOnReveal={typeCard} />
+          <HeroIdentityCard site={site} typeOnReveal={typeCard} settled={introComplete} />
         </div>
       </div>
     </section>

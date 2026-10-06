@@ -49,3 +49,15 @@ export type Event = {
   gallery?: ContentAsset[];
   recap?: EventRecap;
 };
+
+// A server-rendered snapshot: selection and badges share the same clock.
+export type HomeEvent = {
+  event: Event;
+  lifecycle: EventLifecycle;
+};
+
+export type HomeEventSelection = {
+  mode: "current-upcoming" | "recent-highlights" | "empty";
+  referenceDate: string;
+  events: readonly HomeEvent[];
+};

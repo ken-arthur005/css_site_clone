@@ -1,0 +1,107 @@
+- generic [active] [ref=f3e1]:
+  - banner [ref=f3e2]:
+    - link "COMPUTER SCIENCE SOCIETY" [ref=f3e3] [cursor=pointer]:
+      - /url: /
+    - button "MENU" [ref=f3e5] [cursor=pointer]
+  - main [ref=f3e10]:
+    - region [ref=f3e11]:
+      - heading "Think. Build. Become." [level=1] [ref=f3e13]:
+        - generic [ref=f3e14]: THINK
+        - generic [ref=f3e15]: BUILD
+        - generic [ref=f3e16]: BECOME
+    - region "About CSS" [ref=f3e17]:
+      - region "Computer science career paths" [ref=f3e19]
+    - region "The people moving CSS forward." [ref=f3e20]:
+      - generic [ref=f3e21]:
+        - generic [ref=f3e22]:
+          - generic [ref=f3e23]:
+            - paragraph [ref=f3e24]: 02 / Leadership
+            - heading "The people moving CSS forward." [level=2]
+          - paragraph [ref=f3e26]: Meet the 2026 / 27 administration.
+        - list [ref=f3e27]
+    - figure "Linus Torvalds" [ref=f3e30]:
+      - blockquote [ref=f3e31]: Talk is cheap. Show me the code.
+    - region "Events" [ref=f3e33]:
+      - generic [ref=f3e34]:
+        - img "CSS students gathered at a society event" [ref=f3e36]
+        - generic "Selected events" [ref=f3e38]
+    - region [ref=f3e39]:
+      - generic [ref=f3e40]:
+        - generic [ref=f3e42]:
+          - heading [level=2] [ref=f3e43]:
+            - text: Wear CSS,
+            - emphasis [ref=f3e44]: Be CSS
+          - paragraph [ref=f3e45]: Welcome to the family
+        - 'img "Interactive 3D preview: Black CSS tshirt with White print. Drag to rotate." [ref=f3e46]'
+        - generic [ref=f3e47]:
+          - paragraph [ref=f3e48]: Featured garment
+          - heading "css tshirt" [level=3] [ref=f3e49]
+        - generic [ref=f3e50]:
+          - paragraph [ref=f3e51]: Pick a colour
+          - group "Primary colour" [ref=f3e52]:
+            - 'button "Primary colour: Black" [pressed] [ref=f3e53] [cursor=pointer]':
+              - generic [ref=f3e55]: Black
+            - 'button "Primary colour: White" [ref=f3e56] [cursor=pointer]':
+              - generic [ref=f3e58]: White
+            - 'button "Primary colour: Blue" [ref=f3e59] [cursor=pointer]':
+              - generic [ref=f3e61]: Blue
+            - 'button "Primary colour: Pink" [ref=f3e62] [cursor=pointer]':
+              - generic [ref=f3e64]: Pink
+        - generic [ref=f3e65]:
+          - paragraph [ref=f3e66]: Accent colour
+          - group "Accent colour" [ref=f3e67]:
+            - 'button "Accent colour: White" [pressed] [ref=f3e68] [cursor=pointer]':
+              - generic [ref=f3e70]: White
+            - 'button "Accent colour: Pink" [ref=f3e71] [cursor=pointer]':
+              - generic [ref=f3e73]: Pink
+        - generic [ref=f3e74]:
+          - paragraph [ref=f3e75]: Price
+          - paragraph [ref=f3e76]: Price pending verification
+        - generic [ref=f3e77]:
+          - link "View more merch" [ref=f3e78] [cursor=pointer]:
+            - /url: /merch
+            - text: View more merch
+            - generic [aria-hidden] [ref=f3e79]: />
+          - button "Checkout coming soon" [disabled] [ref=f3e80]
+  - contentinfo [ref=f3e81]:
+    - generic [ref=f3e82]:
+      - region "Computer Science Society, KNUST" [ref=f3e83]:
+        - paragraph [ref=f3e84]: Computer ScienceSociety
+        - img "CSS KNUST logo" [ref=f3e86]
+        - paragraph [ref=f3e87]: KNUST / College of ScienceKumasi, Ghana
+      - generic [ref=f3e88]:
+        - paragraph [ref=f3e89]: Explore CSS
+        - navigation "Footer navigation" [ref=f3e90]:
+          - link "01 About" [ref=f3e91] [cursor=pointer]:
+            - /url: /about
+            - generic [ref=f3e92]: "01"
+            - generic [ref=f3e93]: About
+            - generic [aria-hidden] [ref=f3e94]: ↗
+          - link "02 Executives" [ref=f3e95] [cursor=pointer]:
+            - /url: /executives
+            - generic [ref=f3e96]: "02"
+            - generic [ref=f3e97]: Executives
+            - generic [aria-hidden] [ref=f3e98]: ↗
+          - link "03 Events" [ref=f3e99] [cursor=pointer]:
+            - /url: /events
+            - generic [ref=f3e100]: "03"
+            - generic [ref=f3e101]: Events
+            - generic [aria-hidden] [ref=f3e102]: ↗
+          - link "04 Merch" [ref=f3e103] [cursor=pointer]:
+            - /url: /merch
+            - generic [ref=f3e104]: "04"
+            - generic [ref=f3e105]: Merch
+            - generic [aria-hidden] [ref=f3e106]: ↗
+        - generic [ref=f3e107]: A visual preview accompanies the focused destination.
+      - generic [ref=f3e108]:
+        - paragraph [ref=f3e109]: © 2026 Computer Science Society, KNUST
+        - generic "CSS KNUST social media" [ref=f3e110]:
+          - link "Follow CSS KNUST on Instagram" [ref=f3e111] [cursor=pointer]:
+            - /url: https://www.instagram.com/thecssknust
+          - link "Follow CSS KNUST on TikTok" [ref=f3e116] [cursor=pointer]:
+            - /url: https://www.tiktok.com/@thecssknust
+          - link "Follow CSS KNUST on X" [ref=f3e119] [cursor=pointer]:
+            - /url: https://x.com/thecssknust
+          - link "Follow CSS KNUST on YouTube" [ref=f3e120] [cursor=pointer]:
+            - /url: https://www.youtube.com/@thecssknust
+  - alert [ref=f3e121]

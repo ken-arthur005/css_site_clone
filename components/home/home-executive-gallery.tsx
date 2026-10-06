@@ -1,15 +1,20 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { TransitionLink } from "@/components/transitions/transition-link";
+import { SnapRailControls } from "@/components/ui/snap-rail-controls";
+import { useSnapRail } from "@/lib/animations/use-snap-rail";
 import type { Executive } from "@/types/executive";
 
 export function HomeExecutiveGallery({ executives }: { executives: readonly Executive[] }) {
   const [activeId, setActiveId] = useState<string | undefined>(executives[0]?.id);
+  const railId = useId();
+  const { railRef, index, scrollToIndex, onFocusCapture, onKeyDown } = useSnapRail(executives.length);
 
   return (
-    <div className="home-executive-gallery" role="list">
+    <>
+    <div className="home-executive-gallery" id={railId} ref={railRef} role="list" aria-label="CSS executives" onFocusCapture={onFocusCapture} onKeyDown={onKeyDown} data-lenis-prevent>
       {executives.map((executive) => {
         const isActive = executive.id === activeId;
 
@@ -18,6 +23,7 @@ export function HomeExecutiveGallery({ executives }: { executives: readonly Exec
             aria-label={`${executive.name}, ${executive.role}`}
             className="home-executive-card"
             data-active={isActive}
+            data-rail-item
             key={executive.id}
             onFocus={() => setActiveId(executive.id)}
             onMouseEnter={() => setActiveId(executive.id)}
@@ -38,7 +44,7 @@ export function HomeExecutiveGallery({ executives }: { executives: readonly Exec
                 <Image
                   alt={executive.portrait.alt}
                   fill
-                  sizes="(max-width: 767px) 100vw, 58vw"
+                   sizes="(max-width: 1023px) 82vw, (pointer: coarse) 28rem, 58vw"
                   src={executive.portrait.src}
                 />
               ) : (
@@ -59,9 +65,14 @@ export function HomeExecutiveGallery({ executives }: { executives: readonly Exec
         transitionLabel="EXECUTIVES"
       >
         <span className="eyebrow">2026 / 27</span>
-        <strong>View all<br />executives</strong>
+        <strong>View all executives</strong>
         <span className="home-executive-gallery__all-arrow" aria-hidden="true">/&gt;</span>
       </TransitionLink>
     </div>
+    <div className="home-rail-navigation home-executive-navigation">
+      <SnapRailControls label="executive" railId={railId} index={index} count={executives.length} onSelect={scrollToIndex} />
+      <TransitionLink href="/executives" transitionLabel="EXECUTIVES">View all executives <span aria-hidden="true">/&gt;</span></TransitionLink>
+    </div>
+    </>
   );
 }

@@ -3,8 +3,11 @@
 import { Center, useGLTF } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import Image from "next/image";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Group } from "three";
+import { SceneErrorBoundary } from "@/components/three/scene-error-boundary";
+import { WebGLContextGuard } from "@/components/three/webgl-context-guard";
+import { useNavigationState } from "@/components/providers/navigation-state-provider";
 
 function RotatingMark({ active }: { active: boolean }) {
   const groupRef = useRef<Group>(null);
@@ -52,10 +55,14 @@ function RenderScheduler({ active }: { active: boolean }) {
 }
 
 export function FooterLogoScene() {
+  const { isMenuActive } = useNavigationState();
   const rootRef = useRef<HTMLDivElement>(null);
   const [nearViewport, setNearViewport] = useState(false);
   const [visible, setVisible] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const onFailure = useCallback(() => setFailed(true), []);
+  const fallback = <Image alt="CSS KNUST logo" fill sizes="(max-width: 47.99rem) 15rem, 28rem" src="/css_logo.svg" />;
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -79,22 +86,26 @@ export function FooterLogoScene() {
 
   return (
     <div className="site-footer__logo-scene" ref={rootRef}>
-      {reducedMotion || !nearViewport ? (
-        <Image alt="CSS KNUST logo" fill priority={false} sizes="(max-width: 47.99rem) 15rem, 28rem" src="/css_logo.svg" />
-      ) : (
-        <Canvas
-          camera={{ position: [0, 0, 5.75], fov: 40 }}
-          dpr={[1, 1.25]}
-          fallback={<Image alt="CSS KNUST logo" fill sizes="(max-width: 47.99rem) 15rem, 28rem" src="/css_logo.svg" />}
-          frameloop="demand"
-          gl={{ alpha: true, antialias: true, powerPreference: "high-performance" }}
-        >
-          <ambientLight intensity={2.4} />
-          <directionalLight intensity={2.8} position={[3, 4, 5]} />
-          <RotatingMark active={visible} />
-          <RenderScheduler active={visible} />
-        </Canvas>
-      )}
+      <SceneErrorBoundary fallback={fallback} onFailure={onFailure}>
+        <Suspense fallback={fallback}>
+          {failed || reducedMotion || !nearViewport ? (
+            fallback
+          ) : (
+            <Canvas
+              camera={{ position: [0, 0, 5.75], fov: 40 }}
+              dpr={[1, 1.25]}
+              frameloop={isMenuActive ? "never" : "demand"}
+              gl={{ alpha: true, antialias: true, powerPreference: "high-performance" }}
+            >
+              <ambientLight intensity={2.4} />
+              <directionalLight intensity={2.8} position={[3, 4, 5]} />
+              <WebGLContextGuard onFailure={onFailure} />
+              <RotatingMark active={visible && !isMenuActive} />
+              <RenderScheduler active={visible && !isMenuActive} />
+            </Canvas>
+          )}
+        </Suspense>
+      </SceneErrorBoundary>
     </div>
   );
 }
