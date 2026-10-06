@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 import { siteInfo } from "@/content/site";
 import { TransitionLink } from "@/components/transitions/transition-link";
 import { FooterLogoScene } from "./footer-logo-scene";
-import { FooterSnapController } from "./footer-snap-controller";
+import { FooterArrival } from "./footer-arrival";
 
 const navigation = [
   { href: "/about", label: "About", image: "/css_logo-nobg.png", imageClass: "site-footer__preview-image--about" },
@@ -27,7 +27,7 @@ export function SiteFooter() {
 
   return (
     <footer className="site-footer" ref={footerRef}>
-      <FooterSnapController footerRef={footerRef} />
+      <FooterArrival footerRef={footerRef} />
       <div className="site-footer__frame page-shell">
         <section className="site-footer__mark" aria-label="Computer Science Society, KNUST">
           <p className="site-footer__label">Computer Science<br />Society</p>

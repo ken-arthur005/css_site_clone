@@ -107,18 +107,21 @@ function ShirtModel({ modelSource, textureSource, onModelReady }: {
   return <primitive object={model} />;
 }
 
-function CanvasWarmup({ onReady }: Pick<HomeMerchViewerProps, "onReady">) {
+function CanvasWarmup({ active, onReady }: Pick<HomeMerchViewerProps, "onReady"> & { active: boolean }) {
   const { camera, gl, invalidate, scene } = useThree();
   const renderedFrames = useRef(0);
   const hasCompleted = useRef(false);
+  const hasCompiled = useRef(false);
 
   useEffect(() => {
+    if (!active || hasCompiled.current) return;
+    hasCompiled.current = true;
     gl.compile(scene, camera);
     invalidate();
-  }, [camera, gl, invalidate, scene]);
+  }, [active, camera, gl, invalidate, scene]);
 
   useFrame(() => {
-    if (hasCompleted.current) return;
+    if (!active || hasCompleted.current) return;
 
     renderedFrames.current += 1;
     if (renderedFrames.current < 2) {
@@ -136,6 +139,7 @@ function CanvasWarmup({ onReady }: Pick<HomeMerchViewerProps, "onReady">) {
 function ViewerScene({
   modelSource,
   textureSource,
+  active,
   autoRotate,
   onInteractionStart,
   onInteractionEnd,
@@ -143,6 +147,7 @@ function ViewerScene({
 }: Pick<HomeMerchViewerProps, "onReady"> & {
   modelSource: string;
   textureSource: string;
+  active: boolean;
   autoRotate: boolean;
   onInteractionStart: () => void;
   onInteractionEnd: () => void;
@@ -164,12 +169,13 @@ function ViewerScene({
           </group>
         </Center>
       </Suspense>
-      {isModelReady && <CanvasWarmup onReady={onReady} />}
+      {isModelReady && <CanvasWarmup active={active} onReady={onReady} />}
       <OrbitControls
         autoRotate={autoRotate}
         autoRotateSpeed={0.32}
         dampingFactor={0.075}
         enableDamping
+        enabled={active}
         enablePan={false}
         maxPolarAngle={Math.PI * 0.63}
         minPolarAngle={Math.PI * 0.37}
@@ -187,6 +193,7 @@ export function HomeMerchViewer({ model, variant, textureSources, onReady, onFai
   const rootRef = useRef<HTMLDivElement>(null);
   const resumeTimerRef = useRef<number | null>(null);
   const [isNear, setIsNear] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   const [hasBeenNear, setHasBeenNear] = useState(false);
   const [isPageVisible, setIsPageVisible] = useState(true);
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -204,7 +211,14 @@ export function HomeMerchViewer({ model, variant, textureSources, onReady, onFai
       { rootMargin: "110% 0px" },
     );
     observer.observe(root);
-    return () => observer.disconnect();
+    const visibilityObserver = new IntersectionObserver(
+      ([entry]) => setIsVisible(entry.isIntersecting),
+    );
+    visibilityObserver.observe(root);
+    return () => {
+      observer.disconnect();
+      visibilityObserver.disconnect();
+    };
   }, []);
 
   useEffect(() => {
@@ -255,7 +269,7 @@ export function HomeMerchViewer({ model, variant, textureSources, onReady, onFai
     }, 2400);
   };
 
-  const isActive = isNear && isPageVisible && !isMenuActive;
+  const isActive = isVisible && isPageVisible && !isMenuActive;
   const autoRotate = isActive && !reducedMotion && !isInteracting;
 
   return (
@@ -265,11 +279,12 @@ export function HomeMerchViewer({ model, variant, textureSources, onReady, onFai
           <Canvas
             camera={{ fov: 36, position: [0, 0, 7.2] }}
             dpr={[1, 1.5]}
-            frameloop={isMenuActive ? "never" : isActive ? "always" : "demand"}
+            frameloop={!isActive ? "never" : autoRotate ? "always" : "demand"}
             gl={{ alpha: true, antialias: true, powerPreference: "high-performance" }}
             onCreated={({ gl }) => gl.setClearColor(0x000000, 0)}
           >
             <ViewerScene
+              active={isActive}
               autoRotate={autoRotate}
               modelSource={model.src}
               onInteractionEnd={resumeAutoRotation}

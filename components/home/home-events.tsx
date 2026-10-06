@@ -175,8 +175,16 @@ export function HomeEvents({ selection }: { selection: HomeEventSelection }) {
       }) as () => void;
 
       railElement.addEventListener("focusin", revealFocusedItem);
+      let refreshFrame = 0;
       const refresh = () => {
-        ScrollTrigger.refresh();
+        // Refresh mutates pin geometry across the page. Coalesce size changes
+        // outside ResizeObserver delivery to avoid re-entrant layout loops.
+        if (!refreshFrame) {
+          refreshFrame = requestAnimationFrame(() => {
+            refreshFrame = 0;
+            ScrollTrigger.refresh();
+          });
+        }
       };
       const observer = new ResizeObserver(refresh);
       items.forEach((item) => observer.observe(item));
@@ -185,6 +193,7 @@ export function HomeEvents({ selection }: { selection: HomeEventSelection }) {
       refresh();
 
       return () => {
+        cancelAnimationFrame(refreshFrame);
         observer.disconnect();
         railElement.removeEventListener("focusin", revealFocusedItem);
       };
