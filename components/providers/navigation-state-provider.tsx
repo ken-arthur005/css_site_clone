@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import { useRouteTransition } from "@/components/transitions/route-transition-provider";
 
 type NavigationState = {
   isMenuActive: boolean;
@@ -28,6 +29,8 @@ export function NavigationStateProvider({ children }: { children: ReactNode }) {
 
 export function NavigationBackground({ children }: { children: ReactNode }) {
   const { isMenuActive } = useNavigationState();
+  const { isTransitioning } = useRouteTransition();
+  const active = isMenuActive || isTransitioning;
 
-  return <div className="site-background" inert={isMenuActive} data-navigation-active={isMenuActive}>{children}</div>;
+  return <div className="site-background" inert={active} data-navigation-active={active}>{children}</div>;
 }

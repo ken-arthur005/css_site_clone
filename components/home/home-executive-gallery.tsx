@@ -117,7 +117,7 @@ export function HomeExecutiveGallery({ executives }: { executives: readonly Exec
 
   return (
     <>
-    <div className="home-executive-gallery" id={railId} ref={railRef} role="list" aria-label="CSS executives" onFocusCapture={onFocusCapture} onKeyDown={onKeyDown} data-lenis-prevent>
+    <div className="home-executive-gallery" id={railId} ref={railRef} role="list" aria-label="CSS executives" onFocusCapture={onFocusCapture} onKeyDown={onKeyDown} data-lenis-prevent-horizontal>
       {executives.map((executive) => {
         const isActive = executive.id === activeId;
 

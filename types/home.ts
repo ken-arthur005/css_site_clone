@@ -22,3 +22,5 @@ export type HomeTerminalContent = {
   prompt: string;
   command: string;
 };
+
+export type HomeQuote = { author: string; quote: string };

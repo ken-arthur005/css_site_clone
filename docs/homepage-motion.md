@@ -92,7 +92,7 @@ reduced-motion enabled, JavaScript-disabled content, and a deliberately failed
 model request. Terminal output is checked for wrapping, complete descriptions,
 and once-only playback. Build, lint, and TypeScript checks are run for the task.
 
-Foreground Chromium timing checks measured approximately 2.4–2.6 seconds for
+Foreground Chromium timing checks measured approximately 2.3–2.6 seconds for
 hero typing and 2.4–2.6 seconds for the complete terminal command/output at the
 tested widths. Pausing deliberately extends elapsed wall-clock duration.
 

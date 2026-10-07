@@ -78,10 +78,10 @@ export function HomeMerchSelector({ product }: { product: MerchProduct }) {
 
       {selectedVariant && (
         <div
-          aria-label={`Interactive 3D preview: ${selectedVariant.baseColor.name} CSS tshirt with ${selectedVariant.printColor.name} print. Drag to rotate.`}
+          aria-label={`${selectedVariant.baseColor.name} CSS tshirt with ${selectedVariant.printColor.name} print${viewerReady ? ". Interactive 3D preview." : "."}`}
           className="home-merch-stage__viewer"
           data-ready={viewerReady}
-          role="img"
+          role={viewerReady ? "group" : "img"}
         >
           <Image
             alt=""
@@ -98,6 +98,7 @@ export function HomeMerchSelector({ product }: { product: MerchProduct }) {
               onReady={() => setViewerReady(true)}
               textureSources={textureSources}
               variant={selectedVariant}
+              interaction="shirt-only"
             />
           )}
         </div>

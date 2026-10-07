@@ -4,13 +4,15 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Image from "next/image";
-import { useEffect, useRef, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useSmoothScroll } from "@/components/providers/smooth-scroll-provider";
 import { TransitionLink } from "@/components/transitions/transition-link";
 import { SnapRailControls } from "@/components/ui/snap-rail-controls";
 import { HOME_DESKTOP_MOTION, HOME_NATIVE_LAYOUT } from "@/lib/animations/home-media";
 import { useSnapRail } from "@/lib/animations/use-snap-rail";
 import type { Event, EventLifecycle, HomeEventSelection } from "@/types/event";
+import type { HomeQuote } from "@/types/home";
+import { HomeQuoteBridge } from "./home-quote-bridge";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -32,12 +34,55 @@ function eventStatus(event: Event, lifecycle: EventLifecycle) {
   return "Registration pending";
 }
 
-export function HomeEvents({ selection }: { selection: HomeEventSelection }) {
+function EventPreviewCard({ event, lifecycle }: { event: Event; lifecycle: EventLifecycle }) {
+  return <article className="home-event-card angular-cut" data-rail-item tabIndex={-1}>
+    {event.heroImage && (
+      <div className="home-event-card__image">
+        <Image alt={event.heroImage.alt} fill sizes="(max-width: 1023px) 82vw, (pointer: coarse) 28rem, 54vw" src={event.heroImage.src} />
+      </div>
+    )}
+    <div className="home-event-card__content">
+      <p className="eyebrow">CSS KNUST event</p>
+      <p className="home-event-card__date">{formatEventDate(event)}</p>
+      <h3>{event.title}</h3>
+      <p>{event.summary}</p>
+    </div>
+    <div className="home-event-card__footer">
+      <span className="eyebrow">{eventStatus(event, lifecycle)}</span>
+      <TransitionLink aria-label={`View event: ${event.title}`} href={`/events/${event.slug}`} transitionLabel="EVENT DETAIL">
+        View event <span aria-hidden="true">/&gt;</span>
+      </TransitionLink>
+    </div>
+  </article>;
+}
+
+export function HomeEvents({ selection, exitQuote }: { selection: HomeEventSelection; exitQuote: HomeQuote }) {
   const { events, mode } = selection;
   const rootRef = useRef<HTMLElement>(null);
+  const [panelFits, setPanelFits] = useState(true);
   const { scrollToElement } = useSmoothScroll();
-  const { railRef, index, scrollToIndex, onFocusCapture, onKeyDown } = useSnapRail(events.length);
+  const { railRef, index, scrollToIndex, onFocusCapture, onKeyDown } = useSnapRail(events.length, !panelFits);
   const railLabel = mode === "recent-highlights" ? "Recent highlights" : "Current and upcoming events";
+
+  useEffect(() => {
+    const quote = rootRef.current?.querySelector<HTMLElement>(".home-quote-bridge--panel");
+    const figure = quote?.querySelector("figure");
+    if (!quote || !figure) return;
+    const measure = () => {
+      const style = getComputedStyle(quote);
+      const padding = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+      const viewport = parseFloat(style.minHeight);
+      // Enlarged text and short landscape views get complete natural flow,
+      // rather than clipping a quotation inside a viewport-sized scene.
+      setPanelFits(figure.offsetHeight + padding <= viewport);
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(figure);
+    observer.observe(quote);
+    window.addEventListener("resize", measure);
+    measure();
+    return () => { observer.disconnect(); window.removeEventListener("resize", measure); };
+  }, [exitQuote]);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -49,7 +94,7 @@ export function HomeEvents({ selection }: { selection: HomeEventSelection }) {
     const revealNativeFocus = () => {
       frame = 0;
       const focused = document.activeElement;
-      if (!media.matches || !(focused instanceof HTMLElement) || !railElement.contains(focused)) return;
+      if ((panelFits && !media.matches) || !(focused instanceof HTMLElement) || !railElement.contains(focused)) return;
       const card = focused.closest<HTMLElement>(".home-event-card");
       if (!card) return;
 
@@ -75,7 +120,7 @@ export function HomeEvents({ selection }: { selection: HomeEventSelection }) {
       observer.disconnect();
       media.removeEventListener("change", schedule);
     };
-  }, [events, scrollToElement]);
+  }, [events, scrollToElement, panelFits]);
 
   useGSAP(() => {
     const root = rootRef.current;
@@ -91,18 +136,23 @@ export function HomeEvents({ selection }: { selection: HomeEventSelection }) {
     const slices = Array.from(root.querySelectorAll<HTMLElement>(".home-events__slice"));
     const railElement = root.querySelector<HTMLElement>(".home-events__rail");
     const track = root.querySelector<HTMLElement>(".home-events__track");
-    const cards = Array.from(root.querySelectorAll<HTMLElement>(".home-event-card"));
+    const cards = Array.from(track?.querySelectorAll<HTMLElement>(".home-event-card") ?? []);
     const allEvents = root.querySelector<HTMLElement>(".home-events__all");
+    const exit = root.querySelector<HTMLElement>(".home-events__exit");
+    const exitStage = root.querySelector<HTMLElement>(".home-events__exit-stage");
+    const panel = root.querySelector<HTMLElement>(".home-events__exit-panel");
+    const lead = root.querySelector<HTMLElement>(".home-events__exit-lead");
 
-    if (!stage || !hero || !heading || !description || !slices.length || !cards.length || !railElement || !track || !allEvents) {
+    if (!stage || !hero || !heading || !description || !slices.length || !railElement || !track || !allEvents || !exit || !exitStage || !panel || !lead) {
       return;
     }
 
     const media = gsap.matchMedia();
     media.add(HOME_DESKTOP_MOTION, (context) => {
+      if (!cards.length || !panelFits) return;
       gsap.set(root, {
         attr: { "data-animated": "true" },
-        "--events-scroll-height": `${180 + cards.length * 70}svh`,
+        "--events-scroll-height": `${150 + cards.length * 55 + 75}svh`,
       });
       // Clipping cannot accumulate a native scroll offset when links receive focus.
       stage.scrollLeft = 0;
@@ -113,22 +163,36 @@ export function HomeEvents({ selection }: { selection: HomeEventSelection }) {
       gsap.set(slices, { scaleX: 0, transformOrigin: "left center", visibility: "hidden" });
       // Keep offstage links tabbable: focus seeks the same timeline used by scroll.
       gsap.set(track, { x: () => stage.clientWidth });
+      gsap.set(lead, { x: 0, xPercent: 0 });
 
       const centeredPosition = (element: HTMLElement) =>
         stage.clientWidth / 2 - element.offsetLeft - element.offsetWidth / 2;
-      let revealFocusedItem = () => {
-        // Timeline labels are populated after ScrollTrigger's initial refresh.
+      const lastCard = cards[cards.length - 1];
+      const moveLead = gsap.quickSetter(lead, "x", "px");
+      let tailOffset = 0;
+      let buttonOffset = 0;
+      const syncLead = () => moveLead(Number(gsap.getProperty(track, "x")) + tailOffset);
+      const measureTail = () => {
+        const gap = parseFloat(getComputedStyle(track).columnGap) || 0;
+        // Rects preserve fractional CSS pixels; offsetWidth/offsetLeft round
+        // them and can introduce a different gap at the appended button.
+        buttonOffset = lastCard.getBoundingClientRect().right - track.getBoundingClientRect().left + gap;
+        tailOffset = buttonOffset + allEvents.getBoundingClientRect().width;
+        syncLead();
       };
-
+      measureTail();
       const timeline = gsap.timeline({
         defaults: { ease: "none" },
+        onUpdate: syncLead,
         scrollTrigger: {
+          id: "home-events-story",
           trigger: root,
           start: "top bottom",
           end: "bottom bottom",
           scrub: true,
           invalidateOnRefresh: true,
-          onRefresh: () => revealFocusedItem(),
+          onRefreshInit: measureTail,
+          onRefresh: measureTail,
         },
       });
 
@@ -150,15 +214,16 @@ export function HomeEvents({ selection }: { selection: HomeEventSelection }) {
       });
 
       timeline
-        .to(track, {
-          x: () => centeredPosition(allEvents),
-          duration: 0.5,
-        })
+        .addLabel("panel-entry")
+        // One moving track owns the whole chain. The lead's position is derived
+        // from it, so card→button spacing cannot drift during either direction.
+        .to(track, { x: () => stage.clientWidth / 2 - allEvents.getBoundingClientRect().width / 2 - buttonOffset, duration: 0.3 })
         .addLabel("all-events")
-        .to({}, { duration: 0.2 });
+        .to(track, { x: () => -tailOffset, duration: 0.55 })
+        .addLabel("quote-arrived");
 
       const items = [...cards, allEvents];
-      revealFocusedItem = context.add("revealFocusedItem", () => {
+      const revealFocusedItem = context.add("revealFocusedItem", () => {
         const focused = document.activeElement;
         if (!(focused instanceof HTMLElement)) return;
         const item = focused.closest<HTMLElement>(".home-event-card, .home-events__all");
@@ -174,8 +239,10 @@ export function HomeEvents({ selection }: { selection: HomeEventSelection }) {
         ScrollTrigger.update();
       }) as () => void;
 
-      railElement.addEventListener("focusin", revealFocusedItem);
+      stage.addEventListener("focusin", revealFocusedItem);
       let refreshFrame = 0;
+      let disposed = false;
+      let sizes = "";
       const refresh = () => {
         // Refresh mutates pin geometry across the page. Coalesce size changes
         // outside ResizeObserver delivery to avoid re-entrant layout loops.
@@ -186,24 +253,76 @@ export function HomeEvents({ selection }: { selection: HomeEventSelection }) {
           });
         }
       };
-      const observer = new ResizeObserver(refresh);
+      const observer = new ResizeObserver(() => {
+        const next = [stage, ...items].map((item) => `${item.offsetWidth}:${item.offsetHeight}`).join(";");
+        if (next === sizes) return;
+        sizes = next;
+        refresh();
+      });
       items.forEach((item) => observer.observe(item));
-      // Font/media changes in earlier homepage sections can move this trigger.
-      if (root.parentElement) observer.observe(root.parentElement);
+      observer.observe(stage);
+      void document.fonts.ready.then(() => { if (!disposed) refresh(); });
       refresh();
 
       return () => {
+        disposed = true;
         cancelAnimationFrame(refreshFrame);
         observer.disconnect();
-        railElement.removeEventListener("focusin", revealFocusedItem);
+        stage.removeEventListener("focusin", revealFocusedItem);
+        lead.style.removeProperty("transform");
+      };
+    });
+
+    media.add({ native: HOME_NATIVE_LAYOUT, motion: "(prefers-reduced-motion: no-preference)" }, (context) => {
+      if (!context.conditions?.native || !context.conditions?.motion || !panelFits) return;
+      // A short native-scroll-driven exit follows the swipeable mobile cards.
+      // CSS sticky holds the viewport; no touch/wheel handler traps the gesture.
+      gsap.set(root, { attr: { "data-exit-animated": "true" } });
+      const measureLead = () => {
+        const gap = parseFloat(getComputedStyle(track).columnGap) || 0;
+        const cardWidth = cards[cards.length - 1]?.getBoundingClientRect().width ?? 0;
+        const buttonWidth = allEvents.getBoundingClientRect().width;
+        lead.style.setProperty("--events-exit-gap", `${gap}px`);
+        lead.style.setProperty("--events-link-width", `${buttonWidth}px`);
+        lead.style.setProperty("--events-exit-card-width", `${cardWidth}px`);
+        return cards.length
+          ? (exitStage.clientWidth + cardWidth) / 2 + gap + buttonWidth
+          : exitStage.clientWidth + buttonWidth;
+      };
+      const tween = gsap.fromTo(lead, { x: measureLead, xPercent: 0 }, {
+        x: 0, ease: "none",
+        scrollTrigger: {
+          id: "home-events-mobile-exit", trigger: exit,
+          start: "top top", end: "bottom bottom", scrub: true, invalidateOnRefresh: true,
+          onRefreshInit: measureLead,
+        },
+      });
+      const revealExit = () => {
+        const trigger = tween.scrollTrigger;
+        if (!trigger) return;
+        const exitTop = window.scrollY + exit.getBoundingClientRect().top;
+        const distance = measureLead();
+        const buttonPosition = (exitStage.clientWidth + allEvents.getBoundingClientRect().width) / 2;
+        const progress = gsap.utils.clamp(0, 1, (distance - buttonPosition) / distance);
+        scrollToElement(exit, { offset: trigger.start + (trigger.end - trigger.start) * progress - exitTop, immediate: true });
+      };
+      allEvents.addEventListener("focus", revealExit);
+      let disposed = false;
+      const frame = requestAnimationFrame(() => ScrollTrigger.refresh());
+      void document.fonts.ready.then(() => { if (!disposed) ScrollTrigger.refresh(); });
+      return () => {
+        disposed = true;
+        cancelAnimationFrame(frame);
+        allEvents.removeEventListener("focus", revealExit);
+        ["--events-exit-gap", "--events-link-width", "--events-exit-card-width"].forEach((property) => lead.style.removeProperty(property));
       };
     });
 
     return () => media.revert();
-  }, { scope: rootRef, dependencies: [events, scrollToElement], revertOnUpdate: true });
+  }, { scope: rootRef, dependencies: [events, scrollToElement, panelFits], revertOnUpdate: true });
 
   return (
-    <section className="home-events" aria-labelledby="events-title" data-animated="false" data-mode={mode} ref={rootRef}>
+    <section className="home-events" aria-labelledby="events-title" data-animated="false" data-exit-animated="false" data-mode={mode} ref={rootRef}>
       <div className="home-events__stage">
         <div className="home-events__hero-media angular-cut">
           <Image
@@ -232,38 +351,32 @@ export function HomeEvents({ selection }: { selection: HomeEventSelection }) {
           ))}
         </div>
 
-        <div className="home-events__rail" aria-label={mode === "empty" ? "Events" : railLabel} data-lenis-prevent id="home-events-rail" onFocusCapture={onFocusCapture} onKeyDown={onKeyDown} ref={railRef} role="region">
+        <div className="home-events__rail" aria-label={mode === "empty" ? "Events" : railLabel} data-lenis-prevent-horizontal id="home-events-rail" onFocusCapture={onFocusCapture} onKeyDown={onKeyDown} ref={railRef} role="region">
           <div className="home-events__track">
-            {events.map(({ event, lifecycle }) => (
-              <article className="home-event-card angular-cut" data-rail-item key={event.id} tabIndex={-1}>
-                {event.heroImage && (
-                  <div className="home-event-card__image">
-                    <Image alt={event.heroImage.alt} fill sizes="(max-width: 1023px) 82vw, (pointer: coarse) 28rem, 54vw" src={event.heroImage.src} />
-                  </div>
-                )}
-                <div className="home-event-card__content">
-                  <p className="eyebrow">CSS KNUST event</p>
-                  <p className="home-event-card__date">{formatEventDate(event)}</p>
-                  <h3>{event.title}</h3>
-                  <p>{event.summary}</p>
-                </div>
-                <div className="home-event-card__footer">
-                  <span className="eyebrow">{eventStatus(event, lifecycle)}</span>
-                  <TransitionLink aria-label={`View event: ${event.title}`} href={`/events/${event.slug}`} transitionLabel="EVENT DETAIL">
-                    View event <span aria-hidden="true">/&gt;</span>
-                  </TransitionLink>
-                </div>
-              </article>
-            ))}
-            <TransitionLink className="home-events__all button button-secondary angular-cut" href="/events" transitionLabel="EVENTS">
-              View all events <span aria-hidden="true">/&gt;</span>
-            </TransitionLink>
+            {events.map((item) => <EventPreviewCard {...item} key={item.event.id} />)}
           </div>
         </div>
 
         <div className="home-rail-navigation page-shell home-event-navigation">
           <SnapRailControls count={events.length} index={index} label="event" onSelect={scrollToIndex} railId="home-events-rail" />
-          <TransitionLink href="/events" transitionLabel="EVENTS">View all events <span aria-hidden="true">/&gt;</span></TransitionLink>
+        </div>
+
+        <div className="home-events__exit">
+          <div className="home-events__exit-stage">
+            <div className="home-events__exit-lead">
+              {/* The native rail remains swipeable. An inert copy carries its
+                  final card into the mobile handoff without duplicating controls. */}
+              {events.length > 0 && <div className="home-events__exit-card" aria-hidden="true" inert>
+                <EventPreviewCard {...events[events.length - 1]} />
+              </div>}
+              <TransitionLink className="home-events__all button button-secondary angular-cut" href="/events" transitionLabel="EVENTS">
+                View all events <span aria-hidden="true">/&gt;</span>
+              </TransitionLink>
+              <div className="home-events__exit-panel">
+                <HomeQuoteBridge {...exitQuote} panel />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>

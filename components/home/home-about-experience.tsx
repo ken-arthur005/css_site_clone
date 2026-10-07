@@ -126,6 +126,8 @@ export function HomeAboutExperience({ content }: { content: HomeAboutContent }) 
       gsap.set(entries, {
         autoAlpha: 0,
         scale: 0.06,
+        xPercent: 0,
+        yPercent: 0,
         x: (index) => collapsedOffset(index).x,
         y: (index) => collapsedOffset(index).y,
       });
@@ -160,11 +162,13 @@ export function HomeAboutExperience({ content }: { content: HomeAboutContent }) 
         .fromTo(settleProgressRef, { current: 0 }, { current: 1, duration: 0.18, ease: "none" }, 0.12)
         .set(collage, { autoAlpha: 1 }, 0.28)
         .fromTo(entries, {
-          autoAlpha: 0, scale: 0.06,
+          autoAlpha: 0, scale: 0.06, xPercent: 0, yPercent: 0,
           x: (index) => collapsedOffset(index).x,
           y: (index) => collapsedOffset(index).y,
         }, {
-          autoAlpha: 1, scale: 1, x: 0, y: 0, duration: 0.28, ease: "power3.out",
+          // GSAP can infer -50% when a collapsed pixel offset equals half a
+          // tile. Explicit percentages prevent that offset surviving at rest.
+          autoAlpha: 1, scale: 1, x: 0, y: 0, xPercent: 0, yPercent: 0, duration: 0.28, ease: "power3.out",
           immediateRender: false,
           stagger: { amount: 0.2, grid: [activeCards.length / columns, columns], from: "center" },
         }, 0.28)

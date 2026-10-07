@@ -29,13 +29,18 @@ export function TransitionLink({
       event.shiftKey ||
       event.altKey ||
       href.startsWith("#") ||
-      isTransitioning
+      (event.currentTarget.target && event.currentTarget.target !== "_self") ||
+      event.currentTarget.hasAttribute("download")
     ) {
       return;
     }
 
+    const destination = new URL(href, window.location.href);
+    if (destination.origin !== window.location.origin || destination.pathname === window.location.pathname) return;
+
     event.preventDefault();
-    navigate(href, transitionLabel);
+    if (isTransitioning) return;
+    navigate(`${destination.pathname}${destination.search}${destination.hash}`, transitionLabel);
   };
 
   return <Link href={href} onClick={handleClick} {...props} />;

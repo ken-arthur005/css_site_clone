@@ -3,13 +3,13 @@
 import { useCallback, useEffect, useRef, useState, type FocusEvent, type KeyboardEvent } from "react";
 import { HOME_NATIVE_LAYOUT } from "./home-media";
 
-export function useSnapRail(count: number) {
+export function useSnapRail(count: number, forceNative = false) {
   const railRef = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(0);
 
   const scrollToIndex = useCallback((next: number, focus = false, immediate = false) => {
     const rail = railRef.current;
-    if (!rail || !count || !window.matchMedia(HOME_NATIVE_LAYOUT).matches) return;
+    if (!rail || !count || (!forceNative && !window.matchMedia(HOME_NATIVE_LAYOUT).matches)) return;
     const clamped = Math.max(0, Math.min(count - 1, next));
     const item = rail.querySelectorAll<HTMLElement>("[data-rail-item]")[clamped];
     if (!item) return;
@@ -18,7 +18,7 @@ export function useSnapRail(count: number) {
     if (focus) item.focus({ preventScroll: true });
     rail.scrollTo({ left, behavior: focus || immediate || window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
     setIndex(clamped);
-  }, [count]);
+  }, [count, forceNative]);
 
   useEffect(() => {
     const rail = railRef.current;
@@ -27,7 +27,7 @@ export function useSnapRail(count: number) {
     const media = window.matchMedia(HOME_NATIVE_LAYOUT);
     const sync = () => {
       frame = 0;
-      if (!media.matches) return;
+      if (!forceNative && !media.matches) return;
       const inset = Number.parseFloat(getComputedStyle(rail).scrollPaddingLeft) || 0;
       const edge = rail.getBoundingClientRect().left + inset;
       const items = Array.from(rail.querySelectorAll<HTMLElement>("[data-rail-item]"));
@@ -56,7 +56,7 @@ export function useSnapRail(count: number) {
       rail.removeEventListener("scroll", schedule);
       media.removeEventListener("change", schedule);
     };
-  }, [count]);
+  }, [count, forceNative]);
 
   const onFocusCapture = (event: FocusEvent<HTMLDivElement>) => {
     const rail = railRef.current;
@@ -67,7 +67,7 @@ export function useSnapRail(count: number) {
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (!window.matchMedia(HOME_NATIVE_LAYOUT).matches) return;
+    if (!forceNative && !window.matchMedia(HOME_NATIVE_LAYOUT).matches) return;
     const next = event.key === "ArrowRight" ? index + 1
       : event.key === "ArrowLeft" ? index - 1
       : event.key === "Home" ? 0

@@ -4,14 +4,18 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import { usePathname } from "next/navigation";
-import { createContext, useCallback, useContext, useEffect, useRef, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 
 gsap.registerPlugin(ScrollTrigger);
+// Lenis needs elapsed clock time even after a slow frame, rather than GSAP's
+// shortened animation clock, or the page can feel stuck catching up.
+gsap.ticker.lagSmoothing(0);
 
 type ScrollOptions = { offset?: number; immediate?: boolean };
 
 type SmoothScrollContextValue = {
-  setScrollLocked: (locked: boolean) => void;
+  setScrollLocked: (locked: boolean, owner?: string) => void;
+  isScrollLocked: boolean;
   scrollToElement: (element: HTMLElement, options?: ScrollOptions) => void;
 };
 
@@ -29,14 +33,23 @@ export function useSmoothScroll() {
 
 export function SmoothScrollProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const isHome = pathname === "/";
   const fullMerchMotion = pathname === "/merch" || pathname.startsWith("/merch/");
   const lenisRef = useRef<Lenis | null>(null);
   const scrollLockedRef = useRef(false);
+  const scrollLocksRef = useRef(new Set<string>());
+  const [isScrollLocked, setIsScrollLocked] = useState(false);
 
-  const setScrollLocked = useCallback((locked: boolean) => {
-    scrollLockedRef.current = locked;
+  const setScrollLocked = useCallback((locked: boolean, owner = "default") => {
+    if (locked) scrollLocksRef.current.add(owner);
+    else scrollLocksRef.current.delete(owner);
+    const active = scrollLocksRef.current.size > 0;
+    scrollLockedRef.current = active;
+    setIsScrollLocked(active);
+    if (active) document.documentElement.dataset.scrollLocked = "true";
+    else delete document.documentElement.dataset.scrollLocked;
 
-    if (locked) {
+    if (active) {
       lenisRef.current?.stop();
     } else {
       lenisRef.current?.start();
@@ -90,10 +103,15 @@ export function SmoothScrollProvider({ children }: { children: ReactNode }) {
 
       const lenis = new Lenis({
         autoRaf: false,
-        lerp: 0.08,
-        wheelMultiplier: 0.9,
+        lerp: isHome ? 0.14 : 0.08,
+        wheelMultiplier: isHome ? 1 : 0.9,
         respectReducedMotion: !fullMerchMotion,
       });
+      // Lenis owns interpolation here; a second CSS smooth-scroll layer must
+      // not compete with its per-frame native position updates.
+      const html = document.documentElement;
+      const previousScrollBehavior = html.style.scrollBehavior;
+      html.style.scrollBehavior = "auto";
       const updateScrollTrigger = () => ScrollTrigger.update();
       const raf = (time: number) => lenis.raf(time * 1000);
 
@@ -112,6 +130,7 @@ export function SmoothScrollProvider({ children }: { children: ReactNode }) {
         lenis.stop();
         lenis.destroy();
         lenisRef.current = null;
+        html.style.scrollBehavior = previousScrollBehavior;
         ScrollTrigger.refresh();
       };
     };
@@ -123,10 +142,10 @@ export function SmoothScrollProvider({ children }: { children: ReactNode }) {
       media.removeEventListener("change", updateSmoothScrolling);
       cleanup?.();
     };
-  }, [fullMerchMotion]);
+  }, [fullMerchMotion, isHome]);
 
   return (
-    <SmoothScrollContext.Provider value={{ scrollToElement, setScrollLocked }}>
+    <SmoothScrollContext.Provider value={{ scrollToElement, setScrollLocked, isScrollLocked }}>
       {children}
     </SmoothScrollContext.Provider>
   );

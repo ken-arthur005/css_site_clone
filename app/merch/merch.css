@@ -14,7 +14,7 @@
 .merch-image-error { position: absolute; inset: 0; display: flex; justify-content: center; align-items: center; flex-direction: column; gap: .5rem; padding: 1rem; text-align: center; font-size: .8rem; color: var(--foreground-muted); background: var(--surface); }
 .merch-image-error small { font-size: .65rem; text-transform: uppercase; letter-spacing: .08em; }
 .merch-index-space { height: var(--merch-index-height); }
-.merch-index { position: fixed; top: var(--merch-header-height, var(--header-height)); left: 0; width: 100%; z-index: calc(var(--layer-header) - 1); background: var(--background); display: flex; align-items: center; gap: clamp(1rem, 3vw, 3rem); min-height: 3.5rem; padding: .5rem var(--page-gutter); border-bottom: 1px solid var(--border-subtle); }
+.merch-index { position: fixed; top: var(--page-nav-offset); left: 0; width: 100%; z-index: calc(var(--layer-header) - 1); background: var(--background); display: flex; align-items: center; gap: clamp(1rem, 3vw, 3rem); min-height: 3.5rem; padding: .5rem var(--page-gutter); border-bottom: 1px solid var(--border-subtle); transition: top var(--page-nav-duration) var(--ease-out); }
 .merch-index a { font-size: .66rem; letter-spacing: .1em; text-transform: uppercase; text-decoration: none; padding: .5rem 0; }
 .merch-index a:nth-child(2) { color: var(--merch-pink); }
 .merch-index .merch-index__order { margin-left: auto; font-weight: 700; }

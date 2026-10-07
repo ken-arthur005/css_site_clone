@@ -44,7 +44,7 @@ function getFocusableControls(menu: HTMLElement) {
 
 export function SiteHeader() {
   const pathname = usePathname();
-  const { setScrollLocked } = useSmoothScroll();
+  const { setScrollLocked, isScrollLocked } = useSmoothScroll();
   const { isMenuActive, setMenuActive } = useNavigationState();
   const { isTransitioning } = useRouteTransition();
   const [isOpen, setIsOpen] = useState(false);
@@ -78,7 +78,28 @@ export function SiteHeader() {
   useEffect(() => {
     const header = headerRef.current;
     if (!header) return;
+    const root = document.documentElement;
+    const measure = () => root.style.setProperty("--site-header-height", `${header.getBoundingClientRect().height}px`);
+    const observer = new ResizeObserver(measure);
+    observer.observe(header);
+    measure();
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty("--site-header-height");
+    };
+  }, []);
 
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header) return;
+
+    const root = document.documentElement;
+    const setHidden = (hidden: boolean) => {
+      const value = String(hidden);
+      header.dataset.hidden = value;
+      // Page-specific navigation follows every header reveal/hide trigger.
+      root.dataset.siteHeaderHidden = value;
+    };
     const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
     let frame = 0;
     let idleTimeout = 0;
@@ -90,7 +111,7 @@ export function SiteHeader() {
     let topThreshold = header.getBoundingClientRect().height + 24;
 
     const reveal = () => {
-      header.dataset.hidden = "false";
+      setHidden(false);
       direction = 0;
       distance = 0;
       previousY = scrollPosition();
@@ -98,7 +119,7 @@ export function SiteHeader() {
 
     reveal();
     // Keep the navigation steady throughout dialog and route-transition lifecycles.
-    if (isMenuActive || isTransitioning) return;
+    if (isMenuActive || isTransitioning) return () => { delete root.dataset.siteHeaderHidden; };
 
     const update = () => {
       frame = 0;
@@ -118,8 +139,8 @@ export function SiteHeader() {
       distance += Math.abs(delta);
 
       // Accumulate small movements, but ignore tiny direction reversals.
-      if (direction > 0 && distance >= HEADER_HIDE_DISTANCE) header.dataset.hidden = "true";
-      else if (direction < 0 && distance >= HEADER_REVEAL_DISTANCE) header.dataset.hidden = "false";
+      if (direction > 0 && distance >= HEADER_HIDE_DISTANCE) setHidden(true);
+      else if (direction < 0 && distance >= HEADER_REVEAL_DISTANCE) setHidden(false);
     };
 
     const onScroll = () => {
@@ -146,25 +167,29 @@ export function SiteHeader() {
       window.removeEventListener("pageshow", reveal);
       header.removeEventListener("focusin", reveal);
       motionPreference.removeEventListener("change", reveal);
+      delete root.dataset.siteHeaderHidden;
     };
   }, [pathname, isMenuActive, isTransitioning]);
 
   useEffect(() => {
-    if (!isMenuActive) {
-      if (menuWasMountedRef.current && returnFocusRef.current) {
-        triggerRef.current?.focus({ preventScroll: true });
-      }
-      menuWasMountedRef.current = false;
-      return;
+    // Releasing the scroll lock is a separate state commit. Wait until that
+    // commit removes the header's inert attribute before returning focus.
+    if (isMenuActive || isScrollLocked) return;
+    if (menuWasMountedRef.current && returnFocusRef.current) {
+      triggerRef.current?.focus({ preventScroll: true });
     }
+    menuWasMountedRef.current = false;
+  }, [isMenuActive, isScrollLocked]);
+
+  useEffect(() => {
+    if (!isMenuActive) return;
 
     menuWasMountedRef.current = true;
-    setScrollLocked(true);
-
     const previousOverflow = document.body.style.overflow;
     const previousPaddingRight = document.body.style.paddingRight;
     const scrollPosition = menuScrollRef.current;
     const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    setScrollLocked(true, "menu");
     document.body.style.overflow = "hidden";
     document.body.style.paddingRight = `${scrollbarWidth}px`;
 
@@ -217,7 +242,7 @@ export function SiteHeader() {
       if (returnFocusRef.current && scrollPosition) {
         window.scrollTo({ left: scrollPosition.x, top: scrollPosition.y, behavior: "instant" });
       }
-      setScrollLocked(false);
+      setScrollLocked(false, "menu");
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("focusin", containFocus);
     };
@@ -242,25 +267,8 @@ export function SiteHeader() {
     }
 
     pendingNavigationRef.current = null;
-    const main = document.querySelector<HTMLElement>("main");
-    const target = main?.querySelector<HTMLElement>("h1") ?? main;
-    if (!target) {
-      triggerRef.current?.focus({ preventScroll: true });
-      return;
-    }
-
-    const previousTabIndex = target.getAttribute("tabindex");
-    target.tabIndex = -1;
-    target.focus({ preventScroll: true });
-    const restoreTabIndex = () => {
-      if (previousTabIndex === null) target.removeAttribute("tabindex");
-      else target.setAttribute("tabindex", previousTabIndex);
-    };
-    target.addEventListener("blur", restoreTabIndex, { once: true });
-    return () => {
-      target.removeEventListener("blur", restoreTabIndex);
-      restoreTabIndex();
-    };
+    // The persistent route coordinator restores destination focus for every
+    // navigation source, including the footer and browser history.
   }, [pathname, isMenuActive, isTransitioning, closeMenu]);
 
   useGSAP((gsapContext) => {
@@ -314,7 +322,7 @@ export function SiteHeader() {
         ref={headerRef}
         className={`site-header${isHome ? " site-header--hero" : ""}`}
         data-scrolled={hasScrolled}
-        inert={isMenuActive}
+        inert={isMenuActive || isScrollLocked}
       >
         <TransitionLink
           className="site-header__identity"

@@ -1,4 +1,10 @@
-import type { HomeAboutContent, HomeCommunityPhoto } from "@/types/home";
+import type { HomeAboutContent, HomeCommunityPhoto, HomeQuote } from "@/types/home";
+
+// Existing homepage quotations, retained in the owner-approved sequence.
+export const homeQuotes: { leadership: HomeQuote; events: HomeQuote } = {
+  leadership: { author: "Linus Torvalds", quote: "Talk is cheap. Show me the code." },
+  events: { author: "Steve Jobs", quote: "Everybody in this country should learn how to program a computer, because it teaches you how to think." },
+};
 
 function photo(folder: string, file: string, position?: string): HomeCommunityPhoto {
   return { id: file, src: `/about/${folder}/${encodeURIComponent(file)}`, position };

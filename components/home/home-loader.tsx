@@ -120,25 +120,21 @@ export function HomeLoader({ plan, onReveal }: Props) {
     resize.observe(mark);
     resize.observe(cursor.querySelector(".home-intro__cursor-caption")!);
 
-    const html = document.documentElement;
-    const previousOverflow = html.style.overflow;
     const main = root.closest("main");
     const previousBusy = main?.getAttribute("aria-busy");
-    const background = Array.from(document.querySelectorAll<HTMLElement>("main > :not(.home-intro), .site-header, .site-footer"))
+    const background = Array.from(document.querySelectorAll<HTMLElement>("main > :not(.home-intro), .site-footer"))
       .map((element) => ({ element, inert: element.inert }));
     background.forEach(({ element }) => { element.inert = true; });
     main?.setAttribute("aria-busy", "true");
-    html.style.overflow = "hidden";
-    setScrollLocked(true);
+    setScrollLocked(true, "home-intro");
     let unlocked = false;
     const unlock = () => {
       if (unlocked) return;
       unlocked = true;
-      html.style.overflow = previousOverflow;
       background.forEach(({ element, inert }) => { element.inert = inert; });
       if (previousBusy === null || previousBusy === undefined) main?.removeAttribute("aria-busy");
       else main?.setAttribute("aria-busy", previousBusy);
-      setScrollLocked(false);
+      setScrollLocked(false, "home-intro");
     };
 
     const reveal = contextSafe(() => {

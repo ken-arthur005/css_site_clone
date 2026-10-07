@@ -1,13 +1,14 @@
 "use client";
 
-import { Center, OrbitControls, useGLTF, useTexture } from "@react-three/drei";
+import { Bvh, Center, OrbitControls, useGLTF, useTexture } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Component, Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ErrorInfo, type ReactNode } from "react";
-import { Mesh, MeshStandardMaterial, SRGBColorSpace } from "three";
+import { Component, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ErrorInfo, type ReactNode } from "react";
+import { Group, Mesh, MeshStandardMaterial, SRGBColorSpace } from "three";
 import type { MerchVariant } from "@/types/merch";
 import type { ContentAsset } from "@/types/content";
 import { useNavigationState } from "@/components/providers/navigation-state-provider";
 import { WebGLContextGuard } from "@/components/three/webgl-context-guard";
+import { ShirtProximityControls, type ShirtCanvasFrame, type ShirtSurfaceSize } from "./shirt-proximity-controls";
 
 type MerchShirtViewerProps = {
   model: ContentAsset;
@@ -16,6 +17,7 @@ type MerchShirtViewerProps = {
   onReady: () => void;
   onFailure: () => void;
   motion?: "system" | "full";
+  interaction?: "standard" | "shirt-only";
 };
 
 type ViewerErrorBoundaryProps = {
@@ -44,9 +46,10 @@ class ViewerErrorBoundary extends Component<ViewerErrorBoundaryProps, ViewerErro
   }
 }
 
-function ShirtModel({ modelSource, textureSource }: {
+function ShirtModel({ modelSource, textureSource, ownGeometry = false }: {
   modelSource: string;
   textureSource: string;
+  ownGeometry?: boolean;
 }) {
   const { scene } = useGLTF(modelSource, false, true);
   const { invalidate } = useThree();
@@ -66,6 +69,9 @@ function ShirtModel({ modelSource, textureSource }: {
     clone.traverse((node) => {
       if (!(node instanceof Mesh)) return;
       const mesh = node;
+      // The proximity viewer owns its BVH geometry; no shared loader cache or
+      // other viewer can have its indices/raycast tree modified or disposed.
+      if (ownGeometry) mesh.geometry = mesh.geometry.clone();
 
       const sourceMaterial = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
       const material = sourceMaterial.clone() as MeshStandardMaterial;
@@ -77,7 +83,7 @@ function ShirtModel({ modelSource, textureSource }: {
     });
 
     return clone;
-  }, [scene]);
+  }, [ownGeometry, scene]);
 
   useEffect(() => {
     model.traverse((node) => {
@@ -101,11 +107,12 @@ function ShirtModel({ modelSource, textureSource }: {
 
         const material = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
         material.dispose();
+        if (ownGeometry) mesh.geometry.dispose();
       });
     };
-  }, [model]);
+  }, [model, ownGeometry]);
 
-  return <primitive object={model} />;
+  return <primitive object={model} dispose={null} />;
 }
 
 function CanvasWarmup({ active, onReady }: Pick<MerchShirtViewerProps, "onReady"> & { active: boolean }) {
@@ -145,6 +152,10 @@ function ViewerScene({
   onInteractionStart,
   onInteractionEnd,
   onReady,
+  focused,
+  surface,
+  onFrame,
+  label,
 }: Pick<MerchShirtViewerProps, "onReady"> & {
   modelSource: string;
   textureSource: string;
@@ -152,9 +163,14 @@ function ViewerScene({
   autoRotate: boolean;
   onInteractionStart: () => void;
   onInteractionEnd: () => void;
+  focused: boolean;
+  surface: ShirtSurfaceSize;
+  onFrame: (frame: ShirtCanvasFrame) => void;
+  label: string;
 }) {
   const { size } = useThree();
-  const modelScale = size.width < 768 ? 0.8 : 0.65;
+  const rigRef = useRef<Group>(null);
+  const modelScale = (focused ? surface.width : size.width) < 768 ? 0.8 : 0.65;
 
   return (
     <>
@@ -162,14 +178,25 @@ function ViewerScene({
       <directionalLight intensity={2.4} position={[4, 5, 5]} />
       <directionalLight color="#b8cdf8" intensity={0.75} position={[-4, 1, 2]} />
       <Suspense fallback={null}>
-        <Center>
+        {focused ? <>
+          <Bvh firstHitOnly indirect>
+            <group ref={rigRef}>
+              <Center cacheKey={modelScale}>
+                <group position={[0, -0.1, 0]} scale={modelScale}>
+                  <ShirtModel modelSource={modelSource} textureSource={textureSource} ownGeometry />
+                </group>
+              </Center>
+            </group>
+          </Bvh>
+          <ShirtProximityControls modelRef={rigRef} surface={surface} active={active} autoRotate={autoRotate} onFrame={onFrame} onInteractionStart={onInteractionStart} onInteractionEnd={onInteractionEnd} label={label} />
+        </> : <Center>
           <group position={[0, -0.1, 0]} scale={modelScale}>
             <ShirtModel modelSource={modelSource} textureSource={textureSource} />
           </group>
-        </Center>
+        </Center>}
         <CanvasWarmup key={textureSource} active={active} onReady={onReady} />
       </Suspense>
-      <OrbitControls
+      {!focused && <OrbitControls
         autoRotate={autoRotate}
         autoRotateSpeed={0.32}
         dampingFactor={0.075}
@@ -182,7 +209,7 @@ function ViewerScene({
         onEnd={onInteractionEnd}
         onStart={onInteractionStart}
         rotateSpeed={0.7}
-      />
+      />}
     </>
   );
 }
@@ -193,10 +220,11 @@ function subscribeMotionPreference(listener: () => void) {
   return () => media.removeEventListener("change", listener);
 }
 
-export function MerchShirtViewer({ model, variant, onReady, onFailure, motion = "system" }: MerchShirtViewerProps) {
+export function MerchShirtViewer({ model, variant, onReady, onFailure, motion = "system", interaction = "standard" }: MerchShirtViewerProps) {
   const { isMenuActive } = useNavigationState();
   const rootRef = useRef<HTMLDivElement>(null);
   const resumeTimerRef = useRef<number | null>(null);
+  const mountedRef = useRef(true);
   const [isNear, setIsNear] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [hasBeenNear, setHasBeenNear] = useState(false);
@@ -207,6 +235,25 @@ export function MerchShirtViewer({ model, variant, onReady, onFailure, motion = 
     () => false,
   );
   const [isInteracting, setIsInteracting] = useState(false);
+  const [surface, setSurface] = useState<ShirtSurfaceSize>({ width: 0, height: 0 });
+  const [frame, setFrame] = useState<ShirtCanvasFrame | null>(null);
+  const focused = interaction === "shirt-only";
+  const onFrame = useCallback((next: ShirtCanvasFrame) => {
+    setFrame((previous) => previous?.width === next.width && previous.height === next.height && previous.referenceWidth === next.referenceWidth && previous.referenceHeight === next.referenceHeight ? previous : next);
+  }, []);
+
+  useEffect(() => {
+    const parent = rootRef.current?.parentElement;
+    if (!focused || !parent) return;
+    const measure = () => {
+      const { width, height } = parent.getBoundingClientRect();
+      setSurface((previous) => previous.width === width && previous.height === height ? previous : { width, height });
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(parent);
+    measure();
+    return () => observer.disconnect();
+  }, [focused]);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -248,22 +295,26 @@ export function MerchShirtViewer({ model, variant, onReady, onFailure, motion = 
   }, [isNear, model.src, variant.texture.src]);
 
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
+      mountedRef.current = false;
       if (resumeTimerRef.current !== null) {
         window.clearTimeout(resumeTimerRef.current);
       }
     };
   }, []);
 
-  const pauseAutoRotation = () => {
+  const pauseAutoRotation = useCallback(() => {
+    if (!mountedRef.current) return;
     if (resumeTimerRef.current !== null) {
       window.clearTimeout(resumeTimerRef.current);
       resumeTimerRef.current = null;
     }
     setIsInteracting(true);
-  };
+  }, []);
 
-  const resumeAutoRotation = () => {
+  const resumeAutoRotation = useCallback(() => {
+    if (!mountedRef.current) return;
     if (resumeTimerRef.current !== null) {
       window.clearTimeout(resumeTimerRef.current);
     }
@@ -271,14 +322,15 @@ export function MerchShirtViewer({ model, variant, onReady, onFailure, motion = 
       setIsInteracting(false);
       resumeTimerRef.current = null;
     }, 2400);
-  };
+  }, []);
 
   const isActive = isVisible && isPageVisible && !isMenuActive;
   const autoRotate = isActive && !reducedMotion && !isInteracting;
 
   return (
-    <div className="home-merch-viewer" ref={rootRef} data-active={isActive}>
-      {hasBeenNear && (
+    <div className="home-merch-viewer" ref={rootRef} data-active={isActive} data-interaction={interaction}
+      style={focused && frame ? { "--shirt-canvas-width": `${frame.width}px`, "--shirt-canvas-height": `${frame.height}px` } as CSSProperties : undefined}>
+      {hasBeenNear && (!focused || (surface.width > 0 && surface.height > 0)) && (
         <ViewerErrorBoundary onFailure={onFailure}>
           <Canvas
             camera={{ fov: 36, position: [0, 0, 7.2] }}
@@ -296,6 +348,10 @@ export function MerchShirtViewer({ model, variant, onReady, onFailure, motion = 
               onInteractionStart={pauseAutoRotation}
               onReady={onReady}
               textureSource={variant.texture.src}
+              focused={focused}
+              surface={surface}
+              onFrame={onFrame}
+              label={`${variant.baseColor.name} CSS shirt with ${variant.printColor.name} print. Drag on or near the shirt to rotate. On touch screens, drag horizontally; swipe vertically to scroll. Use left and right arrow keys to rotate.`}
             />
           </Canvas>
         </ViewerErrorBoundary>
