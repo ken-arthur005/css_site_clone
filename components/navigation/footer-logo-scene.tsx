@@ -8,6 +8,7 @@ import type { Group } from "three";
 import { SceneErrorBoundary } from "@/components/three/scene-error-boundary";
 import { WebGLContextGuard } from "@/components/three/webgl-context-guard";
 import { useNavigationState } from "@/components/providers/navigation-state-provider";
+import { useHomeAssetFallback } from "@/lib/loading/asset-fallback";
 
 function RotatingMark({ active }: { active: boolean }) {
   const groupRef = useRef<Group>(null);
@@ -61,6 +62,7 @@ export function FooterLogoScene() {
   const [visible, setVisible] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [failed, setFailed] = useState(false);
+  const modelFallback = useHomeAssetFallback("/CSS%20Logo%203d.glb");
   const onFailure = useCallback(() => setFailed(true), []);
   const fallback = <Image alt="CSS KNUST logo" fill sizes="(max-width: 47.99rem) 15rem, 28rem" src="/css_logo.svg" />;
 
@@ -88,7 +90,7 @@ export function FooterLogoScene() {
     <div className="site-footer__logo-scene" ref={rootRef}>
       <SceneErrorBoundary fallback={fallback} onFailure={onFailure}>
         <Suspense fallback={fallback}>
-          {failed || reducedMotion || !nearViewport ? (
+          {failed || modelFallback || reducedMotion || !nearViewport ? (
             fallback
           ) : (
             <Canvas

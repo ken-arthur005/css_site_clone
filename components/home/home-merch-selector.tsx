@@ -11,6 +11,7 @@ import {
   selectVariantForBase,
 } from "@/lib/content/merch";
 import type { MerchProduct } from "@/types/merch";
+import { useHomeAssetFallback } from "@/lib/loading/asset-fallback";
 
 const HomeMerchViewer = dynamic(
   () => import("@/components/merch/merch-shirt-viewer").then(({ MerchShirtViewer: Viewer }) => Viewer),
@@ -32,6 +33,8 @@ export function HomeMerchSelector({ product }: { product: MerchProduct }) {
     selectVariantForBase(product, selectedBaseId, selectedPrintId);
   const textureSources = useMemo(() => product.variants.map((variant) => variant.texture.src), [product.variants]);
   const [viewerReady, setViewerReady] = useState(false);
+  const modelFallback = useHomeAssetFallback(product.model?.src ?? "");
+  const textureFallback = useHomeAssetFallback(selectedVariant?.texture.src ?? "");
 
   useEffect(() => {
     const root = rootRef.current;
@@ -88,7 +91,7 @@ export function HomeMerchSelector({ product }: { product: MerchProduct }) {
             sizes="(max-width: 767px) 100vw, 80vw"
             src={selectedVariant.fallbackImage.src}
           />
-          {product.model && viewerNear && (
+          {product.model && viewerNear && !modelFallback && !textureFallback && (
             <HomeMerchViewer
               model={product.model}
               onFailure={() => setViewerReady(false)}

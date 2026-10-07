@@ -9,6 +9,7 @@ import { getExecutives } from "@/lib/content/executives";
 import { getHomeEventSelection } from "@/lib/content/events";
 import { getFeaturedMerchProducts } from "@/lib/content/merch";
 import { getSiteInfo } from "@/lib/content/site";
+import { getHomeLoadingPlan } from "@/lib/content/loading";
 
 // Request-driven ISR: refresh date-sensitive selection after one hour.
 export const revalidate = 3600;
@@ -20,10 +21,11 @@ export default async function Home() {
     getHomeEventSelection(),
     getFeaturedMerchProducts(),
   ]);
+  const loadingPlan = await getHomeLoadingPlan(featuredProducts[0]);
 
   return (
     <main>
-      <HomeHero site={site} />
+      <HomeHero site={site} loadingPlan={loadingPlan} />
       <HomeAbout />
       <LeadershipMousePass />
       <HomeExecutives executives={executives} />

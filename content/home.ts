@@ -36,7 +36,17 @@ export const homeAboutContent: HomeAboutContent = {
     photo("life", "life3_movienight.jpg"),
   ],
   careerPaths: [
-    "Cybersecurity", "Data Science", "UI/UX Design", "Software Engineering",
-    "AI/ML Engineering", "Cloud Engineering", "DevOps",
+    { id: "cybersecurity", name: "Cybersecurity", description: "Keep intruders out. “password123” is not a strategy." },
+    { id: "data-science", name: "Data Science", description: "Turn messy data into answers. The spreadsheet has trust issues." },
+    { id: "ui-ux", name: "UI/UX Design", description: "Make it usable. If the button needs a tutorial, we need to talk." },
+    { id: "software-engineering", name: "Software Engineering", description: "Build things that work. Then explain why they stopped." },
+    { id: "ai-ml", name: "AI/ML Engineering", description: "Train models. Try not to teach them your bad habits." },
+    { id: "cloud-engineering", name: "Cloud Engineering", description: "Deploy beyond your laptop. “Works on my machine” has left the chat." },
+    { id: "devops", name: "DevOps", description: "Make deployments boring. Keep the group chat dramatic." },
   ],
+  terminal: {
+    title: "css@knust — paths",
+    prompt: "css@knust:~$",
+    command: "./choose-your-path",
+  },
 };

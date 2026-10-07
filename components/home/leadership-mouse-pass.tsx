@@ -10,6 +10,7 @@ import type { Group } from "three";
 import { SceneErrorBoundary } from "@/components/three/scene-error-boundary";
 import { WebGLContextGuard } from "@/components/three/webgl-context-guard";
 import { useNavigationState } from "@/components/providers/navigation-state-provider";
+import { useHomeAssetFallback } from "@/lib/loading/asset-fallback";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -74,7 +75,8 @@ export function LeadershipMousePass() {
     invalidateRef.current = null;
     setFailed(true);
   }, []);
-  const enabled = motionAllowed && !failed;
+  const modelFallback = useHomeAssetFallback("/gaming_mouse_-_free_low_poly.glb");
+  const enabled = motionAllowed && !failed && !modelFallback;
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: no-preference)");
