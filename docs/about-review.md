@@ -41,8 +41,10 @@ photo is prioritised. Aspect-ratio reservations avoid layout shifts; failed imag
 retain a readable descriptive fallback.
 
 The 51-second, 848 × 480 CSS Games montage is intentionally a contained player.
-It starts muted, never autoplays, loads metadata near the section, and pauses when
-away from the section, on tab hiding, or when site navigation opens. The poster
+It autoplays muted and loops, retains native controls, and buffers near the section.
+A coordinated controller pauses away from the player, on tab hiding, or when site
+navigation opens, then resumes when eligible. Deliberate visitor pauses are retained.
+The poster
 `public/about/video/css-games-poster.jpg` is a frame at 30 seconds derived from
 the supplied video with the already-installed FFmpeg. A higher-resolution source
 would be optional polish; it is not required for the current composition.
@@ -50,8 +52,19 @@ would be optional polish; it is not required for the current composition.
 ## Behaviour
 
 Desktop has two brief scoped pins: the opening photographic portal and the
-decorative CS/IT convergence. Touch-sized layouts and reduced motion retain normal
-document flow. No new WebGL scene, animation library, or package was added.
+decorative CS/IT convergence. Touch-sized layouts retain normal document flow.
+The owner explicitly requested removing the About reduced-motion branches.
+No new WebGL scene, animation library, or package was added.
+
+The six requested statements type once per page visit without a cursor. A formatted
+source layer reserves the full text box and stays accessible; the visual copy types
+without altering the fonts, kerning, emphasis, or reading order. Other photos have
+a separate CSS hover zoom layer, independent of GSAP's scroll-parallax transforms.
+
+The champion photo frame cycles through the owner's six selected photos in order,
+every three seconds with a 700ms crossfade and no visible controls. Its existing
+aspect ratios and maximum sizes remain in place. Timer work stops offscreen, when
+the tab is hidden, or during site navigation. Images decode before becoming active.
 
 The chapter index uses real hash links, with header-aware smooth scrolling and
 focus movement as progressive enhancements. Hash history is retained; automatic
@@ -67,9 +80,9 @@ use numeric Lenis destinations so CSS scroll margins are not applied twice.
 - Browser checks for all eight chapter destinations, direct hash loads, hash
   Back/Forward, chapter Escape behaviour, site-menu focus return and background inertness.
 - Office-help selections and automatic opening of the linked office disclosure.
-- Muted, user-controlled video playback and pausing when site navigation opens.
+- Muted autoplay, sustained playback, looping, manual pause, and menu/viewport resume.
 - Layout widths of 320, 390, 768, 1024, 1440, and 1920 CSS pixels; 200% text sizing.
-- Touch and reduced-motion layouts without pins; native chapter/office alternatives
+- Touch layouts without pins; native chapter/office alternatives
   with JavaScript disabled; simulated image and video network failures.
 
 Browser tooling uses an existing cached Playwright installation, with an isolated

@@ -6,7 +6,7 @@ export type AboutCohort = { id: string; programme: "CS" | "IT"; year: number; po
 export type AboutProgramme = { id: string; shortName: string; name: string; verb: string; description: string; subjects: readonly string[]; careers: readonly string[] };
 export type AboutOffice = { id: string; name: string; room: string; location: string; description: string; reasons: readonly string[] };
 export type AboutHelpTopic = { id: string; label: string; officeId: string; steps: readonly string[]; note: string };
-export type AboutHeading = { lines: readonly string[]; emphasis: string; aside?: readonly string[] };
+export type AboutHeading = { lines: readonly string[]; emphasis: string; aside?: readonly string[]; typeIn?: boolean };
 export type AboutStory = {
   contentStatus: ContentStatus;
   reviewNote: string;
@@ -26,7 +26,7 @@ export type AboutStory = {
   faculty: { introduction: string; description: string; fields: readonly string[] };
   cohorts: readonly AboutCohort[];
   initiatives: readonly { title: string; aside: string; description: string; photo: string }[];
-  sports: { description: string; disciplines: readonly string[]; video: { src: string; poster: string; title: string }; champions: readonly { competition: string; winner: string; note?: string }[] };
+  sports: { description: string; disciplines: readonly string[]; video: { src: string; poster: string; title: string }; championGallery: readonly AboutPhoto[]; champions: readonly { competition: string; winner: string; note?: string }[] };
   life: readonly { name: string; aside: string; photo: string; description: string }[];
   council: { session: string; members: readonly { executiveId: string; programme: string }[] };
   offices: readonly AboutOffice[];

@@ -21,27 +21,22 @@ function CssMark({ active, progressRef, settleProgressRef, pathsDockRef }: Omit<
   const { scene } = useGLTF("/CSS%20Logo%203d.glb");
   const model = useMemo(() => scene.clone(), [scene]);
   const { gl, size, viewport } = useThree();
-  const dockingRef = useRef({ startX: 0, startY: 0, dockX: 0, dockY: 0 });
+  const dockingRef = useRef({ dockX: 0, dockY: 0 });
 
   useEffect(() => {
-    // Both targets live in fixed viewport compositions. Scrolling/rotation
-    // changes the journey's progress, not these docking coordinates.
-    const headerMark = document.querySelector<HTMLElement>(".site-header__logo");
+    // The burst starts at viewport centre. Only the later career scene has a
+    // docking target; there is no longer a hand-off from the header logo.
     const compass = gl.domElement.closest(".home-about")?.querySelector<HTMLElement>(".home-about__compass");
-    if (!headerMark) return;
 
     let frame = 0;
     let disposed = false;
     const measure = () => {
       frame = 0;
       if (disposed || !size.width || !size.height) return;
-      const headerBounds = headerMark.getBoundingClientRect();
       const compassBounds = compass?.getBoundingClientRect();
       const toX = (x: number) => ((x - size.width / 2) / size.width) * viewport.width;
       const toY = (y: number) => -((y - size.height / 2) / size.height) * viewport.height;
       dockingRef.current = {
-        startX: toX(headerBounds.left + headerBounds.width / 2),
-        startY: toY(headerBounds.top + headerBounds.height / 2),
         dockX: compassBounds ? toX(compassBounds.left + compassBounds.width / 2) : 0,
         dockY: compassBounds ? toY(compassBounds.top + compassBounds.height / 2) : 0,
       };
@@ -50,8 +45,6 @@ function CssMark({ active, progressRef, settleProgressRef, pathsDockRef }: Omit<
       if (!disposed && !frame) frame = requestAnimationFrame(measure);
     };
     const observer = new ResizeObserver(schedule);
-    observer.observe(headerMark);
-    if (headerMark.parentElement) observer.observe(headerMark.parentElement);
     if (compass) observer.observe(compass);
     window.addEventListener("resize", schedule);
     document.fonts.addEventListener("loadingdone", schedule);
@@ -75,19 +68,16 @@ function CssMark({ active, progressRef, settleProgressRef, pathsDockRef }: Omit<
       return;
     }
 
-    const { startX, startY, dockX, dockY } = dockingRef.current;
-    const handoff = Math.min(progressRef.current * 2.25, 1);
+    const { dockX, dockY } = dockingRef.current;
+    const handoff = Math.min(progressRef.current, 1);
     const eased = handoff * handoff * (3 - 2 * handoff);
     const settle = settleProgressRef.current;
 
-    const prePathsX = startX * (1 - eased);
-    const prePathsY = startY * (1 - eased) - viewport.height * 0.18 * eased * (1 - settle);
-
-    group.position.x = prePathsX * (1 - pathsDockRef.current) + dockX * pathsDockRef.current;
-    group.position.y = prePathsY * (1 - pathsDockRef.current) + dockY * pathsDockRef.current;
+    group.position.x = dockX * pathsDockRef.current;
+    group.position.y = dockY * pathsDockRef.current;
     const settleScale = size.width < 768 ? 0.55 : 1 + settle * 0.14;
-    group.scale.setScalar((0.16 + eased * 0.94) * settleScale);
-    group.rotation.y += delta * 0.38;
+    group.scale.setScalar((0.38 + eased * 0.72) * settleScale);
+    group.rotation.y += Math.min(delta, 0.05) * 0.65;
     group.rotation.x = Math.sin(performance.now() * 0.00055) * 0.12;
   });
 

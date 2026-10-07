@@ -9,6 +9,8 @@ import { Suspense, useCallback, useEffect, useRef, useState, type CSSProperties 
 import { SceneErrorBoundary } from "@/components/three/scene-error-boundary";
 import { useNavigationState } from "@/components/providers/navigation-state-provider";
 import { HOME_DESKTOP_MOTION } from "@/lib/animations/home-media";
+import type { HomeAboutContent } from "@/types/home";
+import { HomeSocietyHeading } from "./home-typing";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -36,25 +38,8 @@ function AboutModelFallback() {
   );
 }
 
-const communityImages = [
-  { src: "/this%20is%20css/REP%20YOUR%20JERSEY-9.jpg", alt: "CSS members at CSS Week", position: "north-west" },
-  { src: "/this%20is%20css/WhatsApp%20Image%202026-09-28%20at%201.43.19%20PM.jpeg", alt: "CSS community moment", position: "north-east" },
-  { src: "/this%20is%20css/REP%20YOUR%20JERSEY-5.jpg", alt: "CSS Week community", position: "south-west" },
-  { src: "/this%20is%20css/WhatsApp%20Image%202026-09-28%20at%201.41.30%20PM.jpeg", alt: "CSS students together", position: "south-east" },
-  { src: "/this%20is%20css/WhatsApp%20Image%202026-09-28%20at%201.41.30%20PM%20(1).jpeg", alt: "CSS community gathering", position: "east" },
-];
-
-const careerPaths = [
-  "Cybersecurity",
-  "Data Science",
-  "UI/UX Design",
-  "Software Engineering",
-  "AI/ML Engineering",
-  "Cloud Engineering",
-  "DevOps",
-];
-
-export function HomeAboutExperience() {
+export function HomeAboutExperience({ content }: { content: HomeAboutContent }) {
+  const { communityPhotos, careerPaths, headingLines } = content;
   const { isMenuActive } = useNavigationState();
   const rootRef = useRef<HTMLElement>(null);
   const clockTimelineRef = useRef<gsap.core.Timeline | null>(null);
@@ -77,9 +62,9 @@ export function HomeAboutExperience() {
       return;
     }
 
-    const media = window.matchMedia(HOME_DESKTOP_MOTION);
+    const media = window.matchMedia("(prefers-reduced-motion: no-preference)");
     let near = false;
-    const update = () => setSceneActive(near && media.matches);
+    const update = () => setSceneActive(near && media.matches && !document.hidden);
     const observer = new IntersectionObserver(
       ([entry]) => {
         near = entry.isIntersecting;
@@ -94,9 +79,11 @@ export function HomeAboutExperience() {
     );
     observer.observe(root);
     media.addEventListener("change", update);
+    document.addEventListener("visibilitychange", update);
     return () => {
       observer.disconnect();
       media.removeEventListener("change", update);
+      document.removeEventListener("visibilitychange", update);
     };
   }, []);
 
@@ -110,6 +97,8 @@ export function HomeAboutExperience() {
     const community = root.querySelector<HTMLElement>(".home-about__chapter--community");
     const communityStage = root.querySelector<HTMLElement>(".home-about__community-stage");
     const communityHeading = communityStage?.querySelector<HTMLElement>("h2");
+    const collage = communityStage?.querySelector<HTMLElement>(".home-about__collage");
+    const modelLayer = root.querySelector<HTMLElement>(".home-about__model-layer");
     const pathsStage = root.querySelector<HTMLElement>(".home-about__paths-stage");
     const pathsOverlay = root.querySelector<HTMLElement>(".home-about__paths-overlay");
     const clock = root.querySelector<HTMLElement>(".home-about__compass-clock");
@@ -117,82 +106,112 @@ export function HomeAboutExperience() {
       .map((card) => ({ card, entry: card?.querySelector<HTMLElement>(".home-about__collage-card-inner") }))
       .filter((item): item is { card: HTMLDivElement; entry: HTMLElement } => item.card !== null && item.entry !== null);
 
-    if (!community || !communityStage || !communityHeading || !pathsStage || !pathsOverlay || !clock) {
+    if (!community || !communityStage || !communityHeading || !collage || !modelLayer || !pathsStage || !pathsOverlay || !clock) {
       return;
     }
 
     const media = gsap.matchMedia();
-    media.add(HOME_DESKTOP_MOTION, () => {
-      const setAboutState = (active: boolean) => {
-        root.dataset.active = String(active);
-        setAboutActive(active);
-        document.documentElement.classList.toggle("about-model-active", active);
-      };
+    const setAboutState = (active: boolean) => {
+      root.dataset.active = String(active);
+      setAboutActive(active);
+      document.documentElement.classList.toggle("about-model-active", active);
+    };
+
+    // The short community burst also runs on touch devices. Only the subsequent
+    // career compass retains its desktop-only choreography.
+    media.add({ motion: "(prefers-reduced-motion: no-preference)", mobile: "(width < 48rem)" }, (context) => {
+      if (!context.conditions?.motion) return;
+      root.dataset.communityMotion = "true";
+      const columns = context.conditions.mobile ? 3 : 6;
+      const activeCards = cardEntries.slice(0, context.conditions.mobile ? 18 : 24);
+      const entries = activeCards.map(({ entry }) => entry);
 
       const collapsedOffset = (index: number) => {
-        const bounds = cardEntries[index].card.getBoundingClientRect();
+        const card = activeCards[index].card;
         return {
-          x: window.innerWidth / 2 - (bounds.left + bounds.width / 2),
-          y: window.innerHeight / 2 - (bounds.top + bounds.height / 2),
+          x: collage.clientWidth / 2 - (card.offsetLeft + card.offsetWidth / 2),
+          y: collage.clientHeight / 2 - (card.offsetTop + card.offsetHeight / 2),
         };
       };
-      const entries = cardEntries.map(({ entry }) => entry);
-
+      gsap.set(collage, { autoAlpha: 0 });
+      gsap.set(modelLayer, { autoAlpha: 0 });
       gsap.set(entries, {
         autoAlpha: 0,
-        scale: 0.16,
+        scale: 0.06,
         x: (index) => collapsedOffset(index).x,
         y: (index) => collapsedOffset(index).y,
-        rotate: (index) => (index % 2 ? -12 : 12),
       });
 
       settleProgressRef.current = 0;
       pathsDockRef.current = 0;
-      const headingText = "A society shaped by computing";
-      root.dataset.compassEnabled = "true";
       progressRef.current = 0;
-      communityHeading.textContent = headingText;
+      let headingFinished = false;
       const communityTimeline = gsap.timeline();
       const communityTrigger = createIndependentScrollTrigger({
+        id: "home-community-burst",
         animation: communityTimeline,
         trigger: communityStage,
         start: "top top",
-        end: "+=150%",
+        end: () => `+=${communityStage.offsetHeight * 0.9}`,
         pin: true,
         pinSpacing: true,
-        scrub: 0.35,
+        scrub: 0.12,
         invalidateOnRefresh: true,
         onEnter: () => setAboutState(true),
         onEnterBack: () => setAboutState(true),
+        onLeave: () => {
+          if (!window.matchMedia(HOME_DESKTOP_MOTION).matches) setAboutState(false);
+        },
         onLeaveBack: () => setAboutState(false),
+        onUpdate: (self) => {
+          if (self.progress > 0.04 && !headingFinished) {
+            headingFinished = true;
+            communityHeading.dispatchEvent(new Event("home:typing-finish"));
+          }
+        },
       });
 
+      communityTimeline
+        .fromTo(communityHeading, { autoAlpha: 1, scale: 1, y: 0 }, { autoAlpha: 0, scale: 0.95, y: -24, duration: 0.15, ease: "none" }, 0.04)
+        .fromTo(modelLayer, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.1, ease: "none" }, 0.14)
+        .fromTo(progressRef, { current: 0 }, { current: 1, duration: 0.18, ease: "none" }, 0.12)
+        .fromTo(settleProgressRef, { current: 0 }, { current: 1, duration: 0.18, ease: "none" }, 0.12)
+        .set(collage, { autoAlpha: 1 }, 0.28)
+        .fromTo(entries, {
+          autoAlpha: 0, scale: 0.06,
+          x: (index) => collapsedOffset(index).x,
+          y: (index) => collapsedOffset(index).y,
+        }, {
+          autoAlpha: 1, scale: 1, x: 0, y: 0, duration: 0.28, ease: "power3.out",
+          immediateRender: false,
+          stagger: { amount: 0.2, grid: [activeCards.length / columns, columns], from: "center" },
+        }, 0.28)
+        // Leave a short complete-wall beat; no mandatory timed hold.
+        .to({}, { duration: 0.24 }, 0.76);
+
+      scrollTriggersRef.current.push(communityTrigger);
+      setAboutState(communityTrigger.isActive);
+
+      return () => {
+        communityTrigger.kill();
+        scrollTriggersRef.current = scrollTriggersRef.current.filter((trigger) => trigger !== communityTrigger);
+        setAboutState(false);
+        delete root.dataset.communityMotion;
+        [communityHeading, collage, modelLayer, ...entries].forEach((element) => {
+          ["transform", "translate", "rotate", "scale", "opacity", "visibility"].forEach((property) => element.style.removeProperty(property));
+        });
+      };
+    });
+
+    media.add(HOME_DESKTOP_MOTION, () => {
+      root.dataset.compassEnabled = "true";
       const setPathsVisible = (visible: boolean) => {
         root.dataset.pathsActive = String(visible);
         gsap.set(pathsOverlay, { autoAlpha: visible ? 1 : 0 });
       };
 
-      communityTimeline
-        .to(progressRef, { current: 1, duration: 0.2, ease: "none" }, 0)
-        .to(settleProgressRef, { current: 1, duration: 0.2, ease: "none" }, 0)
-        .to(communityHeading, { autoAlpha: 1, xPercent: -50, y: 0, duration: 0.01, ease: "none" }, 0.2)
-        .to(entries, { autoAlpha: 1, scale: 1, x: 0, y: 0, rotate: 0, duration: 0.22, ease: "none", stagger: 0.035 }, 0.47)
-        .to(settleProgressRef, { current: 1, duration: 0.15, ease: "none" }, 0.69)
-        .to(entries, {
-          autoAlpha: 0,
-          scale: 0.16,
-          x: (index) => collapsedOffset(index).x,
-          y: (index) => collapsedOffset(index).y,
-          rotate: (index) => (index % 2 ? -12 : 12),
-          duration: 0.16,
-          ease: "none",
-          stagger: 0.035,
-        }, 0.84);
-
       pathsDockRef.current = 0;
       setPathsVisible(false);
-      setAboutState(Boolean(communityTimeline.scrollTrigger?.isActive));
-      scrollTriggersRef.current = [communityTimeline.scrollTrigger!];
 
       const clockTimeline = gsap.timeline({ paused: true, repeat: -1 });
       clockTimelineRef.current = clockTimeline;
@@ -271,16 +290,14 @@ export function HomeAboutExperience() {
         pathsTrigger.kill();
         clockTimelineRef.current = null;
         clockShouldPlayRef.current = false;
-        scrollTriggersRef.current = [];
-        communityTrigger.kill();
+        scrollTriggersRef.current = scrollTriggersRef.current.filter((trigger) => trigger !== travelTrigger && trigger !== pathsTrigger);
         pathsDockRef.current = 0;
         setPathsVisible(false);
         setAboutState(false);
-        communityHeading.textContent = headingText;
         // Independent triggers revert their timelines when killed, which can
         // write the desktop start state after matchMedia has restored styles.
         // Release those inline properties so the native layout owns them again.
-        [communityHeading, pathsOverlay, clock, ...entries].forEach((element) => {
+        [pathsOverlay, clock].forEach((element) => {
           ["transform", "translate", "rotate", "scale", "opacity", "visibility"].forEach((property) => {
             element.style.removeProperty(property);
           });
@@ -290,7 +307,10 @@ export function HomeAboutExperience() {
       };
     });
 
+    let disposed = false;
+    void document.fonts.ready.then(() => { if (!disposed) ScrollTrigger.refresh(); });
     return () => {
+      disposed = true;
       media.revert();
       clockTimelineRef.current = null;
       clockShouldPlayRef.current = false;
@@ -322,73 +342,9 @@ export function HomeAboutExperience() {
     };
   }, [isMenuActive]);
 
-  useGSAP(() => {
-    const root = rootRef.current;
-    const cards = cardRefs.current.filter((card): card is HTMLDivElement => card !== null);
-
-    if (!root || !cards.length) {
-      return;
-    }
-
-    const media = gsap.matchMedia();
-    media.add(HOME_DESKTOP_MOTION, () => {
-      const setters = cards.map((card) => ({
-        x: gsap.quickTo(card, "x", { duration: 0.65, ease: "power3.out" }),
-        y: gsap.quickTo(card, "y", { duration: 0.65, ease: "power3.out" }),
-        scale: gsap.quickTo(card, "scale", { duration: 0.5, ease: "power3.out" }),
-      }));
-      let frame = 0;
-      let pointerX = 0;
-      let pointerY = 0;
-
-      const updateCards = () => {
-        frame = 0;
-        cards.forEach((card, index) => {
-          const bounds = card.getBoundingClientRect();
-          const dx = bounds.left + bounds.width / 2 - pointerX;
-          const dy = bounds.top + bounds.height / 2 - pointerY;
-          const distance = Math.hypot(dx, dy);
-          const influence = Math.max(0, 1 - distance / 240);
-          const push = influence * 24;
-          setters[index].x(distance ? (dx / distance) * push : 0);
-          setters[index].y(distance ? (dy / distance) * push : 0);
-          setters[index].scale(1 + influence * 0.07);
-        });
-      };
-
-      const handlePointerMove = (event: PointerEvent) => {
-        pointerX = event.clientX;
-        pointerY = event.clientY;
-        if (!frame) {
-          frame = window.requestAnimationFrame(updateCards);
-        }
-      };
-
-      const resetCards = () => {
-        setters.forEach((setter) => {
-          setter.x(0);
-          setter.y(0);
-          setter.scale(1);
-        });
-      };
-
-      root.addEventListener("pointermove", handlePointerMove, { passive: true });
-      root.addEventListener("pointerleave", resetCards, { passive: true });
-      return () => {
-        if (frame) {
-          window.cancelAnimationFrame(frame);
-        }
-        root.removeEventListener("pointermove", handlePointerMove);
-        root.removeEventListener("pointerleave", resetCards);
-      };
-    });
-
-    return () => media.revert();
-  }, { scope: rootRef });
-
   return (
     <section className="home-about" data-active={aboutActive} ref={rootRef} aria-label="About CSS">
-      <div className="home-about__model-layer">
+      <div aria-hidden="true" className="home-about__model-layer">
         <SceneErrorBoundary fallback={<AboutModelFallback />} onFailure={onSceneFailure}>
           <Suspense fallback={<AboutModelFallback />}>
             {sceneFailed ? <AboutModelFallback /> : sceneActive && (
@@ -399,8 +355,17 @@ export function HomeAboutExperience() {
       </div>
       <section className="home-about__chapter home-about__chapter--community">
         <div className="home-about__community-stage">
-          <h2 aria-label="A society shaped by computing">A society shaped by computing</h2>
-          <Image alt="CSS KNUST logo" className="home-about__community-mark" height={192} sizes="192px" src="/css_logo.svg" width={370} />
+          <HomeSocietyHeading lines={headingLines} />
+          <div aria-hidden="true" className="home-about__collage">
+            {communityPhotos.map((image, index) => (
+              <div className="home-about__collage-card" key={image.id} ref={(element) => { cardRefs.current[index] = element; }}>
+                <div className="home-about__collage-card-inner">
+                  <Image alt="" fill sizes="(max-width: 47.99rem) 33vw, 17vw" src={image.src} style={{ objectPosition: image.position }} onError={(event) => { event.currentTarget.style.visibility = "hidden"; }} />
+                </div>
+              </div>
+            ))}
+            <Image alt="" className="home-about__community-mark" height={192} sizes="(max-width: 47.99rem) 56vw, 32vw" src="/css_logo.svg" width={370} />
+          </div>
         </div>
       </section>
       <section className="home-about__chapter home-about__chapter--paths" aria-labelledby="home-career-paths-heading">
@@ -431,15 +396,6 @@ export function HomeAboutExperience() {
             </span>
           ))}
         </div>
-      </div>
-      <div aria-hidden="true" className="home-about__collage">
-        {communityImages.map((image, index) => (
-          <div className={`home-about__collage-card home-about__collage-card--${image.position}`} key={image.src} ref={(element) => { cardRefs.current[index] = element; }}>
-            <div className="home-about__collage-card-inner">
-              <Image alt="" fill sizes="(max-width: 47.99rem) 34vw, 16vw" src={image.src} />
-            </div>
-          </div>
-        ))}
       </div>
     </section>
   );

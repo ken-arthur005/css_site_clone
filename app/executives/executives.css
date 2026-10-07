@@ -1,0 +1,520 @@
+.executives-page {
+  --administration-ink: oklch(0.2 0.012 260);
+  padding-bottom: clamp(1rem, 2vw, 2rem);
+  background: var(--administration-ink);
+}
+
+.executives-page :is(section[id], #administration-directory) {
+  scroll-margin-top: calc(var(--header-height) + 1.5rem);
+}
+
+.administration-hero {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  min-height: clamp(23rem, 32vw, 33rem);
+  place-items: center;
+  padding: 3rem var(--page-gutter) 5.5rem;
+  color: var(--on-accent);
+}
+
+.administration-hero__photo {
+  z-index: -2;
+  object-fit: cover;
+  object-position: 50% 56%;
+}
+
+.administration-hero__overlay {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: linear-gradient(180deg, oklch(0.16 0.012 260 / 0.57), oklch(0.16 0.012 260 / 0.77) 70%, var(--administration-ink));
+}
+
+.administration-hero__inner {
+  width: min(100%, 78rem);
+  text-align: center;
+}
+
+.administration-hero__title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.25rem, 1.5vw, 1.75rem);
+}
+
+.administration-hero__logo {
+  width: clamp(15rem, 27vw, 28rem);
+  height: auto;
+  flex-shrink: 0;
+  filter: brightness(0) invert(1);
+}
+
+.administration-hero h1 {
+  min-width: 0;
+  max-width: 100%;
+  font-family: var(--font-bricolage), sans-serif;
+  font-size: clamp(2.25rem, 4.7vw, 5.25rem);
+  font-weight: 600;
+  letter-spacing: -0.065em;
+  line-height: 1.05;
+}
+
+.administration-hero__word {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.administration-hero__context {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.administration-hero__context span {
+  color: var(--accent);
+}
+
+.administration-directory {
+  position: relative;
+  width: calc(100% - clamp(1rem, 3vw, 3rem));
+  max-width: 116rem;
+  margin: -3rem auto 0;
+  padding: clamp(1.25rem, 3vw, 4rem);
+  border-radius: clamp(0.8rem, 1.4vw, 1.5rem);
+  background: var(--surface-raised);
+  color: var(--foreground);
+}
+
+.administration-directory__intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding-block: 0.75rem;
+}
+
+.administration-directory__intro > div {
+  min-width: 0;
+}
+
+.administration-label {
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.13em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+.administration-directory__intro .administration-label {
+  margin-bottom: 0.65rem;
+  color: var(--foreground-muted);
+}
+
+.administration-directory__intro h2 {
+  max-width: 14ch;
+  font-family: var(--font-bricolage), sans-serif;
+  font-size: clamp(2.25rem, 4vw, 4.5rem);
+  font-weight: 750;
+  letter-spacing: -0.065em;
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
+.administration-directory__dot {
+  color: var(--accent-strong);
+}
+
+.administration-directory__logo {
+  width: clamp(9rem, 18vw, 15rem);
+  max-width: 35%;
+  height: auto;
+  flex-shrink: 0;
+}
+
+.committee-navigation {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  max-width: 85rem;
+  margin: clamp(2.5rem, 5vw, 5rem) auto 0;
+}
+
+.committee-navigation a {
+  display: inline-flex;
+  min-height: 2.875rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.125rem;
+  border: 1px solid color-mix(in oklch, var(--foreground) 7%, transparent);
+  border-radius: 0.2rem;
+  background: var(--surface);
+  font-family: var(--font-bricolage), sans-serif;
+  font-size: 0.75rem;
+  font-weight: 750;
+  line-height: 1.4;
+  text-align: center;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease;
+}
+
+.committee-navigation a:is(:hover, :focus-visible) {
+  border-color: var(--accent-strong);
+  background: var(--accent-strong);
+  color: var(--on-accent);
+}
+
+.administration-sections {
+  display: grid;
+  gap: clamp(3.5rem, 6vw, 6rem);
+  margin-top: clamp(3rem, 5vw, 5rem);
+}
+
+.administration-committee:focus {
+  outline: none;
+}
+
+.administration-committee:focus-visible .administration-committee__heading h2 {
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-underline-offset: 0.2em;
+}
+
+.administration-committee__heading {
+  max-width: 58rem;
+  margin: 0 auto clamp(1.5rem, 2.5vw, 2.5rem);
+  text-align: center;
+}
+
+.administration-committee__heading .administration-label {
+  margin-bottom: 0.75rem;
+  color: var(--accent-strong);
+}
+
+.administration-committee__heading h2 {
+  font-family: var(--font-bricolage), sans-serif;
+  font-size: clamp(1.75rem, 2.8vw, 3rem);
+  font-weight: 750;
+  letter-spacing: -0.045em;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.administration-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(0.65rem, 1vw, 1rem);
+}
+
+.person-card {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+  min-width: 0;
+  min-height: 27rem;
+  overflow: hidden;
+  background: oklch(0.3 0.04 260);
+  color: var(--on-accent);
+}
+
+/* The frame and caption share a grid cell. At normal text sizes the frame
+   holds the composition; enlarged text can grow it rather than being clipped. */
+.person-card::before {
+  grid-area: 1 / 1;
+  width: 100%;
+  min-height: inherit;
+  aspect-ratio: 3 / 4;
+  content: "";
+  pointer-events: none;
+}
+
+.person-card__portrait {
+  object-fit: cover;
+  object-position: var(--portrait-position);
+  transition: transform 650ms var(--ease-out);
+}
+
+.person-card[data-portrait-fit="contain"] .person-card__portrait {
+  object-fit: contain;
+  object-position: center bottom;
+}
+
+.person-card[data-expanded="true"] .person-card__portrait {
+  transform: scale(1.035);
+}
+
+.person-card__fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  height: 100%;
+  min-height: inherit;
+  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  padding-bottom: 5rem;
+}
+
+.person-card__fallback > span {
+  font-family: var(--font-bricolage), sans-serif;
+  font-size: 6rem;
+  opacity: 0.45;
+}
+
+.person-card__fallback p {
+  font-size: 0.75rem;
+}
+
+.person-card__shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 20%, oklch(0.13 0.01 260 / 0.25) 45%, oklch(0.13 0.01 260 / 0.88) 78%, oklch(0.13 0.01 260 / 0.96));
+  pointer-events: none;
+}
+
+.person-card__shade::after {
+  position: absolute;
+  inset: 0;
+  background: oklch(0.13 0.01 260 / 0.58);
+  content: "";
+  opacity: 0;
+  transition: opacity 400ms ease;
+}
+
+.person-card[data-expanded="true"] .person-card__shade::after {
+  opacity: 1;
+}
+
+.person-card__body {
+  position: relative;
+  grid-area: 1 / 1;
+  align-self: end;
+  margin-block: 1.5rem 4.25rem;
+  padding-inline: clamp(1rem, 1.6vw, 1.75rem);
+  text-align: center;
+}
+
+.person-card__name {
+  font-family: var(--font-bricolage), sans-serif;
+  font-size: clamp(1.375rem, 1.85vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.person-card__role {
+  margin-top: 0.75rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.person-card__details {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  visibility: hidden;
+  transition: grid-template-rows 450ms var(--ease-out), opacity 350ms ease, visibility 450ms;
+}
+
+.person-card[data-expanded="true"] .person-card__details {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  visibility: visible;
+}
+
+.person-card__details-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.person-card__quote {
+  margin: 1.25rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid oklch(0.99 0.003 255 / 0.32);
+  font-size: 0.875rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.person-card__nickname {
+  margin-top: 0.875rem;
+  font-family: var(--font-bricolage), sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.person-card__toggle {
+  position: absolute;
+  bottom: 0.75rem;
+  left: 50%;
+  display: inline-flex;
+  min-width: 5.25rem;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-inline: 0.75rem;
+  border: 0;
+  border-radius: 0.125rem;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  transform: translateX(-50%);
+  transition: background-color 160ms ease;
+}
+
+.person-card__toggle span:last-child {
+  font-size: 1.125rem;
+  font-weight: 400;
+}
+
+.person-card__toggle:is(:hover, :focus-visible) {
+  background: oklch(0.99 0.003 255 / 0.12);
+}
+
+.person-card__toggle:focus-visible {
+  outline-color: var(--on-accent);
+}
+
+.administration-directory__end {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: clamp(3rem, 6vw, 6rem);
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-subtle);
+  color: var(--foreground-muted);
+}
+
+.administration-directory__end a {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 1.5rem;
+  color: var(--foreground);
+  font-size: 0.875rem;
+}
+
+@media (max-width: 1099px) {
+  .administration-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .person-card__name {
+    font-size: clamp(1.5rem, 2.8vw, 2.25rem);
+  }
+
+  .person-card__body {
+    padding-inline: clamp(1.25rem, 3vw, 2rem);
+  }
+}
+
+@media (max-width: 749px) {
+  .administration-hero__title {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .administration-hero__logo {
+    width: min(21rem, 85%);
+  }
+
+  .administration-hero h1 {
+    font-size: clamp(2.3rem, 7.5vw, 3.25rem);
+  }
+
+  .administration-directory__intro {
+    align-items: flex-start;
+  }
+
+  .administration-directory__intro h2 {
+    font-size: clamp(2rem, 5vw, 3rem);
+  }
+
+  .administration-directory__logo {
+    width: clamp(6rem, 20vw, 9rem);
+  }
+
+  .committee-navigation {
+    justify-content: flex-start;
+  }
+
+  .committee-navigation a {
+    flex-grow: 1;
+    padding-inline: 0.875rem;
+  }
+}
+
+@media (max-width: 599px) {
+  .administration-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
+
+  .person-card {
+    min-height: 28rem;
+  }
+
+  .person-card__name {
+    font-size: clamp(1.625rem, 6.5vw, 2.25rem);
+  }
+
+  .person-card__body {
+    padding-inline: 1.5rem;
+  }
+
+  .person-card__quote {
+    font-size: 0.9375rem;
+  }
+
+  .administration-directory__intro {
+    gap: 0.75rem;
+  }
+
+  .administration-directory__intro .administration-label {
+    max-width: 18ch;
+  }
+}
+
+@media (max-width: 359px) {
+  .administration-directory__intro {
+    flex-direction: column-reverse;
+    gap: 1rem;
+  }
+
+  .administration-hero__context {
+    gap: 0.5rem;
+    font-size: 0.625rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .executives-page *,
+  .executives-page *::after {
+    transition: none !important;
+  }
+}

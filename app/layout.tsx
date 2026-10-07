@@ -10,6 +10,7 @@ import { SmoothScrollProvider } from "@/components/providers/smooth-scroll-provi
 import { NavigationBackground, NavigationStateProvider } from "@/components/providers/navigation-state-provider";
 import { SiteHeader } from "@/components/navigation/site-header";
 import { RouteTransitionProvider } from "@/components/transitions/route-transition-provider";
+import { HOME_INTRO_BOOT_SCRIPT } from "@/lib/home-intro";
 import "./globals.css";
 
 const bricolage = Bricolage_Grotesque({
@@ -49,6 +50,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${bricolage.variable} ${bioRhyme.variable} ${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <script dangerouslySetInnerHTML={{ __html: HOME_INTRO_BOOT_SCRIPT }} />
         <SmoothScrollProvider>
           <NavigationStateProvider>
             <RouteTransitionProvider>

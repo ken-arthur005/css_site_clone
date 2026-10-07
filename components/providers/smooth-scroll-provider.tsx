@@ -3,6 +3,7 @@
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
+import { usePathname } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, type ReactNode } from "react";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -27,6 +28,8 @@ export function useSmoothScroll() {
 }
 
 export function SmoothScrollProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const fullMerchMotion = pathname === "/merch" || pathname.startsWith("/merch/");
   const lenisRef = useRef<Lenis | null>(null);
   const scrollLockedRef = useRef(false);
 
@@ -42,7 +45,7 @@ export function SmoothScrollProvider({ children }: { children: ReactNode }) {
 
   const scrollToElement = useCallback((element: HTMLElement, options: ScrollOptions = {}) => {
     const lenis = lenisRef.current;
-    const immediate = options.immediate || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const immediate = options.immediate || (!fullMerchMotion && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 
     if (lenis) {
       // Lenis 1.3 already subtracts CSS scroll-margin for element targets.
@@ -61,11 +64,19 @@ export function SmoothScrollProvider({ children }: { children: ReactNode }) {
     } else {
       element.scrollIntoView({ behavior: immediate ? "instant" : "smooth", block: "start" });
     }
-  }, []);
+  }, [fullMerchMotion]);
+
+  useEffect(() => {
+    if (!fullMerchMotion) return;
+    const html = document.documentElement;
+    const previous = html.style.scrollBehavior;
+    html.style.scrollBehavior = "smooth";
+    return () => { html.style.scrollBehavior = previous; };
+  }, [fullMerchMotion]);
 
   useEffect(() => {
     const media = window.matchMedia(
-      "(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)",
+      fullMerchMotion ? "(hover: hover) and (pointer: fine)" : "(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)",
     );
     let cleanup: (() => void) | undefined;
 
@@ -81,6 +92,7 @@ export function SmoothScrollProvider({ children }: { children: ReactNode }) {
         autoRaf: false,
         lerp: 0.08,
         wheelMultiplier: 0.9,
+        respectReducedMotion: !fullMerchMotion,
       });
       const updateScrollTrigger = () => ScrollTrigger.update();
       const raf = (time: number) => lenis.raf(time * 1000);
@@ -97,6 +109,7 @@ export function SmoothScrollProvider({ children }: { children: ReactNode }) {
       cleanup = () => {
         lenis.off("scroll", updateScrollTrigger);
         gsap.ticker.remove(raf);
+        lenis.stop();
         lenis.destroy();
         lenisRef.current = null;
         ScrollTrigger.refresh();
@@ -110,7 +123,7 @@ export function SmoothScrollProvider({ children }: { children: ReactNode }) {
       media.removeEventListener("change", updateSmoothScrolling);
       cleanup?.();
     };
-  }, []);
+  }, [fullMerchMotion]);
 
   return (
     <SmoothScrollContext.Provider value={{ scrollToElement, setScrollLocked }}>

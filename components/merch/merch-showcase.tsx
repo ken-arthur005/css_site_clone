@@ -21,15 +21,15 @@ export function useMerchColourway() {
   return context;
 }
 
-export function MerchOrderLink({ children, product = "css-tee", colourwayId, className = "", availableUntil }: {
-  children: ReactNode; product?: TeeId; colourwayId?: string; className?: string; availableUntil?: string;
+export function MerchOrderLink({ children, product = "css-tee", colourwayId, className = "", availableUntil, ariaLabel }: {
+  children: ReactNode; product?: TeeId; colourwayId?: string; className?: string; availableUntil?: string; ariaLabel?: string;
 }) {
   const context = useContext(ColourwayContext);
   const open = useSyncExternalStore(subscribeClock, () => !availableUntil || Date.now() < Date.parse(`${availableUntil}T23:59:59.999Z`) + 1, () => true);
   const cw = colourwayId ?? (product === "css-tee" ? context?.colourway.id : "pink-october");
   const query = new URLSearchParams({ product, ...(cw ? { cw } : {}) });
   if (!open) return <span className={`${className} merch-ended`} aria-disabled="true">{children}<span className="merch-label">Edition ended</span></span>;
-  return <TransitionLink href={`/merch/shop?${query}`} className={className} transitionLabel="SHOP">{children}</TransitionLink>;
+  return <TransitionLink href={`/merch/shop?${query}`} className={className} aria-label={ariaLabel} transitionLabel="SHOP">{children}</TransitionLink>;
 }
 
 export function MerchShowcase({ colourways, children }: { colourways: TeeColourway[]; children: ReactNode }) {
@@ -45,15 +45,12 @@ export function MerchShowcase({ colourways, children }: { colourways: TeeColourw
     return () => { observer.disconnect(); document.removeEventListener("visibilitychange", update); };
   }, []);
   useGSAP(() => {
-    const media = gsap.matchMedia();
-    media.add("(prefers-reduced-motion: no-preference)", () => {
-      root.current?.querySelectorAll<HTMLElement>("[data-merch-reveal]").forEach((element) => {
-        gsap.from(element, { y: 32, opacity: 0, duration: .8, ease: "power3.out", scrollTrigger: { trigger: element, start: "top 94%", once: true } });
-      });
+    root.current?.querySelectorAll<HTMLElement>("[data-merch-reveal]").forEach((element) => {
+      gsap.from(element, { y: 32, opacity: 0, duration: .8, ease: "power3.out", scrollTrigger: { trigger: element, start: "top 94%", once: true } });
     });
     let mounted = true;
     document.fonts.ready.then(() => { if (mounted) ScrollTrigger.refresh(); });
-    return () => { mounted = false; media.revert(); };
+    return () => { mounted = false; };
   }, { scope: root });
   const colourway = colourways.find(({ id }) => id === selectedId) ?? colourways[0];
   return <ColourwayContext.Provider value={{ colourway, select: setSelectedId }}>

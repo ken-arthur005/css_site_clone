@@ -5,6 +5,7 @@ import gsap from "gsap";
 import { useEffect, useId, useRef, useState } from "react";
 import { MerchImage } from "./merch-image";
 import { MerchOrderLink } from "./merch-showcase";
+import { MerchTyping } from "./merch-typing";
 
 export function MerchPink({ facts, availableUntil }: { facts: string[]; availableUntil: string }) {
   const root = useRef<HTMLElement>(null);
@@ -21,21 +22,17 @@ export function MerchPink({ facts, availableUntil }: { facts: string[]; availabl
     return () => document.removeEventListener("keydown", close);
   }, [open]);
   useGSAP(() => {
-    const media = gsap.matchMedia();
-    media.add("(prefers-reduced-motion: no-preference)", () => {
-      const path = root.current?.querySelector<SVGPathElement>(".merch-pink__ribbon path");
-      if (!path) return;
-      const length = path.getTotalLength();
-      gsap.fromTo(path, { strokeDasharray: length, strokeDashoffset: length }, { strokeDashoffset: 0, duration: 2.2, ease: "power2.inOut", scrollTrigger: { trigger: root.current, start: "top 70%", once: true } });
-      gsap.from(".merch-pink__shirt", { y: 55, rotation: -4, opacity: 0, stagger: .15, duration: 1.2, ease: "power3.out", scrollTrigger: { trigger: root.current, start: "top 75%", once: true } });
-    });
-    return () => media.revert();
+    const path = root.current?.querySelector<SVGPathElement>(".merch-pink__ribbon path");
+    if (!path) return;
+    const length = path.getTotalLength();
+    gsap.fromTo(path, { strokeDasharray: length, strokeDashoffset: length }, { strokeDashoffset: 0, duration: 2.2, ease: "power2.inOut", scrollTrigger: { trigger: root.current, start: "top 70%", once: true } });
+    gsap.from(".merch-pink__shirt", { y: 55, rotation: -4, opacity: 0, stagger: .15, duration: 1.2, ease: "power3.out", scrollTrigger: { trigger: root.current, start: "top 75%", once: true } });
   }, { scope: root });
   return <section className="merch-pink" id="pink-october" ref={root} aria-labelledby="pink-title">
     <div className="merch-pink__top">
       <div className="merch-pink__copy">
         <p className="merch-label">{"// limited edition · October 2026"}</p>
-        <h2 id="pink-title">debugCancer<span>(cure)</span></h2>
+        <h2 id="pink-title"><MerchTyping>debugCancer<span>(cure)</span></MerchTyping></h2>
         <p className="merch-pink__lede">October is Breast Cancer Awareness Month. Wear the reminder: check on yourself, check on the people you love.</p>
         <div className="merch-pink__actions">
           <MerchOrderLink product="pink-october" availableUntil={availableUntil} className="merch-button">Choose Pink October <span aria-hidden="true">↗</span></MerchOrderLink>

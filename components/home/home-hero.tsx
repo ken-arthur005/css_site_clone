@@ -9,18 +9,11 @@ import { hasSeenHomeIntro, markHomeIntroSeen } from "@/lib/home-intro";
 import type { SiteInfo } from "@/types/site";
 import { HeroIdentityCard } from "./hero-identity-card";
 import { HeroTechField } from "./hero-tech-field";
+import { HomeHeroTyping } from "./home-typing";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 type IntroMode = "full" | "returning" | null;
-
-const introBootScript = `(() => {
-  try {
-    document.documentElement.dataset.homeIntro = sessionStorage.getItem("css-home-intro-seen") === "true" ? "seen" : "new";
-  } catch {
-    document.documentElement.dataset.homeIntro = "seen";
-  }
-})();`;
 
 export function HomeHero({ site }: { site: SiteInfo }) {
   const heroRef = useRef<HTMLElement>(null);
@@ -52,8 +45,6 @@ export function HomeHero({ site }: { site: SiteInfo }) {
 
     const loader = hero.querySelector<HTMLElement>(".home-intro");
     const loaderPanel = hero.querySelector<HTMLElement>(".home-intro__panel");
-    const titleLines = Array.from(hero.querySelectorAll<HTMLElement>(".home-hero__title-line"));
-    const typedText = titleLines.map((line) => line.querySelector<HTMLElement>(".home-hero__typed-text"));
     const iconEntries = Array.from(hero.querySelectorAll<HTMLElement>(".hero-tech-field__entry"));
     const mobileIconEntries = iconEntries.filter((entry) => entry.closest("[data-mobile]")?.getAttribute("data-mobile") === "true");
     const identityEntry = hero.querySelector<HTMLElement>(".home-hero__identity-entry");
@@ -69,13 +60,6 @@ export function HomeHero({ site }: { site: SiteInfo }) {
 
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    if (introMode === "full" && !reduceMotion) {
-      typedText.forEach((text) => {
-        if (text) text.textContent = "";
-      });
-    }
-
-    gsap.set(titleLines, { autoAlpha: introMode === "full" && !reduceMotion ? 0 : 1, yPercent: introMode === "full" && !reduceMotion ? 14 : 0 });
     gsap.set(stagedIcons, { autoAlpha: 0, scale: 0.88, x: 0, y: 0, rotate: 0 });
     gsap.set(identityEntry, { autoAlpha: 0, x: 26, y: 18 });
 
@@ -85,9 +69,6 @@ export function HomeHero({ site }: { site: SiteInfo }) {
       if (settled) return;
       settled = true;
       setIntroComplete(true);
-      typedText.forEach((text, index) => {
-        if (text) text.textContent = titleLines[index].dataset.word ?? "";
-      });
       if (introMode === "full") {
         markHomeIntroSeen();
       }
@@ -117,27 +98,6 @@ export function HomeHero({ site }: { site: SiteInfo }) {
         .set(loader, { autoAlpha: 0, pointerEvents: "none" });
     } else if (loader) {
       gsap.set(loader, { autoAlpha: 0, pointerEvents: "none" });
-    }
-
-    if (introMode === "full" && !reduceMotion) {
-      titleLines.forEach((line, index) => {
-        const text = typedText[index];
-        const word = line.dataset.word ?? "";
-        const typing = { progress: 0 };
-
-        entrance
-          .to(line, { autoAlpha: 1, yPercent: 0, duration: 0.12 }, 0.08 + index * 0.19)
-          .to(typing, {
-            progress: word.length,
-            duration: word.length * 0.04,
-            ease: "none",
-            onUpdate: () => {
-              if (text) text.textContent = word.slice(0, Math.floor(typing.progress));
-            },
-          }, 0.08 + index * 0.19);
-      });
-    } else {
-      entrance.to(titleLines, { autoAlpha: 1, yPercent: 0, duration: reduceMotion ? 0 : 0.2 }, 0);
     }
 
     entrance
@@ -171,7 +131,6 @@ export function HomeHero({ site }: { site: SiteInfo }) {
 
   return (
     <section ref={heroRef} className="home-hero" aria-labelledby="home-title">
-      <script dangerouslySetInnerHTML={{ __html: introBootScript }} />
       <div aria-hidden="true" className="home-intro">
         <div className="home-intro__panel">
           <div className="home-intro__content">
@@ -185,11 +144,7 @@ export function HomeHero({ site }: { site: SiteInfo }) {
       <HeroTechField />
 
       <div className="page-shell home-hero__inner">
-        <h1 aria-label="Think. Build. Become." className="home-hero__title" id="home-title">
-          <span className="home-hero__title-line" data-word="THINK"><span aria-hidden="true" className="home-hero__typed-text">THINK</span></span>
-          <span className="home-hero__title-line" data-word="BUILD"><span aria-hidden="true" className="home-hero__typed-text">BUILD</span></span>
-          <span className="home-hero__title-line" data-word="BECOME"><span aria-hidden="true" className="home-hero__typed-text">BECOME</span></span>
-        </h1>
+        <HomeHeroTyping enabled={Boolean(introMode)} />
         <div className="home-hero__identity-entry">
           <HeroIdentityCard site={site} typeOnReveal={typeCard} settled={introComplete} />
         </div>

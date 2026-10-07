@@ -55,10 +55,8 @@ export const merchStoreCopy = {
     "Check on the people you love. A conversation can be a good place to start.",
   ],
   faq: [
-    { question: "What is CSS?", answer: "The Computer Science Society at KNUST. We build things, break things, and occasionally remember to go outside. Now we have the tee for it." },
     { question: "How does the 5% offer work?", answer: "Buy two or more tees in one order, in any combination. Get 5% off the whole merchandise subtotal, including fit and size extras. Payment fees are separate." },
     { question: "How do I pay?", answer: "Checkout opens Paystack through the CSS ordering service. Use one of the payment methods offered there. Your order page shows the confirmed payment status and pickup code when available." },
     { question: "Which sizes and fits can I choose?", answer: "Both tees come in S–3XL. The CSS Tee has regular and oversized fits; Pink October has a regular fit. The size guide and any extras are shown before you add a tee." },
-    { question: "Why only these colourways?", answer: "These six CSS Tee combinations are the approved designs. Each choice pairs the fabric and print together, keeping the artwork as intended." },
   ],
 };

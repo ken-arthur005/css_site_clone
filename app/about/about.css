@@ -30,6 +30,19 @@
 .about-text-link:hover > span { transform: translate(3px, -3px); }
 .about-photo { position: relative; width: 100%; height: 100%; overflow: hidden; background: color-mix(in oklch, var(--about-blue) 10%, var(--about-paper)); }
 .about-photo img { object-fit: cover; }
+.about-photo__zoom { position: absolute; inset: 0; }
+.about-photo[data-hover-zoom] .about-photo__zoom { transform: scale(1.075); transition: transform 800ms var(--ease-out); }
+@media (hover: hover) and (pointer: fine) {
+  .about-photo[data-hover-zoom]:hover .about-photo__zoom { transform: scale(1); }
+}
+.about-typing { display: grid; min-width: 0; }
+.about-typing__source, .about-typing__visual { grid-area: 1 / 1; min-width: 0; }
+.about-typing__visual { display: none; }
+.about-typing[data-typing] .about-typing__source { opacity: 0; }
+.about-typing[data-typing] .about-typing__visual { display: block; }
+.about-champion-slideshow { position: relative; width: 100%; height: 100%; overflow: hidden; }
+.about-champion-slideshow__slide { position: absolute; inset: 0; opacity: 0; transition: opacity 700ms ease-in-out; pointer-events: none; }
+.about-champion-slideshow__slide[data-active="true"] { opacity: 1; }
 .about-photo__fallback { display: grid; height: 100%; align-content: center; gap: 1rem; padding: 2rem; }
 .about-photo__fallback > span { font-family: var(--font-bricolage), sans-serif; font-size: clamp(3rem, 7vw, 7rem); font-weight: 700; color: var(--about-blue); }
 .about-photo__fallback p { max-width: 28ch; font-size: 0.85rem; color: var(--foreground); }
@@ -131,10 +144,6 @@
 }
 @media (max-width: 389px) {
   .about-chapters__identity { font-size: 0.75rem; gap: 0.5rem; }.about-chapters__current { font-size: 0.55rem; }.about-chapters__bar { gap: 0.6rem; }.about-chapters__trigger { font-size: 0.55rem; gap: 0.5rem; }.about-programme__details ul { grid-template-columns: 1fr; }.about-opening__actions { gap: 1rem; }.about-heading { font-size: 2.65rem; }.about-help__destination { flex-direction: column; align-items: start; }
-}
-@media (prefers-reduced-motion: reduce) {
-  html:has(.about-page) { scroll-behavior: auto; }
-  .about-page *, .about-page *::before, .about-page *::after { transition: none !important; animation: none !important; }
 }
 @media print {
   .about-chapters, .about-film { display: none; }.about-section { padding-block: 2rem; }.about-convergence { display: none; }.about-opening { min-height: 0; }.about-opening__title { font-size: 7rem; }.about-opening__photo { position: relative; right: auto; top: auto; width: 100%; height: 20rem; }.about-opening__note { width: 100%; }.about-opening__bottom { position: relative; left: auto; right: auto; bottom: auto; }.about-principles article, .about-cohort, .about-programme { break-inside: avoid; }

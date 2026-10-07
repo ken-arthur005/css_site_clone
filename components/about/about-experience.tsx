@@ -16,14 +16,13 @@ export function AboutExperience({ children }: { children: ReactNode }) {
     const root = rootRef.current;
     if (!root) return;
     const media = gsap.matchMedia();
-    media.add({ desktop: "(min-width: 1000px) and (min-height: 650px) and (hover: hover) and (pointer: fine)", motion: "(prefers-reduced-motion: no-preference)" }, ({ conditions }) => {
-      if (!conditions?.motion) return;
+    media.add({ desktop: "(min-width: 1000px) and (min-height: 650px) and (hover: hover) and (pointer: fine)", active: "all" }, ({ conditions }) => {
       const entrance = gsap.timeline({ defaults: { ease: "power4.out", duration: 1.1 } });
       entrance.from(".about-opening__line > span", { yPercent: 105, stagger: 0.12 })
         .from(".about-opening__photo > .about-photo", { scale: 1.06, opacity: 0, duration: 1.25 }, 0.25)
         .from(".about-opening__note", { y: 18, opacity: 0, duration: 0.7 }, 0.65);
 
-      if (conditions.desktop) {
+      if (conditions?.desktop) {
         const opening = root.querySelector<HTMLElement>(".about-opening");
         const photo = root.querySelector<HTMLElement>(".about-opening__photo");
         if (opening && photo) {
@@ -56,7 +55,7 @@ export function AboutExperience({ children }: { children: ReactNode }) {
       const community = root.querySelector(".about-community");
       gsap.to(".about-community__word", { xPercent: -12, ease: "none", scrollTrigger: { trigger: community, start: "top bottom", end: "bottom top", scrub: 0.8 } });
 
-      if (conditions.desktop) {
+      if (conditions?.desktop) {
         const stage = root.querySelector<HTMLElement>(".about-convergence");
         if (stage) {
           const timeline = gsap.timeline({ scrollTrigger: { trigger: stage, start: () => `top top+=${anchorOffset() - 16}`, end: "+=70%", pin: true, scrub: 0.6, invalidateOnRefresh: true } });

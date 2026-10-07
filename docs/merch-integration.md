@@ -121,7 +121,7 @@ pnpm exec gltf-transform optimize "public/css_shirt_3dmodel/models/css_shirt.web
 ```
 
 No new packages were installed. Desktop's scoped tour pin becomes readable
-un-pinned content on narrow/touch/reduced-motion layouts. The print bot uses
+un-pinned content on narrow/touch layouts or when there is insufficient room. The print bot uses
 event-driven motion; it and the band pause while inactive. Fonts/design tokens,
 navigation and footer are shared with the existing site. Merch metadata uses
 the canonical origin only once it is approved in shared site content.
@@ -145,6 +145,55 @@ that widened the document at 200% text. `app/globals.css` now bounds that minimu
 by the viewport; merch headings also wrap rather than clip at increased sizes.
 The shared header reserves the menu's width and lets the identity wrap without
 overlapping the menu when text is enlarged.
+
+## Merch motion refinement
+
+The owner approved character-by-character entrances on the hero, manifesto, five
+tour titles, Shop, Pink October, Lookbook and README. Headings take one second;
+the manifesto takes 3.5 seconds. Each runs once per mounted page, with tour
+headings activated by their current step. The caret is removed on completion.
+The complete semantic text reserves the final layout; the animated visual copy
+is aria-hidden. No-JavaScript views display the complete text.
+
+The merch navigation stays fixed below the shared header, including at the
+footer. A ResizeObserver measures both bars; anchors, direct hashes/history,
+hero sizing, bot position and tour pinning use the combined height. When there
+is insufficient room (including enlarged text), the tour uses normal flow.
+
+The CSS Tee shop card cycles through all six approved photographic colourways
+at one-second intervals with a short opacity crossfade. Its image and product
+name links both select the displayed colourway. It pauses on hover/focus, touch
+presses, explicit Pause, hidden tabs, offscreen positioning and menu opening.
+The same animated preview and Pause/Play control are used for every motion
+preference. Other previews retain their independently selected colourways.
+Only nearby shop images load.
+
+The README now contains the discount, payment and sizing questions; the owner
+requested removal of the CSS identity and colourway-rationale entries.
+
+Verification for this refinement: lint, TypeScript, production build and the ten
+merch tests; browser samples of actual typing and one-second colourway updates,
+reserved layout heights, all five tour activations/once-only returns, fixed bar
+alignment through the footer, anchor focus and direct/hash-history navigation,
+six-colourway ordering links, hover/focus/pause/menu/touch behaviour, 320–1920px,
+200% text, reduced motion, responsive tour reflow, no-JS text and image failure.
+No new assets or dependencies were required.
+
+### Full-motion setting
+
+The owner subsequently requested removal of all reduced-motion behaviour from
+the merch experience. Typing, entrances, reveals, the desktop tour, robot,
+binary ribbon, CSS transitions, carousel and hero auto-rotation now use full
+motion regardless of `prefers-reduced-motion`. Merch-route smooth scrolling and
+section navigation also use full motion. The shared shirt viewer receives an
+explicit `motion="full"` on the merch hero; its default still serves the separate
+homepage viewer. Responsive layouts, no-JS/media fallbacks, manual pause, focus/
+hover pauses and inactive rendering/timer cleanup remain functional.
+
+Verification includes desktop and touch contexts emulating reduced motion:
+typing progress, desktop pinning, carousel cycling/Pause, CSS animation and
+crossfade durations, animated section navigation, rotating hero canvas, responsive
+layout, and restoration of the shared scroll/viewer defaults after leaving merch.
 
 Browser evidence and temporary QA scripts are outside the repository under the
 pre-approved temporary directory. The supplied API YAML is owner work and has

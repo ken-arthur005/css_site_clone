@@ -19,6 +19,10 @@ const menuItems = [
   { href: "/merch", label: "MERCH", number: "04" },
 ];
 
+const HEADER_IDLE_DELAY = 700;
+const HEADER_HIDE_DISTANCE = 12;
+const HEADER_REVEAL_DISTANCE = 6;
+
 function subscribeToScroll(onStoreChange: () => void) {
   window.addEventListener("scroll", onStoreChange, { passive: true });
   return () => window.removeEventListener("scroll", onStoreChange);
@@ -45,6 +49,7 @@ export function SiteHeader() {
   const { isTransitioning } = useRouteTransition();
   const [isOpen, setIsOpen] = useState(false);
   const hasScrolled = useSyncExternalStore(subscribeToScroll, getScrollSnapshot, getServerScrollSnapshot);
+  const headerRef = useRef<HTMLElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const returnFocusRef = useRef(true);
@@ -69,6 +74,80 @@ export function SiteHeader() {
   };
 
   const isHome = pathname === "/";
+
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header) return;
+
+    const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let frame = 0;
+    let idleTimeout = 0;
+    let direction = 0;
+    let distance = 0;
+    // Clamp elastic overscroll so bouncing at either edge isn't a direction change.
+    const scrollPosition = () => Math.max(0, Math.min(window.scrollY, document.documentElement.scrollHeight - window.innerHeight));
+    let previousY = scrollPosition();
+    let topThreshold = header.getBoundingClientRect().height + 24;
+
+    const reveal = () => {
+      header.dataset.hidden = "false";
+      direction = 0;
+      distance = 0;
+      previousY = scrollPosition();
+    };
+
+    reveal();
+    // Keep the navigation steady throughout dialog and route-transition lifecycles.
+    if (isMenuActive || isTransitioning) return;
+
+    const update = () => {
+      frame = 0;
+      const currentY = scrollPosition();
+      const delta = currentY - previousY;
+      previousY = currentY;
+
+      if (motionPreference.matches || header.contains(document.activeElement) || currentY <= topThreshold) {
+        reveal();
+        return;
+      }
+
+      if (delta === 0) return;
+      const nextDirection = Math.sign(delta);
+      if (nextDirection !== direction) distance = 0;
+      direction = nextDirection;
+      distance += Math.abs(delta);
+
+      // Accumulate small movements, but ignore tiny direction reversals.
+      if (direction > 0 && distance >= HEADER_HIDE_DISTANCE) header.dataset.hidden = "true";
+      else if (direction < 0 && distance >= HEADER_REVEAL_DISTANCE) header.dataset.hidden = "false";
+    };
+
+    const onScroll = () => {
+      window.clearTimeout(idleTimeout);
+      idleTimeout = window.setTimeout(reveal, HEADER_IDLE_DELAY);
+      if (!frame) frame = window.requestAnimationFrame(update);
+    };
+    const onResize = () => {
+      topThreshold = header.getBoundingClientRect().height + 24;
+      reveal();
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onResize);
+    window.addEventListener("pageshow", reveal);
+    header.addEventListener("focusin", reveal);
+    motionPreference.addEventListener("change", reveal);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(idleTimeout);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("pageshow", reveal);
+      header.removeEventListener("focusin", reveal);
+      motionPreference.removeEventListener("change", reveal);
+    };
+  }, [pathname, isMenuActive, isTransitioning]);
 
   useEffect(() => {
     if (!isMenuActive) {
@@ -232,6 +311,7 @@ export function SiteHeader() {
   return (
     <>
       <header
+        ref={headerRef}
         className={`site-header${isHome ? " site-header--hero" : ""}`}
         data-scrolled={hasScrolled}
         inert={isMenuActive}

@@ -5,6 +5,7 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { useCallback, useMemo, useRef, useState, type CSSProperties } from "react";
 import { MerchImage } from "./merch-image";
+import { MerchTyping } from "./merch-typing";
 import { MerchOrderLink, useMerchColourway } from "./merch-showcase";
 import type { MerchProduct } from "@/types/merch";
 import type { TeeColourway } from "@/types/merch-store";
@@ -23,18 +24,13 @@ export function MerchHero({ modelProduct, colourways }: { modelProduct: MerchPro
   const onFailure = useCallback(() => { setFailed(true); setReadyVariant(null); }, []);
 
   useGSAP(() => {
-    const media = gsap.matchMedia();
-    media.add("(prefers-reduced-motion: no-preference)", () => {
-      gsap.from(".merch-hero__title > span", { yPercent: 105, stagger: .1, duration: 1, ease: "power4.out" });
-      gsap.from(".merch-hero__detail", { y: 18, opacity: 0, duration: .7, stagger: .08, delay: .2 });
-    });
-    return () => media.revert();
+    gsap.from(".merch-hero__detail", { y: 18, opacity: 0, duration: .7, stagger: .08, delay: .2 });
   }, { scope: root });
 
   return <section className="merch-hero" ref={root} aria-labelledby="merch-title" style={{ "--bot-ink": colourway.printValue } as CSSProperties}>
     <div className="merch-hero__copy">
       <p className="merch-label merch-hero__detail">Computer Science Society<br />KNUST · 2026 drop</p>
-      <h1 className="merch-hero__title" id="merch-title"><span>Wear the</span><span>society<span className="merch-hero__period">.</span></span></h1>
+      <h1 className="merch-hero__title" id="merch-title"><MerchTyping><span>Wear the</span><span>society<span className="merch-hero__period">.</span></span></MerchTyping></h1>
       <p className="merch-hero__blurb merch-hero__detail">We make more than merch. Clothes that compile,<br className="merch-desktop-break" /> crash and still look good on you.</p>
       <div className="merch-colourways merch-hero__detail" role="group" aria-label="CSS Tee colourways">
         {colourways.map((item) => <button key={item.id} type="button" aria-pressed={item.id === colourway.id} aria-label={`${item.name}: ${item.base} fabric, ${item.print} print`} onClick={() => select(item.id)}>
@@ -47,7 +43,7 @@ export function MerchHero({ modelProduct, colourways }: { modelProduct: MerchPro
     <div className="merch-hero__visual" data-merch-bot-anchor="hero">
       <div className="merch-hero__stage" data-ready={readyVariant === variant.id && view === "3d" && !failed}>
         <div className="merch-hero__fallback"><MerchImage src={view === "back" ? colourway.back : variant.fallbackImage.src} alt={`${colourway.base} CSS Tee with ${colourway.print} print, ${view === "back" ? "back" : "front"}`} priority /></div>
-        {!failed && modelProduct.model && view === "3d" && <ShirtViewer model={modelProduct.model} variant={variant} textureSources={textureSources} onReady={onReady} onFailure={onFailure} />}
+        {!failed && modelProduct.model && view === "3d" && <ShirtViewer model={modelProduct.model} variant={variant} textureSources={textureSources} onReady={onReady} onFailure={onFailure} motion="full" />}
         <div className="merch-hero__scan" key={colourway.id} aria-hidden="true" />
       </div>
       <div className="merch-hero__view-controls" role="group" aria-label="Shirt view">

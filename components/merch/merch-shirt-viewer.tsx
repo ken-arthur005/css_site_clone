@@ -2,7 +2,7 @@
 
 import { Center, OrbitControls, useGLTF, useTexture } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Component, Suspense, useEffect, useMemo, useRef, useState, type ErrorInfo, type ReactNode } from "react";
+import { Component, Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ErrorInfo, type ReactNode } from "react";
 import { Mesh, MeshStandardMaterial, SRGBColorSpace } from "three";
 import type { MerchVariant } from "@/types/merch";
 import type { ContentAsset } from "@/types/content";
@@ -15,6 +15,7 @@ type MerchShirtViewerProps = {
   textureSources: readonly string[];
   onReady: () => void;
   onFailure: () => void;
+  motion?: "system" | "full";
 };
 
 type ViewerErrorBoundaryProps = {
@@ -186,7 +187,13 @@ function ViewerScene({
   );
 }
 
-export function MerchShirtViewer({ model, variant, onReady, onFailure }: MerchShirtViewerProps) {
+function subscribeMotionPreference(listener: () => void) {
+  const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+  media.addEventListener("change", listener);
+  return () => media.removeEventListener("change", listener);
+}
+
+export function MerchShirtViewer({ model, variant, onReady, onFailure, motion = "system" }: MerchShirtViewerProps) {
   const { isMenuActive } = useNavigationState();
   const rootRef = useRef<HTMLDivElement>(null);
   const resumeTimerRef = useRef<number | null>(null);
@@ -194,7 +201,11 @@ export function MerchShirtViewer({ model, variant, onReady, onFailure }: MerchSh
   const [isVisible, setIsVisible] = useState(false);
   const [hasBeenNear, setHasBeenNear] = useState(false);
   const [isPageVisible, setIsPageVisible] = useState(true);
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const reducedMotion = useSyncExternalStore(
+    (listener) => motion === "full" ? () => {} : subscribeMotionPreference(listener),
+    () => motion !== "full" && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    () => false,
+  );
   const [isInteracting, setIsInteracting] = useState(false);
 
   useEffect(() => {
@@ -220,16 +231,11 @@ export function MerchShirtViewer({ model, variant, onReady, onFailure }: MerchSh
   }, []);
 
   useEffect(() => {
-    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const updateMotion = () => setReducedMotion(media.matches);
     const updateVisibility = () => setIsPageVisible(!document.hidden);
 
-    updateMotion();
     updateVisibility();
-    media.addEventListener("change", updateMotion);
     document.addEventListener("visibilitychange", updateVisibility);
     return () => {
-      media.removeEventListener("change", updateMotion);
       document.removeEventListener("visibilitychange", updateVisibility);
     };
   }, []);
