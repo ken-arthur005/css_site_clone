@@ -1,6 +1,14 @@
 import type { SiteInfo } from "@/types/site";
 
-const planningOrigin = "https://thecssknust.com";
+const approvedOrigin = "https://thecssknust.com";
+
+function canonicalOrigin(): string {
+  try {
+    const configured = new URL(process.env.NEXT_PUBLIC_SITE_ORIGIN ?? approvedOrigin);
+    // The custom domain supersedes older preview/deployment origin settings.
+    return configured.hostname === "vercel.app" || configured.hostname.endsWith(".vercel.app") ? approvedOrigin : configured.origin;
+  } catch { return approvedOrigin; }
+}
 
 export const siteInfo = {
   name: "Computer Science Society, KNUST",
@@ -9,8 +17,8 @@ export const siteInfo = {
   college: "College of Science",
   location: "Kumasi, Ghana",
   canonicalOrigin: {
-    value: process.env.NEXT_PUBLIC_SITE_ORIGIN ?? planningOrigin,
-    contentStatus: "placeholder",
+    value: canonicalOrigin(),
+    contentStatus: "verified",
   },
   socials: [
     { platform: "Instagram", url: "https://www.instagram.com/thecssknust" },

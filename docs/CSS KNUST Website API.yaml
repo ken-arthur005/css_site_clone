@@ -110,6 +110,27 @@ paths:
       description: |-
         List-only public viewset: no retrieve route. Use when the domain
         directive defines no detail endpoint.
+      parameters:
+      - in: query
+        name: committee
+        schema:
+          type: string
+          enum:
+          - academic-board
+          - audit-committee
+          - creative-team
+          - developers
+          - editorial-board
+          - executives
+          - judicial-committee
+          - mentorship-committee
+          - organizing-committee
+          - publicity
+          - research-scholarship-and-internship-committee
+          - sports-committee
+          - technical-team
+          - welfare-committee
+          - womens-commission
       tags:
       - executives
       security:
@@ -122,6 +143,40 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Executive'
+          description: ''
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/executives/committees/:
+    get:
+      operationId: executives_committees_list
+      description: Return active executive committees in display order.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - executives
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCommitteeList'
           description: ''
         '500':
           description: Internal server error.
@@ -219,6 +274,37 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Category'
+          description: ''
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/merchandise/discount/:
+    get:
+      operationId: merchandise_discount_retrieve
+      description: Returns the current bulk discount configuration. Clients can use
+        this to display discount info to buyers before checkout.
+      summary: Get bulk discount settings
+      tags:
+      - merchandise
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  enabled:
+                    type: boolean
+                  percent:
+                    type: string
+                    format: decimal
+                  min_units:
+                    type: integer
           description: ''
         '500':
           description: Internal server error.
@@ -327,6 +413,16 @@ components:
       required:
       - name
       - slug
+    Committee:
+      type: object
+      properties:
+        value:
+          type: string
+        label:
+          type: string
+      required:
+      - label
+      - value
     Event:
       type: object
       properties:
@@ -380,21 +476,21 @@ components:
         id:
           type: integer
           readOnly: true
-        name:
+        full_name:
+          type: string
+          maxLength: 150
+        nickname:
           type: string
           readOnly: true
-        position:
+        favourite_quote:
           type: string
           readOnly: true
-        biography:
-          type: string
-          readOnly: true
-        photo:
+        image:
           type: string
           format: uri
           nullable: true
           readOnly: true
-        photo_sizes:
+        image_sizes:
           type: object
           nullable: true
           properties:
@@ -408,18 +504,47 @@ components:
               type: string
               format: uri
           readOnly: true
-        academic_year:
+        committee:
+          type: object
+          properties:
+            value:
+              type: string
+            label:
+              type: string
+          required:
+          - value
+          - label
+          readOnly: true
+        role:
+          type: object
+          properties:
+            value:
+              type: string
+            label:
+              type: string
+          required:
+          - value
+          - label
+          readOnly: true
+        title:
           type: string
           readOnly: true
+        academic_year:
+          type: string
           description: e.g. 2026/2027
+          pattern: ^\d{4}/\d{4}$
+          maxLength: 9
       required:
       - academic_year
-      - biography
+      - committee
+      - favourite_quote
+      - full_name
       - id
-      - name
-      - photo
-      - photo_sizes
-      - position
+      - image
+      - image_sizes
+      - nickname
+      - role
+      - title
     Merchandise:
       type: object
       properties:
@@ -470,15 +595,36 @@ components:
           allOf:
           - $ref: '#/components/schemas/Category'
           readOnly: true
+        sizes:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          readOnly: true
+        colorways:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          readOnly: true
+        unavailable_combinations:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          readOnly: true
       required:
       - availability
       - category
+      - colorways
       - id
       - image_sizes
       - image_url
       - in_stock
       - name
+      - sizes
       - stock_quantity
+      - unavailable_combinations
     OrderCreateRequest:
       type: object
       properties:
@@ -515,6 +661,14 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        discount_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        discount_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
         fee:
           type: string
           format: decimal
@@ -531,6 +685,8 @@ components:
           readOnly: true
       required:
       - authorization_url
+      - discount_amount
+      - discount_percent
       - expires_at
       - fee
       - id
@@ -546,6 +702,14 @@ components:
           type: integer
           maximum: 50
           minimum: 1
+        size:
+          type: string
+          default: ''
+          maxLength: 30
+        colorway:
+          type: string
+          default: ''
+          maxLength: 30
         note:
           type: string
           default: ''
@@ -575,6 +739,14 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        discount_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        discount_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
         fee:
           type: string
           format: decimal
@@ -596,6 +768,8 @@ components:
           readOnly: true
       required:
       - created_at
+      - discount_amount
+      - discount_percent
       - expires_at
       - fee
       - id
@@ -605,6 +779,29 @@ components:
       - status
       - subtotal
       - total
+    PaginatedCommitteeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Committee'
     PaginatedEventList:
       type: object
       required:

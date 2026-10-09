@@ -466,6 +466,24 @@
     "role_in_committee": "Member",
     "upload_your_preferred_picture": "/committee_members/IMG_8908 - Benniton Otumfuo - Nyarko.JPG",
     "favourite_quote": "Do what you can, where you are, with what you have."
+  },
+  {
+    "email_address": "reindorfnanalance@gmail.com",
+    "full_name": "Reindorf Ayitey",
+    "preferred_name": "Reindorf",
+    "committee": "Deputies",
+    "role_in_committee": "Deputy Organizing Secretary",
+    "upload_your_preferred_picture": "/reindorf.jpeg",
+    "favourite_quote": "Insanity is doing the same thing over and over again and expecting different results - Albert Einstein."
+  },
+  {
+    "email_address": "amfootoomarg@gmail.com",
+    "full_name": "Margaret Amfo-Otu",
+    "preferred_name": "Maggie",
+    "committee": "Deputies",
+    "role_in_committee": "Deputy General Secretary",
+    "upload_your_preferred_picture": "/margaret.jpg",
+    "favourite_quote": "Life is bliss."
   }
 ]
 

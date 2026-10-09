@@ -6,12 +6,30 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { createContext, useContext, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { TransitionLink } from "@/components/transitions/transition-link";
 import { MERCH_BOT_ENABLED } from "@/lib/merch/features";
-import type { TeeColourway, TeeId } from "@/types/merch-store";
+import { money } from "@/lib/merch/order";
+import type { CheckoutCatalog, TeeColourway, TeeId } from "@/types/merch-store";
 import { MerchBotGuide } from "./merch-bot-guide";
+import { useMerchCatalog } from "./use-merch-catalog";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 const ColourwayContext = createContext<{ colourway: TeeColourway; select: (id: string) => void } | null>(null);
+const CatalogContext = createContext<CheckoutCatalog | null>(null);
+
+export function MerchLivePrice({ product }: { product: TeeId }) {
+  const catalog = useContext(CatalogContext);
+  const live = catalog?.products[product];
+  if (!catalog) return <p>Price confirmed in shop</p>;
+  if (!live?.in_stock || live.price === null) return <p>Currently unavailable</p>;
+  return <p>From <strong>{money(Math.round(Number(live.price) * 100))}</strong></p>;
+}
+
+export function MerchLiveOffer() {
+  const discount = useContext(CatalogContext)?.discount;
+  return <p className="merch-offer"><span aria-hidden="true">↳</span> {discount?.enabled && discount.percent > 0
+    ? <>Good things come together. <strong>Any {discount.minimumQuantity}+ tees. {discount.percent}% off.</strong></>
+    : "Current prices and offers are confirmed in the shop."}</p>;
+}
 function subscribeClock(listener: () => void) {
   const timer = window.setInterval(listener, 60000);
   return () => window.clearInterval(timer);
@@ -34,6 +52,7 @@ export function MerchOrderLink({ children, product = "css-tee", colourwayId, cla
 }
 
 export function MerchShowcase({ colourways, children }: { colourways: TeeColourway[]; children: ReactNode }) {
+  const { catalog } = useMerchCatalog();
   const root = useRef<HTMLDivElement>(null);
   const [selectedId, setSelectedId] = useState(colourways[0].id);
   useEffect(() => {
@@ -54,7 +73,7 @@ export function MerchShowcase({ colourways, children }: { colourways: TeeColourw
     return () => { mounted = false; };
   }, { scope: root });
   const colourway = colourways.find(({ id }) => id === selectedId) ?? colourways[0];
-  return <ColourwayContext.Provider value={{ colourway, select: setSelectedId }}>
+  return <CatalogContext.Provider value={catalog}><ColourwayContext.Provider value={{ colourway, select: setSelectedId }}>
     <div className="merch-showcase" ref={root}>{children}{MERCH_BOT_ENABLED && <MerchBotGuide rootRef={root} ink={colourway.printValue} />}</div>
-  </ColourwayContext.Provider>;
+  </ColourwayContext.Provider></CatalogContext.Provider>;
 }

@@ -5,102 +5,181 @@
 - `/merch`: the owner-supplied merch site's story adapted to the CSS KNUST shell.
   Shared header/menu/footer, interactive GLB hero, six colourways, five-stage
   photographic tour, two-product collection, Pink October, lookbook and FAQ.
-- `/merch/shop`: CSS and Pink October tees, S–3XL, a two-stage builder with an
+- `/merch/shop`: CSS and Pink October tees, live available sizes, a two-stage builder with an
   editable visual order shelf, persistent order draft and review.
-- `/merch/order/[publicId]`: API-backed payment status, totals and pickup code.
+- `/merch/order/[publicId]`: server-rendered receipt, live payment status, item
+  images/details, verified amount paid, copyable pickup code and Shop again.
 - `/merch/order`: payment-return landing. Accepts a UUID in `public_id`, `order_id`
   or `id`; otherwise restores the saved public ID on the same browser.
+- `/checkout/[publicId]`: absolute compatibility redirect to
+  `https://thecssknust.com/merch/order/[publicId]` for older Vercel callbacks.
+  Invalid IDs 404. Legacy Vercel canonical-origin settings fall back to the
+  approved custom domain.
 
-## Approved offer and catalog
+## Current payment contract — 9 October 2026
 
-The owner approved both tees at GH₵70, six CSS colourways, XXL +GH₵10 and
-3XL +GH₵10, and Pink October through 31 October 2026 (Accra time).
-The owner's latest correction removes fit options and all fit surcharges.
-No printed names, executive polo, ID cards, packs, cash selection, discount-code
-input, student ID or hostel fields. Buyer details are name, phone and email.
-
-Any **two or more tee units**, including identical units or mixed products,
-receive **5% off the entire merchandise subtotal including size extras**.
-Round the discount to the nearest pesewa. Apply the payment fee after discount.
-Examples:
-
-- 2 M tees: subtotal 140.00, discount 7.00, merchandise total 133.00.
-- CSS 3XL + Pink October XXL: subtotal 160.00, discount 8.00,
-  merchandise total 152.00.
-
-Local approved content lives behind `getMerchStore()`. Live product IDs, stock
-and catalog pricing are read independently from the ordering service. The
-frontend does not invent inventory or connect an approved tee to a test record.
-
-## Backend handoff — required before enabling real payments
+The backend controls prices, discounts, stock, sizes and colourway availability.
+The owner has removed all size/fit surcharges for now; both tees use their live
+base price. Pink October remains open through 31 October 2026 (Accra time).
+Buyer details are name, phone and email; there are no student ID, hostel, cash,
+printed-name or discount-code fields.
 
 Base: `https://css-knust-api.onrender.com/api/v1/`.
-During implementation the live catalog returned only one `Test Item`, ID 1.
-The supplied and live schemas have `product`, `quantity` and `note` on items;
-the dedicated size/colourway fields and discount response are pending.
 
-1. Publish the actual **CSS Tee** and **Pink October Tee** merchandise records.
-   Unique, exact names map automatically; explicit IDs can be set with
-   `CSS_MERCH_TEE_ID` and `CSS_MERCH_PINK_ID` if names differ. Never use Test Item.
-2. For this build, interpret and retain the generated note:
+| Local product | Confirmed API ID | Observed API name |
+| --- | --- | --- |
+| CSS Tee | 2 | Css Shirt |
+| Pink October Tee | 3 | Pink Octobee |
 
-   ```text
-    size=3XL;colourway=kernel-panic
-   ```
+IDs live in the typed content and can be overridden by `CSS_MERCH_TEE_ID` and
+`CSS_MERCH_PINK_ID` when moving to another catalog. `Test Item` is never mapped.
+At verification both tees cost GH₵70 and expose M/L/XL/XXL. The service's
+`merchandise/discount/` endpoint returns enabled=true, percent="5.00", min_units=2.
+These are a snapshot, not frontend constants to enforce against backend updates.
 
-    Keys and values are stable IDs. Pink October uses `colourway=pink-october`.
-    New orders omit `fit`; it is not a product option. Receipt parsing accepts
-    legacy notes, and saved-cart normalization drops legacy fit fields while
-    preserving quantities. Every approved note fits the 100-character limit.
-   The request adapter is `makeOrderRequest()` in `lib/merch/order.ts`; change
-   only its serialization when dedicated API fields arrive.
-3. Validate options and calculate size extras **on the backend** (XXL and 3XL
-   each +GH₵10, no fit surcharge). A note
-   does not automatically change Paystack's amount. Count stock across all
-   configurations of the same merchandise record.
-4. Implement the automatic offer. Include `discount` as a decimal GHS string
-   in create/status responses. This adapter expects `subtotal` **before** the
-   discount, and `total = subtotal - discount + fee`.
+CSS colourway mappings are part of the content data:
 
-   ```json
-   {
-     "id": "<public order UUID>",
-     "status": "PENDING",
-     "subtotal": "140.00",
-     "discount": "7.00",
-     "fee": "<backend-calculated decimal>",
-     "total": "<133.00 plus fee>",
-     "authorization_url": "https://checkout.paystack.com/<session>",
-     "expires_at": "<ISO datetime>"
-   }
-   ```
+| Local visual ID | API `colorway` |
+| --- | --- |
+| kernel-panic | black-pink |
+| hot-reload | pink-white |
+| blue-screen | blue-white |
+| dark-mode | black-white |
+| light-mode | white-black |
+| hyperlink | white-blue |
 
-5. Set the Paystack callback to the deployed frontend's
-   `/merch/order/<public order UUID>`, or `/merch/order?public_id=<UUID>`.
-   The website's real production origin needs to be supplied in backend setup.
-   Paystack's transaction reference alone is not the documented public order ID.
-6. Confirm status names. The frontend explicitly recognises `PAID`, `COLLECTED`,
-   common pending spellings, `FAILED`, `EXPIRED`, `CANCELLED`/`CANCELED`; other
-   returned statuses remain visible and are never treated as paid.
-   Receipt item descriptions support `product_name`/`name`, `quantity` and `note`.
-7. After those contracts are verified, set `CSS_MERCH_PRICING_READY=true` in the
-   frontend environment. `.env.example` contains the complete frontend setup.
-   Keep Paystack keys/webhook processing in the existing backend.
+New order items send `{ product, quantity, size, colorway }`. Pink October has
+no backend colourway option and omits `colorway`. Neither product sends option
+notes or fit. Receipts still understand legacy note-based selections.
 
-The Next route handlers are thin adapters, not a replacement store backend:
+`getMerchStore()` supplies creative content, measurement references and stable
+cart IDs. `getCheckoutCatalog()` supplies validated commerce data. Shared helpers
+derive display estimates and selection/aggregate-stock checks from that catalog.
+Unsupported saved sizes remain visible and editable; their units are not dropped.
+Showcase prices/offers load separately so API failure does not block first view.
+Offline builder prices are marked estimates and new payments are disabled.
+
+The Next handlers remain thin adapters:
 `/api/merch/catalog`, `/api/merch/orders`, `/api/merch/orders/[id]`.
-They call the approved service server-side, validate quantities/options, compare
-backend amounts against the approved selections/offer and permit only HTTPS
-Paystack payment links. A mismatched amount returns the saved public ID without
-opening payment; its backend stock hold expires according to backend policy.
-The readiness setting defaults false, so the present test catalog cannot take
-payments. Catalog failure leaves the showcase and local order draft usable.
+Orders are revalidated server-side against fresh options and stock. Decimal GHS
+responses use `discount_amount` and `discount_percent`. The backend quote is
+authoritative, with `subtotal - discount_amount + fee = total`; invalid amounts,
+arithmetic or payment URLs are rejected while retaining a valid created order ID.
+Only HTTPS Paystack checkout URLs are exposed. Public responses explicitly
+select fields, including receipt-item fields, to exclude buyer contact details.
 
-Preparing payment creates the backend order/stock hold. The buyer sees its final
-fee-inclusive total before continuing to Paystack. A refresh retains a resumable
-payment link for that session. Only confirmed Paid/Collected clears purchased
-quantities; tees added after the submitted snapshot are retained. Public order
-pages are `noindex` and do not return buyer contact details.
+The owner's latest flow is **Build order → Review & pay → Proceed to pay →
+Paystack → receipt**. Review is the checkout screen. A single submit validates
+buyer/options, creates the backend order/stock hold, saves its reference, and
+opens Paystack immediately. There is no prepare/confirm-payment intermediate
+screen. Merchandise amounts are estimates; the buyer pays the processing fee,
+and Paystack shows the final fee-inclusive total before payment authorization.
+
+The shop rechecks saved attempts on mount, return/focus/visibility and just before
+submission. Paid/Collected attempts are reconciled once; Cancelled/Expired/Failed
+attempts are retired without discarding unpaid selections. An earlier pending
+attempt is an optional disclosure, never a lock on the current checkout.
+Editing/removing submitted selections detaches the older snapshot from the cart;
+creating a replacement also archives its predecessor without cart ownership.
+Later receipt visits cannot subtract purchased units again from a new cart.
+Adding extra units retains the existing snapshot so those later additions survive
+normal completion. A small local journal retains up to 20 order snapshots, with
+no buyer contact details, and keeps a link to the last confirmed receipt.
+
+There is no documented backend cancellation endpoint. Replacing a frontend
+attempt does not cancel its Paystack link or release its backend stock hold;
+the backend's existing expiry policy applies. No inventory changes are made by
+the frontend reconciliation helpers.
+
+Review/build step buttons explicitly reset the shared Lenis/native scroll
+coordinator to the top after rendering, with keyboard focus moved without a
+second browser scroll. The receipt loads validated initial status server-side
+and polls pending payments (or a missing pickup code) for up to two minutes,
+with manual Check payment. Paid/Collected alone enables success and pickup code
+display. Images/names and historical unit/line prices come from confirmed
+catalog mappings and validated receipt fields; totals never use today's catalog
+price in place of a historical paid amount. Public order pages are `noindex`.
+
+Checkout has no frontend readiness environment switch. The backend controls
+ordering availability; stale deployment readiness values are ignored by this
+build. Paystack test/live mode is determined by backend credentials. No Paystack
+public or secret key is used in the frontend; all credentials belong in the backend.
+`.env.example` contains the frontend's API/ID/origin settings.
+
+### Callback and webhook setup
+
+Approved callback: `https://thecssknust.com/merch/order/<public order UUID>`.
+The backend must substitute the actual order ID while initialising each payment;
+Paystack's reference alone is not the public order UUID.
+
+Backend webhook: `https://css-knust-api.onrender.com/api/v1/payments/paystack/webhook/`.
+Returning to the callback does not confirm payment. The website reads the
+backend's confirmed status; webhook verification remains in the backend.
+
+**Observed mismatch:** the completed test transaction returned to
+`https://thecssknust.vercel.app/checkout/<UUID>?trxref=...&reference=...`, which
+was a 404 on the existing deployment. The compatibility route now redirects
+absolutely to the custom domain, rather than remaining on the Vercel origin.
+The backend should still initialise new transactions with the approved URL.
+
+### Payment verification and live-mode handoff
+
+A real Paystack **test-mode** Mobile Money checkout completed for order
+`3e01d967-f287-4eca-8631-3fc7335bad3c`, buyer name `CSS PAYMENT QA — TEST ORDER`,
+using Paystack's MTN test number. The checkout visibly identified itself as Test.
+The order contains one CSS XXL Kernel Panic tee and one Pink October L tee.
+The service confirmed subtotal 140.00, discount 7.00, fee 2.65, total 135.65,
+then status `paid` with a pickup code. The local receipt and cart cleanup worked.
+No real-money transaction was performed. This test order uses one unit of each
+product in the shared backend stock; the owner will manually reconcile those
+test records before live sales.
+
+When switching the same Render backend to live: finish tests, resolve the
+callback mismatch, close out test sessions/stock holds, set live backend
+credentials, confirm live webhook/callback settings, and redeploy. Signature
+verification must use the matching live secret. The frontend keeps the same API
+and receipt flow. A controlled real transaction remains a separate launch check.
+The YAML source is owner-maintained and has not been altered.
+
+### Checkout UX correction checks
+
+- `pnpm lint`, TypeScript and production build checks pass. The automated suite
+  now contains 21 merchandise tests plus 9 event regression tests, including
+  legacy paid-attempt retirement, one-time reconciliation, superseded/edited
+  snapshots, historic receipt item prices, and private-field filtering.
+- The owner's existing order `9800caae-6800-4b4e-85d4-76e6f1b9a74c` was checked
+  read-only: Paid, two Light Mode L tees, subtotal 140.00, discount 7.00, fee
+  2.65, amount paid 135.65 and a supplied pickup code. Its new receipt renders
+  fully without JavaScript. The code itself is not copied into this document.
+- Production-build browser checks cover 320/390/768/1024/1920, 200% text,
+  keyboard/touch, scrolling to the top from the bottom, replacing an earlier
+  unpaid cart, single-click redirect, and double-submit protection. Two successive
+  purchases and visits to older receipts preserve the new cart correctly.
+- Pending/Cancelled/unknown payment statuses, delayed pickup code, clipboard
+  denial/manual-copy fallback, image failure, missing receipts, and canonical
+  legacy redirect are verified. The receipt remains readable without motion.
+- Checkout mutations for this correction were tested against isolated local API
+  fixtures, not the deployed order service. No new external payments or inventory
+  changes were made. No assets or packages were added. Temporary browser evidence
+  and fixtures remain outside the source repository.
+
+### Original payment integration checks (historical)
+
+- Passed `pnpm lint`, `pnpm exec tsc --noEmit`, and `pnpm build`.
+- Passed `node --experimental-strip-types --test tests/merch.test.mjs tests/events.test.mjs`:
+  17 merchandise tests plus 9 event regression tests.
+- Production-browser checks: live catalog and dedicated option submission,
+  backend quote/fee/receipt, refresh restoration, single-flight submission,
+  mixed products, changing prices/offer thresholds, disabled options and
+  combinations, stock reductions, failed catalog/retry, unsupported legacy
+  size preservation/editing, Pending/Cancelled/Collected/unknown statuses,
+  cleanup preserving later additions, and legacy callback redirect/invalid IDs.
+- Viewports 320/390/768/1024/1920, 200% text, keyboard activation, a separate
+  double-density touch context using taps, reduced motion, no-JavaScript
+  showcase pricing fallback, and readable content with model requests blocked.
+- Only one external test-mode order/payment was created (documented above).
+  Other checkout/status cases were mocked or blocked. No new assets or packages
+  were needed; existing supplied tee cutouts and the shelf/review cart were reused.
 
 ## Assets and performance
 
@@ -130,7 +209,7 @@ event-driven motion; it and the band pause while inactive. Fonts/design tokens,
 navigation and footer are shared with the existing site. Merch metadata uses
 the canonical origin only once it is approved in shared site content.
 
-## Verification
+## Original migration verification (historical)
 
 - `pnpm lint`, `pnpm exec tsc --noEmit`, `pnpm build`.
 - `node --experimental-strip-types --test tests/merch.test.mjs tests/events.test.mjs`.
@@ -151,6 +230,9 @@ The shared header reserves the menu's width and lets the identity wrap without
 overlapping the menu when text is enlarged.
 
 ## Merch motion refinement
+
+The following refinement entries record earlier work. The current payment
+contract above supersedes their historical pricing and mocked-payment notes.
 
 The owner approved character-by-character entrances on the hero, manifesto, five
 tour titles, Shop, Pink October, Lookbook and README. Headings take one second;
@@ -220,7 +302,8 @@ Desktop rows wrap; narrow layouts use stacked image/detail entries that reflow
 at enlarged text sizes. Images have the shared failure fallback.
 
 Fit was removed from product options, pricing, types and new order notes.
-XXL and 3XL now each add GH₵10. Legacy saved fit entries normalize into the new
+At that stage XXL and 3XL each added GH₵10; these extras are now removed by the
+current payment contract. Legacy saved fit entries normalize into the new
 product/colourway/size key without discarding units. Above-limit merged quantities
 remain visible and must be reduced before checkout. Existing payment snapshots
 and backend-confirmed amounts are not rewritten; receipt cleanup normalizes
@@ -233,3 +316,36 @@ removal/Undo/focus, stock checks, refresh/hash history, legacy migration, pricin
 A separate 390px double-density touch context verified add, quantity, edit/save,
 remove/Undo and review using taps.
 Checkout and receipt responses were mocked; no live order or payment was made.
+
+## Saved-order review cart
+
+Review & pay now replaces the configurator's carried-over preview with
+`MerchReviewCart`, which consumes only saved order lines. The same front WebP
+cutouts sit inside a custom SVG wire cart with a handle, wheels, front/side mesh
+and grounding shadow. Repeated shirt images represent units; size tags distinguish
+otherwise identical imagery. No new assets, models or dependencies were added.
+
+The composition displays up to eight units. Allocation represents distinct
+configurations before adding repeated copies; remaining units are counted by
+the **+N more tees** control. The **Find a selection** disclosure exposes every
+configuration, including those outside the visible composition. Selecting an
+otherwise hidden configuration brings a representative shirt into the cart.
+
+Each shirt is a labelled native button controlling a stable review-row ID.
+Click, tap or keyboard activation selects its matching group, highlights the
+row, and moves focus to it. Offscreen rows are brought into view. Focus within
+the itemised list also updates cart selection. Quantity/removal/Undo updates
+the composition immediately; an empty cart links back to the builder.
+
+Mobile uses a compact cart above the list. Review rows and monetary totals
+reflow at narrow container widths/enlarged text, and review quantity buttons
+have at least 44px touch targets. Cart entrances, hover transitions and row
+scrolling account for reduced motion. Failed images retain labelled selection
+controls and the itemised breakdown.
+
+Verification: ESLint, TypeScript, production build and all eleven merch tests;
+the existing shelf/checkout browser regression; and a focused cart browser
+pass covering saved-order-only images, repeated units, mouse/keyboard/touch row
+selection/focus, same colour with different sizes, quantity/removal/Undo, empty
+state, refresh, large orders, hidden configurations, 320–1920px, 200% text,
+reduced motion and image failure. Payment requests were blocked or mocked.

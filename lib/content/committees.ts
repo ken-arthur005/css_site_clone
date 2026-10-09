@@ -14,7 +14,12 @@ export async function getCommittees(): Promise<readonly Committee[]> {
   }
 
   return [...groups.entries()]
-    .sort(([first], [second]) => first.localeCompare(second, "en"))
+    .sort(([first], [second]) => {
+      // Deputies follow all committees, immediately before the executive team.
+      if (first === "Deputies") return 1;
+      if (second === "Deputies") return -1;
+      return first.localeCompare(second, "en");
+    })
     .map(([name, members]) => ({
       id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-$/, ""),
       name,

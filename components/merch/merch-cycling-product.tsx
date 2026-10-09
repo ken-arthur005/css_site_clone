@@ -2,10 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useNavigationState } from "@/components/providers/navigation-state-provider";
-import { money } from "@/lib/merch/order";
 import type { TeeProduct } from "@/types/merch-store";
 import { MerchImage } from "./merch-image";
-import { MerchOrderLink } from "./merch-showcase";
+import { MerchLivePrice, MerchOrderLink } from "./merch-showcase";
 
 export function MerchCyclingProduct({ product }: { product: TeeProduct }) {
   const root = useRef<HTMLElement>(null);
@@ -65,6 +64,6 @@ export function MerchCyclingProduct({ product }: { product: TeeProduct }) {
         <span className="merch-label">{String(index + 1).padStart(2, "0")} / {String(product.colourways.length).padStart(2, "0")} · {colourway.name}</span>
       </div>
     </div>
-    <div className="merch-product__meta"><div><h3><MerchOrderLink product={product.id} colourwayId={colourway.id}>{product.name}</MerchOrderLink></h3><p>{product.description}</p></div><p>From <strong>{money(product.priceMinor)}</strong></p></div>
+    <div className="merch-product__meta"><div><h3><MerchOrderLink product={product.id} colourwayId={colourway.id}>{product.name}</MerchOrderLink></h3><p>{product.description}</p></div><MerchLivePrice product={product.id} /></div>
   </article>;
 }

@@ -1,9 +1,11 @@
 import { getMerchStore } from "@/lib/content/merch-store";
-import { amountMinor, getCheckoutCatalog, MerchApiError, merchApi, parseOrder, safePaymentUrl } from "@/lib/api/merch";
-import { calculateTotals, makeOrderRequest, validateLine } from "@/lib/merch/order";
+import { getCheckoutCatalog, isOrderId, MerchApiError, merchApi, parseOrder, safePaymentUrl } from "@/lib/api/merch";
+import { makeOrderRequest, validateLine } from "@/lib/merch/order";
+import { selectionIssue, stockIssue } from "@/lib/merch/catalog";
 import type { Buyer, TeeLine } from "@/types/merch-store";
 
 export async function POST(request: Request) {
+  let createdId: string | undefined;
   try {
     const body = await request.json().catch(() => { throw new MerchApiError("The order could not be read.", 400); });
     const content = await getMerchStore();
@@ -13,29 +15,27 @@ export async function POST(request: Request) {
       typeof buyer.phone !== "string" || !/^\+?[\d\s()-]{9,20}$/.test(buyer.phone.trim())) throw new MerchApiError("Please check your name, email and phone number.", 400);
     const lines = body?.lines as TeeLine[];
     if (!Array.isArray(lines) || !lines.length || lines.length > 40 || !lines.every((line) => validateLine(line, content))) throw new MerchApiError("Please check the tee options and quantities in your order.", 400);
-    const catalog = await getCheckoutCatalog();
-    if (!catalog.pricingReady) throw new MerchApiError("Online ordering is being connected. Your tees are saved on this device.", 503);
+    const catalog = await getCheckoutCatalog(content);
     const ids: Partial<Record<TeeLine["productId"], number>> = {};
+    const invalidSelection = lines.map((line) => selectionIssue(line, content, catalog)).find(Boolean);
+    if (invalidSelection) throw new MerchApiError(invalidSelection, 409);
+    const invalidStock = stockIssue(lines, content, catalog);
+    if (invalidStock) throw new MerchApiError(invalidStock, 409);
     for (const product of content.products) {
       const chosen = lines.filter((line) => line.productId === product.id);
       if (!chosen.length) continue;
       const live = catalog.products[product.id];
-      const quantity = chosen.reduce((sum, line) => sum + line.quantity, 0);
       if (!live || !live.in_stock || live.price === null) throw new MerchApiError(`${product.name} is currently unavailable. Please edit your order.`, 409);
-      if (live.stock_quantity !== null && quantity > live.stock_quantity) throw new MerchApiError(`Only ${live.stock_quantity} ${product.name}s remain. Please update your quantities.`, 409);
-      if (amountMinor(live.price) !== product.priceMinor) throw new MerchApiError(`${product.name} pricing has changed. Please try again once the catalog has been updated.`, 409);
       ids[product.id] = live.id;
     }
-    const expected = calculateTotals(lines, content);
-    const raw = await merchApi("orders/", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(makeOrderRequest(buyer, lines, ids)) });
+    const raw = await merchApi("orders/", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(makeOrderRequest(buyer, lines, ids, content)) });
+    const id = raw && typeof raw === "object" ? (raw as { id?: unknown }).id : undefined;
+    if (typeof id === "string" && isOrderId(id)) createdId = id;
     const order = parseOrder(raw);
-    // Never send a buyer to payment with a silently missing discount or surcharge.
-    if (amountMinor(order.subtotal) !== expected.subtotalMinor || amountMinor(order.discount ?? "0") !== expected.discountMinor ||
-      amountMinor(order.total) !== expected.totalMinor + amountMinor(order.fee)) {
-      return Response.json({ error: { message: "The service’s total doesn’t match your tee options and offer. Payment has not been opened; please keep this order reference for support.", orderId: order.id } }, { status: 409 });
-    }
+    // The backend owns pricing. Validate its arithmetic before the single-click
+    // redirect; Paystack shows the final amount before payment authorization.
     return Response.json({ ...order, authorization_url: safePaymentUrl(order.authorization_url) }, { status: 201 });
   } catch (error) {
-    return Response.json({ error: { message: error instanceof Error ? error.message : "The order could not be placed." } }, { status: error instanceof MerchApiError ? error.status : 502 });
+    return Response.json({ error: { message: error instanceof Error ? error.message : "The order could not be placed.", ...(createdId ? { orderId: createdId } : {}) } }, { status: error instanceof MerchApiError ? error.status : 502 });
   }
 }

@@ -1,15 +1,17 @@
 "use client";
 
 import { useRef } from "react";
-import { lineKey, money, productIsOpen, unitPrice } from "@/lib/merch/order";
-import type { MerchStoreContent, TeeLine } from "@/types/merch-store";
+import { lineKey, money, unitPrice } from "@/lib/merch/order";
+import { selectionIssue } from "@/lib/merch/catalog";
+import type { CheckoutCatalog, MerchStoreContent, TeeLine } from "@/types/merch-store";
 import { MerchImage } from "./merch-image";
 import { Quantity } from "./merch-quantity";
 
 export type ShelfFeedback = { key: string; sequence: number; action: "Added" | "Updated" };
 
-export function MerchOrderShelf({ content, lines, editingKey, feedback, disabled, onEdit, onRemove, onQuantity }: {
+export function MerchOrderShelf({ content, catalog, lines, editingKey, feedback, disabled, onEdit, onRemove, onQuantity }: {
   content: MerchStoreContent;
+  catalog: CheckoutCatalog | null;
   lines: TeeLine[];
   editingKey: string | null;
   feedback: ShelfFeedback | null;
@@ -44,6 +46,7 @@ export function MerchOrderShelf({ content, lines, editingKey, feedback, disabled
         const active = editingKey === key;
         const pulse = feedback?.key === key ? feedback : null;
         const label = `${product.name}, ${colourway.name}, size ${line.size}`;
+        const issue = selectionIssue(line, content, catalog);
         return <article className="merch-shelf-item" key={key} data-editing={active || undefined} aria-label={label}>
           <div className="merch-shelf-item__stage">
             <span className="merch-shelf-item__number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
@@ -58,7 +61,7 @@ export function MerchOrderShelf({ content, lines, editingKey, feedback, disabled
             <h3>{product.name}</h3><p>{colourway.name}</p><p className="merch-shelf-item__colours">{colourway.base} fabric / {colourway.print} print</p>
             <div className="merch-shelf-item__quantity"><Quantity quantity={line.quantity} max={content.maxQuantity} label={`${label} quantity`} disabled={disabled || active} onChange={(quantity) => onQuantity(line, quantity)} /><strong>{money(unitPrice(line, content) * line.quantity)}</strong></div>
             <div className="merch-shelf-item__actions"><button type="button" disabled={disabled || !!editingKey} aria-label={`Edit ${label}`} onClick={() => onEdit(line)}>Edit size / colour</button><button data-shelf-remove type="button" disabled={disabled} aria-label={`Remove ${label}`} onClick={() => remove(line, index)}>Remove</button></div>
-            {!productIsOpen(product) && <p className="merch-form-error">This edition has ended. Remove it to continue.</p>}
+            {issue && <p className="merch-form-error">{issue} Edit or remove this selection.</p>}
             {line.quantity > content.maxQuantity && <p className="merch-form-error">Choose up to {content.maxQuantity} of this configuration. Reduce the quantity to continue.</p>}
           </div>
         </article>;

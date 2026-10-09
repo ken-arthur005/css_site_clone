@@ -1,7 +1,47 @@
-import type { Buyer, MerchStoreContent, MerchTotals, TeeLine, TeeProduct } from "@/types/merch-store";
+import type { ApiOrderItem, Buyer, MerchQuote, MerchStoreContent, MerchTotals, SavedMerchOrder, TeeLine, TeeProduct } from "@/types/merch-store";
 
 export const CART_KEY = "cssknust.merch.cart.v1";
 export const PENDING_ORDER_KEY = "cssknust.merch.pending.v1";
+export const ORDER_HISTORY_KEY = "cssknust.merch.orders.v1";
+export const LAST_RECEIPT_KEY = "cssknust.merch.receipt.v1";
+
+export function orderPhase(status: string): "paid" | "pending" | "closed" | "unknown" {
+  const value = status.toUpperCase();
+  if (["PAID", "COLLECTED"].includes(value)) return "paid";
+  if (["PENDING", "PENDING_PAYMENT", "AWAITING_PAYMENT", "CREATED", "UNPAID"].includes(value)) return "pending";
+  if (["FAILED", "EXPIRED", "CANCELLED", "CANCELED"].includes(value)) return "closed";
+  return "unknown";
+}
+
+export function paymentHref(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && (url.hostname === "paystack.com" || url.hostname.endsWith(".paystack.com")) && !url.username && !url.password ? url.href : null;
+  } catch { return null; }
+}
+
+export function readSavedOrder(value: unknown): SavedMerchOrder | null {
+  if (!value || typeof value !== "object") return null;
+  const saved = value as Record<string, unknown>;
+  if (typeof saved.id !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(saved.id)) return null;
+  return { id: saved.id.toLowerCase(), lines: Array.isArray(saved.lines) ? saved.lines : [], authorization_url: paymentHref(saved.authorization_url),
+    expires_at: typeof saved.expires_at === "string" ? saved.expires_at : null, quote: readMerchQuote(saved.quote),
+    ownsCart: saved.ownsCart !== false, reconciled: saved.reconciled === true,
+    ...(typeof saved.status === "string" ? { status: saved.status } : {}) };
+}
+
+export function snapshotReduced(previous: TeeLine[], next: TeeLine[], snapshot: TeeLine[]): boolean {
+  return snapshot.some((line) => {
+    const before = previous.find((item) => lineKey(item) === lineKey(line))?.quantity ?? 0;
+    const after = next.find((item) => lineKey(item) === lineKey(line))?.quantity ?? 0;
+    return after < Math.min(before, line.quantity);
+  });
+}
+
+export function reconcileOrderCart(cart: TeeLine[], saved: SavedMerchOrder, status: string, content: MerchStoreContent): TeeLine[] {
+  return orderPhase(status) === "paid" && saved.ownsCart && !saved.reconciled ? subtractPurchasedLines(cart, normalizeStoredLines(saved.lines, content)) : cart;
+}
 
 export function money(minor: number): string {
   return `GH₵${(minor / 100).toFixed(2)}`;
@@ -49,13 +89,13 @@ export function unitPrice(line: TeeLine, content: MerchStoreContent): number {
   const product = content.products.find(({ id }) => id === line.productId);
   const size = content.sizes.find(({ id }) => id === line.size);
   if (!product || !size) throw new Error("Choose a valid tee and size.");
-  return product.priceMinor + size.extraMinor;
+  return product.priceMinor;
 }
 
 export function calculateTotals(lines: TeeLine[], content: MerchStoreContent): MerchTotals {
   const quantity = lines.reduce((sum, line) => sum + line.quantity, 0);
   const subtotalMinor = lines.reduce((sum, line) => sum + unitPrice(line, content) * line.quantity, 0);
-  const discountMinor = quantity >= content.discount.minimumQuantity ? Math.round(subtotalMinor * content.discount.percent / 100) : 0;
+  const discountMinor = content.discount.enabled && quantity >= content.discount.minimumQuantity ? Math.round(subtotalMinor * content.discount.percent / 100) : 0;
   return { quantity, subtotalMinor, discountMinor, totalMinor: subtotalMinor - discountMinor };
 }
 
@@ -87,19 +127,43 @@ export function subtractPurchasedLines(cart: TeeLine[], purchased: TeeLine[]): T
   });
 }
 
-export function serializeOptions(line: TeeLine): string {
-  const note = `size=${line.size};colourway=${line.colourwayId}`;
-  if (note.length > 100) throw new Error("The selected options exceed the ordering service’s note limit.");
-  return note;
+export function readMerchQuote(value: unknown): MerchQuote | null {
+  if (!value || typeof value !== "object") return null;
+  const quote = value as MerchQuote;
+  const fields = [quote.subtotal, quote.discount_amount, quote.discount_percent, quote.fee, quote.total];
+  if (!fields.every((field) => typeof field === "string" && /^\d+(\.\d{1,2})?$/.test(field) && Number.isSafeInteger(Math.round(Number(field) * 100)))) return null;
+  const minor = (field: string) => Math.round(Number(field) * 100);
+  if (minor(quote.discount_amount) > minor(quote.subtotal) || minor(quote.discount_percent) > 10000 || minor(quote.subtotal) - minor(quote.discount_amount) + minor(quote.fee) !== minor(quote.total)) return null;
+  return { subtotal: quote.subtotal, discount_amount: quote.discount_amount, discount_percent: quote.discount_percent, fee: quote.fee, total: quote.total };
 }
 
-export function makeOrderRequest(buyer: Buyer, lines: TeeLine[], ids: Partial<Record<TeeLine["productId"], number>>) {
+export function receiptOptions(item: ApiOrderItem, content: MerchStoreContent): string {
+  // Old receipts used note-based local IDs; new receipts have dedicated fields.
+  const legacy = Object.fromEntries((item.note ?? "").split(";").filter((part) => part.includes("=")).map((part) => part.split("=")));
+  const size = item.size || legacy.size;
+  const value = item.colorway || legacy.colourway;
+  const colourway = value ? content.products.flatMap((product) => product.colourways).find((cw) => cw.apiValue === value || cw.id === value) : undefined;
+  return [colourway?.name ?? value, size ? `Size ${size}` : null].filter(Boolean).join(" · ") || item.note || "";
+}
+
+export function receiptProduct(item: ApiOrderItem, content: MerchStoreContent) {
+  const product = content.products.find((product) => product.apiId === item.product || product.apiNames.some((name) => name.toLowerCase() === item.product_name?.toLowerCase()));
+  if (!product) return null;
+  const legacy = Object.fromEntries((item.note ?? "").split(";").filter((part) => part.includes("=")).map((part) => part.split("=")));
+  const value = item.colorway || legacy.colourway;
+  const colourway = product.colourways.find((cw) => cw.apiValue === value || cw.id === value) ?? (product.colourways.length === 1 ? product.colourways[0] : null);
+  return { product, colourway };
+}
+
+export function makeOrderRequest(buyer: Buyer, lines: TeeLine[], ids: Partial<Record<TeeLine["productId"], number>>, content: MerchStoreContent) {
   return {
     buyer_name: buyer.name.trim(), buyer_phone: buyer.phone.trim(), buyer_email: buyer.email.trim(),
     items: lines.map((line) => {
       const product = ids[line.productId];
       if (!product || !Number.isInteger(product)) throw new Error("This tee is not connected to the ordering service yet.");
-      return { product, quantity: line.quantity, note: serializeOptions(line) };
+      const colourway = content.products.find(({ id }) => id === line.productId)?.colourways.find(({ id }) => id === line.colourwayId);
+      if (!colourway) throw new Error("Choose a valid colourway.");
+      return { product, quantity: line.quantity, size: line.size, ...(colourway.apiValue ? { colorway: colourway.apiValue } : {}) };
     }),
   };
 }

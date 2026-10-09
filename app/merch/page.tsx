@@ -2,19 +2,18 @@ import type { Metadata } from "next";
 import { MerchHero } from "@/components/merch/merch-hero";
 import { MerchImage } from "@/components/merch/merch-image";
 import { MerchPink } from "@/components/merch/merch-pink";
-import { MerchOrderLink, MerchShowcase } from "@/components/merch/merch-showcase";
+import { MerchLiveOffer, MerchLivePrice, MerchOrderLink, MerchShowcase } from "@/components/merch/merch-showcase";
 import { MerchTour } from "@/components/merch/merch-tour";
 import { MerchTyping } from "@/components/merch/merch-typing";
 import { MerchSectionNav } from "@/components/merch/merch-section-nav";
 import { MerchCyclingProduct } from "@/components/merch/merch-cycling-product";
 import { getMerchStore } from "@/lib/content/merch-store";
 import { getSiteInfo } from "@/lib/content/site";
-import { money } from "@/lib/merch/order";
 
 export async function generateMetadata(): Promise<Metadata> {
   const site = await getSiteInfo();
   const canonical = site.canonicalOrigin.contentStatus === "verified" ? new URL("/merch", site.canonicalOrigin.value).href : undefined;
-  return { title: "Wear the society — CSS KNUST Merch", description: "Explore the CSS Tee in six colourways and the Pink October Tee. Choose your colourway and size; get 5% off when you buy two or more tees.",
+  return { title: "Wear the society — CSS KNUST Merch", description: "Explore the CSS Tee in six colourways and the Pink October Tee. Choose your colourway and size, and discover the current offer in the shop.",
     ...(canonical ? { alternates: { canonical }, openGraph: { url: canonical, images: [{ url: new URL("/merch/mockups/black-magenta.jpg", site.canonicalOrigin.value).href }] } } : {}) };
 }
 
@@ -33,14 +32,14 @@ export default async function MerchPage() {
       <MerchTour story={content.story} />
       <section className="merch-shop-section" id="shop" aria-labelledby="shop-title">
         <div className="merch-section-heading" data-merch-bot-anchor="shop"><div><p className="merch-label">02 / The collection</p><h2 id="shop-title"><MerchTyping>The shop<span>.</span></MerchTyping></h2></div><p>Two tees. No complicated choices.<br />Choose your colours, find your fit, wear CSS.</p></div>
-        <p className="merch-offer"><span aria-hidden="true">↳</span> Good things come in twos. <strong>Any 2+ tees. 5% off.</strong></p>
+        <MerchLiveOffer />
         <div className="merch-product-grid">{content.products.map((product) => product.id === "css-tee" ? <MerchCyclingProduct key={product.id} product={product} /> : <article className="merch-product" key={product.id} data-merch-reveal>
           <MerchOrderLink product={product.id} availableUntil={product.availableUntil} className={`merch-product__image ${product.id === "pink-october" ? "merch-product__image--pink" : ""}`}>
             <span className="merch-label merch-product__tag">{product.id === "pink-october" ? "October edition" : "Six colourways"}</span>
             <MerchImage src={product.colourways[0].front} alt={product.name} />
             <span className="merch-product__arrow" aria-hidden="true">↗</span>
           </MerchOrderLink>
-          <div className="merch-product__meta"><div><h3><MerchOrderLink product={product.id} availableUntil={product.availableUntil}>{product.name}</MerchOrderLink></h3><p>{product.description}</p></div><p>From <strong>{money(product.priceMinor)}</strong></p></div>
+          <div className="merch-product__meta"><div><h3><MerchOrderLink product={product.id} availableUntil={product.availableUntil}>{product.name}</MerchOrderLink></h3><p>{product.description}</p></div><MerchLivePrice product={product.id} /></div>
         </article>)}</div>
       </section>
       <MerchPink facts={content.facts} availableUntil={pink.availableUntil!} />
