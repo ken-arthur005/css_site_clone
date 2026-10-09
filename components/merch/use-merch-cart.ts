@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useSyncExternalStore } from "react";
-import { CART_KEY, PENDING_ORDER_KEY, validLineOptions } from "@/lib/merch/order";
+import { CART_KEY, normalizeStoredLines, PENDING_ORDER_KEY } from "@/lib/merch/order";
 import type { MerchStoreContent, TeeLine } from "@/types/merch-store";
 
 const memory = new Map<string, string>();
@@ -31,7 +31,7 @@ export function useStoredValue(key: string): string {
 export function useMerchCart(content: MerchStoreContent) {
   const raw = useStoredValue(CART_KEY);
   const lines = useMemo(() => {
-    try { const parsed: unknown = JSON.parse(raw); return Array.isArray(parsed) ? parsed.filter((line) => validLineOptions(line, content)).slice(0, 40) : []; }
+    try { return normalizeStoredLines(JSON.parse(raw), content); }
     catch { return []; }
   }, [raw, content]);
   return { lines, setLines: (next: TeeLine[]) => saveStoredValue(CART_KEY, JSON.stringify(next)) };

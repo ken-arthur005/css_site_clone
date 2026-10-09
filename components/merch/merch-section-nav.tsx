@@ -19,7 +19,7 @@ export function MerchSectionNav() {
     const element = nav.current, page = element?.closest<HTMLElement>(".merch-page");
     const header = document.querySelector<HTMLElement>(".site-header");
     if (!element || !page || !header) return;
-    let frame = 0, hashFrame = 0, mounted = true;
+    let frame = 0, mounted = true;
     let previous = "";
     const measure = () => {
       frame = 0;
@@ -38,29 +38,14 @@ export function MerchSectionNav() {
     const observer = new ResizeObserver(schedule);
     observer.observe(header); observer.observe(element);
     measure();
-    const alignHash = () => {
-      hashFrame = 0;
-      const target = document.getElementById(location.hash.slice(1));
-      if (target && page.contains(target)) scrollToElement(target, { offset: -getMerchStackHeight() - 16, immediate: true });
-    };
-    const historyChange = () => { cancelAnimationFrame(hashFrame); hashFrame = requestAnimationFrame(alignHash); };
-    const initialHash = location.hash;
-    let interacted = false;
-    const recordInteraction = () => { interacted = true; };
-    window.addEventListener("wheel", recordInteraction, { passive: true });
-    window.addEventListener("pointerdown", recordInteraction, { passive: true });
-    window.addEventListener("keydown", recordInteraction);
+    // URL/hash history alignment belongs to the app coordinator; reapplying an
+    // anchor here would overwrite a saved Back/Forward position in that chapter.
     document.fonts.ready.then(() => {
       if (!mounted) return;
       schedule();
-      if (initialHash && location.hash === initialHash && !interacted) hashFrame = requestAnimationFrame(() => { if (mounted) alignHash(); });
     });
-    window.addEventListener("popstate", historyChange);
-    window.addEventListener("hashchange", historyChange);
     return () => {
-      mounted = false; observer.disconnect(); cancelAnimationFrame(frame); cancelAnimationFrame(hashFrame);
-      window.removeEventListener("popstate", historyChange); window.removeEventListener("hashchange", historyChange);
-      window.removeEventListener("wheel", recordInteraction); window.removeEventListener("pointerdown", recordInteraction); window.removeEventListener("keydown", recordInteraction);
+      mounted = false; observer.disconnect(); cancelAnimationFrame(frame);
       page.style.removeProperty("--merch-header-height"); page.style.removeProperty("--merch-index-height"); page.style.removeProperty("--merch-stack-height");
     };
   }, [scrollToElement]);

@@ -2,7 +2,6 @@ import type { MerchProduct } from "./merch";
 
 export type TeeId = "css-tee" | "pink-october";
 export type TeeSize = "S" | "M" | "L" | "XL" | "XXL" | "3XL";
-export type TeeFit = "regular" | "oversized";
 
 export type TeeColourway = {
   id: string;
@@ -22,7 +21,6 @@ export type TeeProduct = {
   name: string;
   description: string;
   priceMinor: number;
-  fits: { id: TeeFit; name: string; extraMinor: number }[];
   colourways: TeeColourway[];
   availableUntil?: string;
 };
@@ -44,7 +42,6 @@ export type TeeLine = {
   productId: TeeId;
   colourwayId: string;
   size: TeeSize;
-  fit: TeeFit;
   quantity: number;
 };
 

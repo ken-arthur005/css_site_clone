@@ -5,27 +5,28 @@
 - `/merch`: the owner-supplied merch site's story adapted to the CSS KNUST shell.
   Shared header/menu/footer, interactive GLB hero, six colourways, five-stage
   photographic tour, two-product collection, Pink October, lookbook and FAQ.
-- `/merch/shop`: standalone CSS and Pink October tees, regular/oversized options
-  where valid, S–3XL, multiple configurations, persistent order draft and review.
+- `/merch/shop`: CSS and Pink October tees, S–3XL, a two-stage builder with an
+  editable visual order shelf, persistent order draft and review.
 - `/merch/order/[publicId]`: API-backed payment status, totals and pickup code.
 - `/merch/order`: payment-return landing. Accepts a UUID in `public_id`, `order_id`
   or `id`; otherwise restores the saved public ID on the same browser.
 
 ## Approved offer and catalog
 
-The owner approved both tees at GH₵70, six CSS colourways, CSS oversized +GH₵20,
-XXL +GH₵10, 3XL +GH₵15, and Pink October through 31 October 2026 (Accra time).
+The owner approved both tees at GH₵70, six CSS colourways, XXL +GH₵10 and
+3XL +GH₵10, and Pink October through 31 October 2026 (Accra time).
+The owner's latest correction removes fit options and all fit surcharges.
 No printed names, executive polo, ID cards, packs, cash selection, discount-code
 input, student ID or hostel fields. Buyer details are name, phone and email.
 
 Any **two or more tee units**, including identical units or mixed products,
-receive **5% off the entire merchandise subtotal including fit/size extras**.
+receive **5% off the entire merchandise subtotal including size extras**.
 Round the discount to the nearest pesewa. Apply the payment fee after discount.
 Examples:
 
-- 2 regular M tees: subtotal 140.00, discount 7.00, merchandise total 133.00.
-- CSS oversized 3XL + Pink October XXL: subtotal 185.00, discount 9.25,
-  merchandise total 175.75.
+- 2 M tees: subtotal 140.00, discount 7.00, merchandise total 133.00.
+- CSS 3XL + Pink October XXL: subtotal 160.00, discount 8.00,
+  merchandise total 152.00.
 
 Local approved content lives behind `getMerchStore()`. Live product IDs, stock
 and catalog pricing are read independently from the ordering service. The
@@ -36,7 +37,7 @@ frontend does not invent inventory or connect an approved tee to a test record.
 Base: `https://css-knust-api.onrender.com/api/v1/`.
 During implementation the live catalog returned only one `Test Item`, ID 1.
 The supplied and live schemas have `product`, `quantity` and `note` on items;
-the dedicated size/fit/colourway fields and discount response are pending.
+the dedicated size/colourway fields and discount response are pending.
 
 1. Publish the actual **CSS Tee** and **Pink October Tee** merchandise records.
    Unique, exact names map automatically; explicit IDs can be set with
@@ -44,14 +45,17 @@ the dedicated size/fit/colourway fields and discount response are pending.
 2. For this build, interpret and retain the generated note:
 
    ```text
-   size=3XL;fit=oversized;colourway=kernel-panic
+    size=3XL;colourway=kernel-panic
    ```
 
-   Keys and values are stable IDs. Pink October uses `colourway=pink-october`
-   and `fit=regular`. Every approved note fits the current 100-character limit.
+    Keys and values are stable IDs. Pink October uses `colourway=pink-october`.
+    New orders omit `fit`; it is not a product option. Receipt parsing accepts
+    legacy notes, and saved-cart normalization drops legacy fit fields while
+    preserving quantities. Every approved note fits the 100-character limit.
    The request adapter is `makeOrderRequest()` in `lib/merch/order.ts`; change
    only its serialization when dedicated API fields arrive.
-3. Validate options and calculate size/fit extras **on the backend**. A note
+3. Validate options and calculate size extras **on the backend** (XXL and 3XL
+   each +GH₵10, no fit surcharge). A note
    does not automatically change Paystack's amount. Count stock across all
    configurations of the same merchandise record.
 4. Implement the automatic offer. Include `discount` as a decimal GHS string
@@ -198,3 +202,34 @@ layout, and restoration of the shared scroll/viewer defaults after leaving merch
 Browser evidence and temporary QA scripts are outside the repository under the
 pre-approved temporary directory. The supplied API YAML is owner work and has
 not been overwritten to invent forthcoming backend fields.
+
+## Order shelf redesign
+
+The shop now uses **Build your order → Review & pay**. Design selection lives
+inside the configurator, and the order shelf remains visible below it. The shelf
+reuses the supplied front WebP cutouts (`public/merch/tees/` and
+`public/merch/pink/`); its shallow tray, front lip and shadows are CSS surfaces.
+No additional images, models or packages are needed.
+
+Each product/colourway/size combination has its own entry. Identical additions
+merge quantities. Shelf controls share the review's quantity/stock checks; Edit
+loads the configuration with Save/Cancel, and Remove has a ten-second Undo.
+New additions settle into place, matching quantities receive confirmation, and
+the new shelf motion respects reduced motion independently of the showcase.
+Desktop rows wrap; narrow layouts use stacked image/detail entries that reflow
+at enlarged text sizes. Images have the shared failure fallback.
+
+Fit was removed from product options, pricing, types and new order notes.
+XXL and 3XL now each add GH₵10. Legacy saved fit entries normalize into the new
+product/colourway/size key without discarding units. Above-limit merged quantities
+remain visible and must be reduced before checkout. Existing payment snapshots
+and backend-confirmed amounts are not rewritten; receipt cleanup normalizes
+their selections when subtracting purchased units from the current cart.
+
+Checks: eleven merch tests, ESLint, TypeScript and production build; isolated
+browser verification of mixed designs/sizes, duplicates, edit merging/cancellation,
+removal/Undo/focus, stock checks, refresh/hash history, legacy migration, pricing,
+320–1920px layouts, 200% text, keyboard, reduced motion and failed images.
+A separate 390px double-density touch context verified add, quantity, edit/save,
+remove/Undo and review using taps.
+Checkout and receipt responses were mocked; no live order or payment was made.

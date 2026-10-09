@@ -5,6 +5,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { createContext, useContext, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { TransitionLink } from "@/components/transitions/transition-link";
+import { MERCH_BOT_ENABLED } from "@/lib/merch/features";
 import type { TeeColourway, TeeId } from "@/types/merch-store";
 import { MerchBotGuide } from "./merch-bot-guide";
 
@@ -54,6 +55,6 @@ export function MerchShowcase({ colourways, children }: { colourways: TeeColourw
   }, { scope: root });
   const colourway = colourways.find(({ id }) => id === selectedId) ?? colourways[0];
   return <ColourwayContext.Provider value={{ colourway, select: setSelectedId }}>
-    <div className="merch-showcase" ref={root}>{children}<MerchBotGuide rootRef={root} ink={colourway.printValue} /></div>
+    <div className="merch-showcase" ref={root}>{children}{MERCH_BOT_ENABLED && <MerchBotGuide rootRef={root} ink={colourway.printValue} />}</div>
   </ColourwayContext.Provider>;
 }

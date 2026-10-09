@@ -69,7 +69,6 @@ export function AboutExperience({ children }: { children: ReactNode }) {
 
     let disposed = false;
     let frame = 0;
-    let hashFrame = 0;
     const refresh = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => { if (!disposed) ScrollTrigger.refresh(); });
@@ -98,18 +97,13 @@ export function AboutExperience({ children }: { children: ReactNode }) {
       if (window.location.hash !== hash) history.pushState(null, "", hash);
       followHash(false);
     };
-    const onHash = () => followHash(true);
     root.addEventListener("click", click);
-    window.addEventListener("hashchange", onHash);
-    // Pins/fonts can change document offsets after the browser's initial hash jump.
-    const fontsReady = document.fonts.ready.then(() => {
+    // The app coordinator owns URL/history alignment after route and font
+    // layout settles. This component only scrolls for an explicit chapter click.
+    void document.fonts.ready.then(() => {
       if (disposed) return;
       refresh();
-      hashFrame = requestAnimationFrame(() => {
-        hashFrame = requestAnimationFrame(() => { if (!disposed) followHash(true); });
-      });
     });
-    void fontsReady;
     const resizeObserver = new ResizeObserver(refresh);
     resizeObserver.observe(root);
     // Complete outstanding reveal tweens when focusing content below the fold.
@@ -123,10 +117,8 @@ export function AboutExperience({ children }: { children: ReactNode }) {
     return () => {
       disposed = true;
       cancelAnimationFrame(frame);
-      cancelAnimationFrame(hashFrame);
       resizeObserver.disconnect();
       root.removeEventListener("click", click);
-      window.removeEventListener("hashchange", onHash);
       if (focus) root.removeEventListener("focusin", focus);
       media.revert();
     };

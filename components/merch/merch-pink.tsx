@@ -36,7 +36,7 @@ export function MerchPink({ facts, availableUntil }: { facts: string[]; availabl
         <p className="merch-pink__lede">October is Breast Cancer Awareness Month. Wear the reminder: check on yourself, check on the people you love.</p>
         <div className="merch-pink__actions">
           <MerchOrderLink product="pink-october" availableUntil={availableUntil} className="merch-button">Choose Pink October <span aria-hidden="true">↗</span></MerchOrderLink>
-          <button type="button" className="merch-text-button" ref={trigger} aria-expanded={open} aria-controls="merch-bot-facts" onClick={() => setOpen(!open)}>A word with Dr. Bot <span aria-hidden="true">{open ? "−" : "+"}</span></button>
+          <button type="button" className="merch-text-button" ref={trigger} aria-expanded={open} aria-controls="merch-awareness-facts" onClick={() => setOpen(!open)}>Breast cancer awareness <span aria-hidden="true">{open ? "−" : "+"}</span></button>
         </div>
         <p className="merch-pink__deadline">Order through {new Date(`${availableUntil}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "Africa/Accra" })}.</p>
       </div>
@@ -46,8 +46,8 @@ export function MerchPink({ facts, availableUntil }: { facts: string[]; availabl
         <div className="merch-pink__shirt merch-pink__shirt--back"><MerchImage src="/merch/pink/back.webp" alt="Pink October Tee, back awareness artwork" /></div>
       </div>
     </div>
-    <div id="merch-bot-facts" className="merch-pink__facts" hidden={!open} ref={factsRef} tabIndex={-1}>
-      <p className="merch-label">Dr. Bot / {fact + 1} of {facts.length}</p><p aria-live="polite">{facts[fact]}</p>
+    <div id="merch-awareness-facts" className="merch-pink__facts" hidden={!open} ref={factsRef} tabIndex={-1}>
+      <p className="merch-label">Awareness / {fact + 1} of {facts.length}</p><p aria-live="polite">{facts[fact]}</p>
       <button className="merch-text-button" type="button" onClick={() => setFact((value) => (value + 1) % facts.length)}>Next thought →</button>
       <button className="merch-text-button" type="button" onClick={() => { setOpen(false); trigger.current?.focus(); }}>Close ×</button>
     </div>

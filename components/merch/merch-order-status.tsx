@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { TransitionLink } from "@/components/transitions/transition-link";
-import { CART_KEY, money, PENDING_ORDER_KEY, subtractPurchasedLines, validLineOptions } from "@/lib/merch/order";
-import type { ApiOrder, MerchStoreContent, TeeLine } from "@/types/merch-store";
+import { CART_KEY, money, normalizeStoredLines, PENDING_ORDER_KEY, subtractPurchasedLines } from "@/lib/merch/order";
+import type { ApiOrder, MerchStoreContent } from "@/types/merch-store";
 import { saveStoredValue, storedValue, usePendingOrder } from "./use-merch-cart";
 
 const pendingStatuses = ["PENDING", "PENDING_PAYMENT", "AWAITING_PAYMENT", "CREATED", "UNPAID"];
@@ -35,8 +35,8 @@ function syncCompletedOrder(order: ApiOrder, content: MerchStoreContent) {
       const cart: unknown = JSON.parse(storedValue(CART_KEY) || "[]");
       const purchased: unknown = saved.lines;
       if (Array.isArray(cart) && Array.isArray(purchased)) {
-        const validCart = cart.filter((line): line is TeeLine => validLineOptions(line, content));
-        const validPurchased = purchased.filter((line): line is TeeLine => validLineOptions(line, content));
+        const validCart = normalizeStoredLines(cart, content);
+        const validPurchased = normalizeStoredLines(purchased, content);
         saveStoredValue(CART_KEY, JSON.stringify(subtractPurchasedLines(validCart, validPurchased)));
       }
       saveStoredValue(PENDING_ORDER_KEY, "");
@@ -89,8 +89,8 @@ export function MerchOrderStatus({ id, content }: { id: string; content: MerchSt
         const note = textField(item, "note");
         const selections = note ? Object.fromEntries(note.split(";").map((part) => part.split("="))) : {};
         const colourway = content.products.flatMap((product) => product.colourways).find((cw) => cw.id === selections.colourway);
-        const options = colourway && content.sizes.some(({ id }) => id === selections.size) && ["regular", "oversized"].includes(selections.fit)
-          ? `${colourway.name} · ${selections.size} · ${selections.fit === "oversized" ? "Oversized" : "Regular"} fit` : note;
+        const options = colourway && content.sizes.some(({ id }) => id === selections.size)
+          ? `${colourway.name} · Size ${selections.size}` : note;
         const quantity = item && typeof item === "object" ? (item as Record<string, unknown>).quantity : undefined;
         return <div className="merch-order__item" key={index}><div>{name ?? `Item ${index + 1}`}{options && <small>{options}</small>}</div>{typeof quantity === "number" && <span>× {quantity}</span>}</div>;
       })}</div>}

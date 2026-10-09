@@ -1,11 +1,12 @@
 "use client";
 
-export function SnapRailControls({ label, railId, index, count, onSelect }: {
+export function SnapRailControls({ label, railId, index, count, onSelect, announceChanges = true }: {
   label: string;
   railId: string;
   index: number;
   count: number;
   onSelect: (index: number) => void;
+  announceChanges?: boolean;
 }) {
   if (!count) return null;
   return (
@@ -13,7 +14,7 @@ export function SnapRailControls({ label, railId, index, count, onSelect }: {
       <button aria-controls={railId} aria-label={`Previous ${label}`} disabled={index === 0} onClick={() => onSelect(index - 1)} type="button">
         <span aria-hidden="true">←</span>
       </button>
-      <p className="eyebrow" aria-live="polite" aria-atomic="true">
+      <p className="eyebrow" aria-live={announceChanges ? "polite" : "off"} aria-atomic="true">
         <span className="sr-only">{label} </span>{index + 1} / {count}
       </p>
       <button aria-controls={railId} aria-label={`Next ${label}`} disabled={index === count - 1} onClick={() => onSelect(index + 1)} type="button">

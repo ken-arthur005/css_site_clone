@@ -14,7 +14,7 @@ import { money } from "@/lib/merch/order";
 export async function generateMetadata(): Promise<Metadata> {
   const site = await getSiteInfo();
   const canonical = site.canonicalOrigin.contentStatus === "verified" ? new URL("/merch", site.canonicalOrigin.value).href : undefined;
-  return { title: "Wear the society — CSS KNUST Merch", description: "Explore the CSS Tee in six colourways and the Pink October Tee. Choose your fit and size; get 5% off when you buy two or more tees.",
+  return { title: "Wear the society — CSS KNUST Merch", description: "Explore the CSS Tee in six colourways and the Pink October Tee. Choose your colourway and size; get 5% off when you buy two or more tees.",
     ...(canonical ? { alternates: { canonical }, openGraph: { url: canonical, images: [{ url: new URL("/merch/mockups/black-magenta.jpg", site.canonicalOrigin.value).href }] } } : {}) };
 }
 

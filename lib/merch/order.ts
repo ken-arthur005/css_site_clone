@@ -12,7 +12,7 @@ export function productIsOpen(product: TeeProduct, now = new Date()): boolean {
 }
 
 export function lineKey(line: TeeLine): string {
-  return `${line.productId}:${line.colourwayId}:${line.fit}:${line.size}`;
+  return `${line.productId}:${line.colourwayId}:${line.size}`;
 }
 
 export function validLineOptions(value: unknown, content: MerchStoreContent): value is TeeLine {
@@ -21,21 +21,35 @@ export function validLineOptions(value: unknown, content: MerchStoreContent): va
   const product = content.products.find(({ id }) => id === line.productId);
   return !!product &&
     product.colourways.some(({ id }) => id === line.colourwayId) &&
-    product.fits.some(({ id }) => id === line.fit) &&
     content.sizes.some(({ id }) => id === line.size) &&
-    Number.isInteger(line.quantity) && line.quantity >= 1 && line.quantity <= content.maxQuantity;
+    Number.isInteger(line.quantity) && line.quantity >= 1 && line.quantity <= content.maxQuantity * 40;
+}
+
+// Preserve legacy drafts while removing the obsolete fit field. If formerly
+// distinct fit entries merge above the limit, retain every unit so the buyer
+// can explicitly reduce the quantity rather than silently losing selections.
+export function normalizeStoredLines(value: unknown, content: MerchStoreContent): TeeLine[] {
+  if (!Array.isArray(value)) return [];
+  const result: TeeLine[] = [];
+  for (const raw of value.slice(0, 40)) {
+    if (!validLineOptions(raw, content)) continue;
+    const line: TeeLine = { productId: raw.productId, colourwayId: raw.colourwayId, size: raw.size, quantity: raw.quantity };
+    const existing = result.find((other) => lineKey(other) === lineKey(line));
+    if (existing) existing.quantity += line.quantity;
+    else result.push(line);
+  }
+  return result;
 }
 
 export function validateLine(value: unknown, content: MerchStoreContent, now = new Date()): value is TeeLine {
-  return validLineOptions(value, content) && productIsOpen(content.products.find(({ id }) => id === value.productId)!, now);
+  return validLineOptions(value, content) && value.quantity <= content.maxQuantity && productIsOpen(content.products.find(({ id }) => id === value.productId)!, now);
 }
 
 export function unitPrice(line: TeeLine, content: MerchStoreContent): number {
   const product = content.products.find(({ id }) => id === line.productId);
-  const fit = product?.fits.find(({ id }) => id === line.fit);
   const size = content.sizes.find(({ id }) => id === line.size);
-  if (!product || !fit || !size) throw new Error("Choose a valid tee, fit and size.");
-  return product.priceMinor + fit.extraMinor + size.extraMinor;
+  if (!product || !size) throw new Error("Choose a valid tee and size.");
+  return product.priceMinor + size.extraMinor;
 }
 
 export function calculateTotals(lines: TeeLine[], content: MerchStoreContent): MerchTotals {
@@ -46,13 +60,18 @@ export function calculateTotals(lines: TeeLine[], content: MerchStoreContent): M
 }
 
 export function addLine(lines: TeeLine[], incoming: TeeLine, maxQuantity: number): TeeLine[] {
+  if (!Number.isInteger(incoming.quantity) || incoming.quantity < 1 || incoming.quantity > maxQuantity) throw new Error(`Choose between 1 and ${maxQuantity} tees per configuration.`);
   const existing = lines.find((line) => lineKey(line) === lineKey(incoming));
-  if (!existing) return [...lines, incoming];
+  if (!existing) {
+    if (lines.length >= 40) throw new Error("Your order can contain up to 40 different configurations.");
+    return [...lines, incoming];
+  }
   if (existing.quantity + incoming.quantity > maxQuantity) throw new Error(`You can add up to ${maxQuantity} of the same tee configuration.`);
   return lines.map((line) => line === existing ? { ...line, quantity: line.quantity + incoming.quantity } : line);
 }
 
 export function updateLine(lines: TeeLine[], originalKey: string, incoming: TeeLine, maxQuantity: number): TeeLine[] {
+  if (!Number.isInteger(incoming.quantity) || incoming.quantity < 1 || incoming.quantity > maxQuantity) throw new Error(`Choose between 1 and ${maxQuantity} tees per configuration.`);
   if (!lines.some((line) => lineKey(line) === originalKey)) throw new Error("This tee has changed in your saved order. Please review it again.");
   const collision = lines.some((line) => lineKey(line) !== originalKey && lineKey(line) === lineKey(incoming));
   if (collision) return addLine(lines.filter((line) => lineKey(line) !== originalKey), incoming, maxQuantity);
@@ -69,7 +88,7 @@ export function subtractPurchasedLines(cart: TeeLine[], purchased: TeeLine[]): T
 }
 
 export function serializeOptions(line: TeeLine): string {
-  const note = `size=${line.size};fit=${line.fit};colourway=${line.colourwayId}`;
+  const note = `size=${line.size};colourway=${line.colourwayId}`;
   if (note.length > 100) throw new Error("The selected options exceed the ordering service’s note limit.");
   return note;
 }

@@ -18,12 +18,11 @@ const colourways = [
 export const teeProducts: TeeProduct[] = [
   {
     id: "css-tee", name: "CSS Tee", description: "The original. Six colourways. One society.", priceMinor: 7000,
-    fits: [{ id: "regular", name: "Regular", extraMinor: 0 }, { id: "oversized", name: "Oversized", extraMinor: 2000 }],
     colourways,
   },
   {
     id: "pink-october", name: "Pink October Tee", description: "debugCancer(cure). Wear the reminder.", priceMinor: 7000,
-    fits: [{ id: "regular", name: "Regular", extraMinor: 0 }], availableUntil: "2026-10-31",
+    availableUntil: "2026-10-31",
     colourways: [{ id: "pink-october", name: "Pink October", base: "White", print: "Pink / black artwork", baseValue: "#f4f3f0", printValue: "#a92970", front: "/merch/pink/front.webp", back: "/merch/pink/back.webp", photo: "/merch/pink/mockup.jpg" }],
   },
 ];
@@ -35,7 +34,7 @@ export const merchStoreCopy = {
     { id: "L" as const, chest: "42–44", length: "30", extraMinor: 0 },
     { id: "XL" as const, chest: "45–47", length: "31", extraMinor: 0 },
     { id: "XXL" as const, chest: "48–50", length: "32", extraMinor: 1000 },
-    { id: "3XL" as const, chest: "51–53", length: "33", extraMinor: 1500 },
+    { id: "3XL" as const, chest: "51–53", length: "33", extraMinor: 1000 },
   ],
   maxQuantity: 20,
   discount: { minimumQuantity: 2, percent: 5 },
@@ -46,7 +45,7 @@ export const merchStoreCopy = {
     { title: "The mark.", description: "The CSS logo sits on the chest. Small enough to be subtle, sharp enough to be recognised." },
     { title: "The strip.", description: "Databases, bugs, shields, bots, money bags. Everything a CS student dreams about, stacked down the side." },
     { title: "The spec sheet.", description: "Warning labels, a loading bar, the Cyber Society definition and a QR code. The back has something to say, too." },
-    { title: "Make it yours.", description: "Choose your colourway, fit and size. Add another tee and get 5% off your merchandise subtotal." },
+    { title: "Make it yours.", description: "Choose your colourway and size. Add another tee and get 5% off your merchandise subtotal." },
   ],
   facts: [
     "October is Breast Cancer Awareness Month. That’s why the ribbon—and this tee—are pink.",
@@ -55,8 +54,8 @@ export const merchStoreCopy = {
     "Check on the people you love. A conversation can be a good place to start.",
   ],
   faq: [
-    { question: "How does the 5% offer work?", answer: "Buy two or more tees in one order, in any combination. Get 5% off the whole merchandise subtotal, including fit and size extras. Payment fees are separate." },
+    { question: "How does the 5% offer work?", answer: "Buy two or more tees in one order, in any combination. Get 5% off the whole merchandise subtotal, including size extras. Payment fees are separate." },
     { question: "How do I pay?", answer: "Checkout opens Paystack through the CSS ordering service. Use one of the payment methods offered there. Your order page shows the confirmed payment status and pickup code when available." },
-    { question: "Which sizes and fits can I choose?", answer: "Both tees come in S–3XL. The CSS Tee has regular and oversized fits; Pink October has a regular fit. The size guide and any extras are shown before you add a tee." },
+    { question: "Which sizes can I choose?", answer: "Both tees come in S–3XL. XXL and 3XL each add GH₵10 to the base price. The size guide and extras are shown before you add a tee." },
   ],
 };

@@ -7,12 +7,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useSmoothScroll } from "@/components/providers/smooth-scroll-provider";
 import { getRouteLabel } from "@/lib/animations/route-label";
+import { getHashTarget, HISTORY_ENTRY_KEY, readScrollPositions, saveScrollPositions, type ScrollPosition } from "@/lib/navigation-scroll";
 
 gsap.registerPlugin(useGSAP);
 
 const ROUTE_WAIT_LIMIT = 4000;
-const HISTORY_ENTRY_KEY = "cssTransitionEntry";
-type ScrollPosition = { x: number; y: number };
 type TransitionContextValue = { navigate: (href: string, label?: string) => void; isTransitioning: boolean };
 type Coordinator = { navigate: (href: string, label?: string) => void; commit: (pathname: string) => void };
 type Transaction = {
@@ -39,7 +38,9 @@ export function useRouteTransition() {
 export function RouteTransitionProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { setScrollLocked } = useSmoothScroll();
+  const { setScrollLocked, scrollToPosition, scrollToElement } = useSmoothScroll();
+  const scrollToElementRef = useRef(scrollToElement);
+  useEffect(() => { scrollToElementRef.current = scrollToElement; }, [scrollToElement]);
   const rootRef = useRef<HTMLDivElement>(null);
   const announcementRef = useRef<HTMLParagraphElement>(null);
   const coordinatorRef = useRef<Coordinator | null>(null);
@@ -61,15 +62,17 @@ export function RouteTransitionProvider({ children }: { children: ReactNode }) {
     const titleWindow = root.querySelector<HTMLElement>(".route-transition__label-window")!;
     const hint = root.querySelector<HTMLElement>(".route-transition__hint")!;
     let active: Transaction | null = null;
-    let lateDestination: string | null = null;
+    let lateDestination: Transaction | null = null;
     let sequence = 0;
     let disposed = false;
     let waitTimer = 0;
     let hintTimer = 0;
     let focusFrame = 0;
     let fitFrame = 0;
+    let positionFrame = 0;
+    let initialPositionPending = true;
     let restoreFocus: (() => void) | undefined;
-    const positions = new Map<string, ScrollPosition>();
+    const positions = readScrollPositions();
     const entryKey = () => {
       const state = window.history.state ?? {};
       const stored = state[HISTORY_ENTRY_KEY] as { id: string; href: string } | undefined;
@@ -85,11 +88,63 @@ export function RouteTransitionProvider({ children }: { children: ReactNode }) {
     };
     let currentEntry = entryKey();
     const position = () => ({ x: window.scrollX, y: window.scrollY });
-    positions.set(currentEntry, position());
+    const navigation = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+    const initialPosition = navigation?.type === "back_forward" ? positions.get(currentEntry) : undefined;
+    if (!initialPosition) positions.set(currentEntry, position());
     const capturePosition = () => {
-      if (active || window.location.pathname !== pathnameRef.current) return;
+      // Opening the menu changes scrollbar geometry. Save the browsing position,
+      // not any scroll anchoring caused by a navigation lock.
+      if (active || initialPositionPending || document.documentElement.dataset.scrollLocked === "true" || window.location.pathname !== pathnameRef.current) return;
       currentEntry = entryKey();
       positions.set(currentEntry, position());
+    };
+    const followDestination = (restorePosition?: ScrollPosition) => {
+      if (restorePosition) scrollToPosition(restorePosition);
+      else {
+        const target = getHashTarget();
+        if (target) {
+          // An anchor may point into a collapsed About chapter.
+          const details = target.closest("details");
+          if (details) details.open = true;
+          scrollToElementRef.current(target, { immediate: true, force: true });
+        } else scrollToPosition({ x: 0, y: 0 });
+      }
+      currentEntry = entryKey();
+      positions.set(currentEntry, position());
+    };
+    const schedulePosition = (restorePosition?: ScrollPosition) => {
+      cancelAnimationFrame(positionFrame);
+      positionFrame = requestAnimationFrame(() => {
+        positionFrame = requestAnimationFrame(() => {
+          positionFrame = 0;
+          if (!disposed && !active) followDestination(restorePosition);
+        });
+      });
+    };
+    const applyInitialPosition = () => {
+      positionFrame = 0;
+      if (disposed || !initialPositionPending) return;
+      initialPositionPending = false;
+      followDestination(initialPosition);
+    };
+    // Layout effects create the initial pins before this frame. Fonts can then
+    // change their geometry; align once more, unless the visitor has interacted.
+    if (!initialPosition) scrollToPosition({ x: 0, y: 0 });
+    void document.fonts.ready.then(() => {
+      if (disposed || !initialPositionPending) return;
+      positionFrame = requestAnimationFrame(() => {
+        positionFrame = requestAnimationFrame(applyInitialPosition);
+      });
+    });
+    const recordInteraction = () => {
+      initialPositionPending = false;
+      cancelAnimationFrame(positionFrame);
+      positionFrame = 0;
+    };
+    const persistPositions = () => { capturePosition(); saveScrollPositions(positions); };
+    const onVisibilityChange = () => { if (document.visibilityState === "hidden") persistPositions(); };
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) schedulePosition(positions.get(entryKey()));
     };
 
     const phase = (name: string) => { root.dataset.phase = name; };
@@ -114,7 +169,7 @@ export function RouteTransitionProvider({ children }: { children: ReactNode }) {
       focusFrame = requestAnimationFrame(() => {
         if (disposed || active || id !== sequence || document.documentElement.dataset.scrollLocked === "true") return;
         const main = document.querySelector<HTMLElement>("main");
-        const target = main?.querySelector<HTMLElement>("h1") ?? main;
+        const target = getHashTarget() ?? main?.querySelector<HTMLElement>("h1") ?? main;
         if (!target || target.closest("[inert]")) return;
         restoreFocus?.();
         const previous = target.getAttribute("tabindex");
@@ -134,17 +189,20 @@ export function RouteTransitionProvider({ children }: { children: ReactNode }) {
       if (disposed || active !== transaction) return;
       clearWait();
       transaction.context?.kill(false);
+      // Reassert after destination effects/old pin teardown, before uncovering
+      // the page. Failed navigation must leave the source position untouched.
+      if (transaction.committed) followDestination(transaction.restorePosition);
       root.style.opacity = "0";
       root.style.visibility = "hidden";
       root.style.pointerEvents = "none";
       phase("idle");
       active = null;
-      if (transaction.restorePosition) {
-        window.scrollTo({ left: transaction.restorePosition.x, top: transaction.restorePosition.y, behavior: "instant" });
-      }
       setScrollLocked(false, "route-transition");
       setIsTransitioning(false);
       if (transaction.committed) {
+        // Releasing overflow/inert can resize pinned layouts and anchor the
+        // document. Settle the same intent after that commit, unless interrupted.
+        schedulePosition(transaction.restorePosition);
         lateDestination = null;
         setNotice("");
         announce(`${transaction.label} opened.`);
@@ -160,7 +218,7 @@ export function RouteTransitionProvider({ children }: { children: ReactNode }) {
       transaction.finishing = true;
       clearWait();
       if (recover) {
-        lateDestination = transaction.pathname;
+        lateDestination = transaction;
         hint.textContent = "Opening in the background.";
         announce("");
         setNotice(`Opening ${transaction.label} is taking longer. You can keep browsing.`);
@@ -176,7 +234,10 @@ export function RouteTransitionProvider({ children }: { children: ReactNode }) {
         }
         const release = recover ? 0 : 0.12;
         exit
-          .call(() => phase("revealing"), [], release)
+          .call(() => {
+            if (transaction.committed) followDestination(transaction.restorePosition);
+            phase("revealing");
+          }, [], release)
           .to(lockup, { y: -12, duration: 0.36, ease: "power2.in" }, release)
           .to(panel, { xPercent: -112, duration: 0.42, ease: "power3.inOut" }, release)
           .to(shade, { autoAlpha: 0, duration: 0.18 }, release + 0.12);
@@ -201,9 +262,11 @@ export function RouteTransitionProvider({ children }: { children: ReactNode }) {
       if (disposed || (active && !history)) return;
       const destination = new URL(href, window.location.href);
       if (destination.origin !== window.location.origin) return;
-      if (!history && destination.pathname === pathnameRef.current) return;
+      if (!history && !committed && destination.pathname === pathnameRef.current) return;
       if (active) cancel();
       if (!history) capturePosition();
+      recordInteraction();
+      saveScrollPositions(positions);
       clearWait();
       cancelAnimationFrame(focusFrame);
       restoreFocus?.();
@@ -253,8 +316,10 @@ export function RouteTransitionProvider({ children }: { children: ReactNode }) {
             .call(() => {
               if (disposed || active !== transaction) return;
               phase("stamping");
-              if (!history) {
-                try { router.push(transaction.href); }
+              if (!history && !committed) {
+                // The coordinator, not Next's DOM visibility heuristic, owns
+                // the destination position beneath this transition.
+                try { router.push(transaction.href, { scroll: false }); }
                 catch { root.dataset.result = "error"; leave(transaction, true); }
               }
             }, [], 0.28)
@@ -294,23 +359,32 @@ export function RouteTransitionProvider({ children }: { children: ReactNode }) {
         clearWait();
         maybeLeave();
       } else if (lateDestination) {
+        schedulePosition(lateDestination.restorePosition);
         lateDestination = null;
         announce(`${getRouteLabel(nextPathname)} opened.`);
         focusDestination(sequence);
       } else {
         // Replacements not initiated by a TransitionLink receive the same
         // treatment after commit, without pushing another history entry.
-        begin(nextPathname, undefined, true, true);
+        begin(window.location.href, undefined, false, true);
         root.dataset.result = "committed";
       }
     };
     const onPopState = () => {
+      recordInteraction();
       if (window.location.pathname === pathnameRef.current) {
         if (active) cancel();
         currentEntry = entryKey();
+        // Same-page query/hash history has no route commit to trigger finish.
+        schedulePosition(positions.get(currentEntry));
         return;
       }
       begin(`${window.location.pathname}${window.location.search}${window.location.hash}`, undefined, true);
+    };
+    const onHashChange = () => {
+      if (active || positionFrame) return;
+      recordInteraction();
+      schedulePosition(positions.get(entryKey()));
     };
     const onKeyDown = (event: KeyboardEvent) => {
       if (!active) return;
@@ -322,7 +396,15 @@ export function RouteTransitionProvider({ children }: { children: ReactNode }) {
       }
     };
     window.addEventListener("popstate", onPopState);
+    window.addEventListener("hashchange", onHashChange);
     window.addEventListener("scroll", capturePosition, { passive: true });
+    window.addEventListener("pagehide", persistPositions);
+    window.addEventListener("pageshow", onPageShow);
+    window.addEventListener("wheel", recordInteraction, { passive: true });
+    window.addEventListener("touchstart", recordInteraction, { passive: true });
+    window.addEventListener("pointerdown", recordInteraction, { passive: true });
+    window.addEventListener("keydown", recordInteraction);
+    document.addEventListener("visibilitychange", onVisibilityChange);
     document.addEventListener("keydown", onKeyDown, true);
     const coordinator = { navigate: (href: string, label?: string) => begin(href, label), commit };
     coordinatorRef.current = coordinator;
@@ -335,14 +417,23 @@ export function RouteTransitionProvider({ children }: { children: ReactNode }) {
       observer.disconnect();
       cancelAnimationFrame(fitFrame);
       cancelAnimationFrame(focusFrame);
+      cancelAnimationFrame(positionFrame);
       restoreFocus?.();
       window.removeEventListener("popstate", onPopState);
+      window.removeEventListener("hashchange", onHashChange);
       window.removeEventListener("scroll", capturePosition);
+      window.removeEventListener("pagehide", persistPositions);
+      window.removeEventListener("pageshow", onPageShow);
+      window.removeEventListener("wheel", recordInteraction);
+      window.removeEventListener("touchstart", recordInteraction);
+      window.removeEventListener("pointerdown", recordInteraction);
+      window.removeEventListener("keydown", recordInteraction);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       document.removeEventListener("keydown", onKeyDown, true);
       setScrollLocked(false, "route-transition");
       if (coordinatorRef.current === coordinator) coordinatorRef.current = null;
     };
-  }, { scope: rootRef, dependencies: [router, setScrollLocked], revertOnUpdate: true });
+  }, { scope: rootRef, dependencies: [router, setScrollLocked, scrollToPosition], revertOnUpdate: true });
 
   useEffect(() => {
     if (pathnameRef.current === pathname) return;

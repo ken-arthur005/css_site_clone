@@ -9,6 +9,7 @@ import { useSmoothScroll } from "@/components/providers/smooth-scroll-provider";
 import { TransitionLink } from "@/components/transitions/transition-link";
 import { SnapRailControls } from "@/components/ui/snap-rail-controls";
 import { HOME_DESKTOP_MOTION, HOME_NATIVE_LAYOUT } from "@/lib/animations/home-media";
+import { useEventRailAutoplay } from "@/lib/animations/use-event-rail-autoplay";
 import { useSnapRail } from "@/lib/animations/use-snap-rail";
 import type { Event, EventLifecycle, HomeEventSelection } from "@/types/event";
 import type { HomeQuote } from "@/types/home";
@@ -62,6 +63,7 @@ export function HomeEvents({ selection, exitQuote }: { selection: HomeEventSelec
   const [panelFits, setPanelFits] = useState(true);
   const { scrollToElement } = useSmoothScroll();
   const { railRef, index, scrollToIndex, onFocusCapture, onKeyDown } = useSnapRail(events.length, !panelFits);
+  const { paused, togglePlayback } = useEventRailAutoplay(rootRef, railRef, events.length);
   const railLabel = mode === "recent-highlights" ? "Recent highlights" : "Current and upcoming events";
 
   useEffect(() => {
@@ -138,12 +140,10 @@ export function HomeEvents({ selection, exitQuote }: { selection: HomeEventSelec
     const track = root.querySelector<HTMLElement>(".home-events__track");
     const cards = Array.from(track?.querySelectorAll<HTMLElement>(".home-event-card") ?? []);
     const allEvents = root.querySelector<HTMLElement>(".home-events__all");
-    const exit = root.querySelector<HTMLElement>(".home-events__exit");
-    const exitStage = root.querySelector<HTMLElement>(".home-events__exit-stage");
     const panel = root.querySelector<HTMLElement>(".home-events__exit-panel");
     const lead = root.querySelector<HTMLElement>(".home-events__exit-lead");
 
-    if (!stage || !hero || !heading || !description || !slices.length || !railElement || !track || !allEvents || !exit || !exitStage || !panel || !lead) {
+    if (!stage || !hero || !heading || !description || !slices.length || !railElement || !track || !allEvents || !panel || !lead) {
       return;
     }
 
@@ -273,56 +273,11 @@ export function HomeEvents({ selection, exitQuote }: { selection: HomeEventSelec
       };
     });
 
-    media.add({ native: HOME_NATIVE_LAYOUT, motion: "(prefers-reduced-motion: no-preference)" }, (context) => {
-      if (!context.conditions?.native || !context.conditions?.motion || !panelFits) return;
-      // A short native-scroll-driven exit follows the swipeable mobile cards.
-      // CSS sticky holds the viewport; no touch/wheel handler traps the gesture.
-      gsap.set(root, { attr: { "data-exit-animated": "true" } });
-      const measureLead = () => {
-        const gap = parseFloat(getComputedStyle(track).columnGap) || 0;
-        const cardWidth = cards[cards.length - 1]?.getBoundingClientRect().width ?? 0;
-        const buttonWidth = allEvents.getBoundingClientRect().width;
-        lead.style.setProperty("--events-exit-gap", `${gap}px`);
-        lead.style.setProperty("--events-link-width", `${buttonWidth}px`);
-        lead.style.setProperty("--events-exit-card-width", `${cardWidth}px`);
-        return cards.length
-          ? (exitStage.clientWidth + cardWidth) / 2 + gap + buttonWidth
-          : exitStage.clientWidth + buttonWidth;
-      };
-      const tween = gsap.fromTo(lead, { x: measureLead, xPercent: 0 }, {
-        x: 0, ease: "none",
-        scrollTrigger: {
-          id: "home-events-mobile-exit", trigger: exit,
-          start: "top top", end: "bottom bottom", scrub: true, invalidateOnRefresh: true,
-          onRefreshInit: measureLead,
-        },
-      });
-      const revealExit = () => {
-        const trigger = tween.scrollTrigger;
-        if (!trigger) return;
-        const exitTop = window.scrollY + exit.getBoundingClientRect().top;
-        const distance = measureLead();
-        const buttonPosition = (exitStage.clientWidth + allEvents.getBoundingClientRect().width) / 2;
-        const progress = gsap.utils.clamp(0, 1, (distance - buttonPosition) / distance);
-        scrollToElement(exit, { offset: trigger.start + (trigger.end - trigger.start) * progress - exitTop, immediate: true });
-      };
-      allEvents.addEventListener("focus", revealExit);
-      let disposed = false;
-      const frame = requestAnimationFrame(() => ScrollTrigger.refresh());
-      void document.fonts.ready.then(() => { if (!disposed) ScrollTrigger.refresh(); });
-      return () => {
-        disposed = true;
-        cancelAnimationFrame(frame);
-        allEvents.removeEventListener("focus", revealExit);
-        ["--events-exit-gap", "--events-link-width", "--events-exit-card-width"].forEach((property) => lead.style.removeProperty(property));
-      };
-    });
-
     return () => media.revert();
   }, { scope: rootRef, dependencies: [events, scrollToElement, panelFits], revertOnUpdate: true });
 
   return (
-    <section className="home-events" aria-labelledby="events-title" data-animated="false" data-exit-animated="false" data-mode={mode} ref={rootRef}>
+    <section className="home-events" aria-labelledby="events-title" data-animated="false" data-mode={mode} ref={rootRef}>
       <div className="home-events__stage">
         <div className="home-events__hero-media angular-cut">
           <Image
@@ -358,17 +313,15 @@ export function HomeEvents({ selection, exitQuote }: { selection: HomeEventSelec
         </div>
 
         <div className="home-rail-navigation page-shell home-event-navigation">
-          <SnapRailControls count={events.length} index={index} label="event" onSelect={scrollToIndex} railId="home-events-rail" />
+          <SnapRailControls announceChanges={false} count={events.length} index={index} label="event" onSelect={scrollToIndex} railId="home-events-rail" />
+          {events.length > 1 && <button aria-controls="home-events-rail" className="home-events__playback eyebrow" onClick={togglePlayback} type="button">
+            <span aria-hidden="true">{paused ? "▶" : "Ⅱ"}</span> {paused ? "Resume motion" : "Pause motion"}
+          </button>}
         </div>
 
         <div className="home-events__exit">
           <div className="home-events__exit-stage">
             <div className="home-events__exit-lead">
-              {/* The native rail remains swipeable. An inert copy carries its
-                  final card into the mobile handoff without duplicating controls. */}
-              {events.length > 0 && <div className="home-events__exit-card" aria-hidden="true" inert>
-                <EventPreviewCard {...events[events.length - 1]} />
-              </div>}
               <TransitionLink className="home-events__all button button-secondary angular-cut" href="/events" transitionLabel="EVENTS">
                 View all events <span aria-hidden="true">/&gt;</span>
               </TransitionLink>

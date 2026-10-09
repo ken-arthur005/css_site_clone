@@ -8,5 +8,5 @@ export default async function MerchShopPage({ searchParams }: { searchParams: Pr
   const content = await getMerchStore();
   const query = await searchParams;
   const product = query.product === "pink-october" ? "pink-october" : "css-tee";
-  return <main className="merch-shop-page"><MerchShop content={content} initialProduct={product} initialColourway={typeof query.cw === "string" ? query.cw : undefined} hasSelection={query.product === "css-tee" || query.product === "pink-october"} /></main>;
+  return <main className="merch-shop-page"><MerchShop content={content} initialProduct={product} initialColourway={typeof query.cw === "string" ? query.cw : undefined} /></main>;
 }

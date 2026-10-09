@@ -2,7 +2,7 @@
 
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import Typed from "typed.js";
 import { useNavigationState } from "@/components/providers/navigation-state-provider";
 
@@ -19,12 +19,10 @@ export function HomeHeroTyping({ enabled }: { enabled: boolean }) {
   const targetRef = useRef<HTMLSpanElement>(null);
   const blockedRef = useRef(false);
   const syncPlaybackRef = useRef(() => {});
-  const [paused, setPaused] = useState(false);
-
   useEffect(() => {
-    blockedRef.current = paused || isMenuActive;
+    blockedRef.current = isMenuActive;
     syncPlaybackRef.current();
-  }, [paused, isMenuActive]);
+  }, [isMenuActive]);
 
   useGSAP(() => {
     const root = rootRef.current;
@@ -137,9 +135,6 @@ export function HomeHeroTyping({ enabled }: { enabled: boolean }) {
       </span>
       <span className="home-typing__visual" aria-hidden="true" ref={visualRef}><span ref={prefixRef}>{heroText}</span><span ref={targetRef} /></span>
     </h1>
-    <button className="home-hero__typing-control" type="button" aria-controls="home-title" aria-pressed={paused} onClick={() => setPaused((value) => !value)}>
-      <span aria-hidden="true">{paused ? "▶" : "Ⅱ"}</span> {paused ? "Resume typing" : "Pause typing"}
-    </button>
   </div>;
 }
 
