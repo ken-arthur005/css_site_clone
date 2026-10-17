@@ -13,27 +13,10 @@ import { useEventRailAutoplay } from "@/lib/animations/use-event-rail-autoplay";
 import { useSnapRail } from "@/lib/animations/use-snap-rail";
 import type { Event, EventLifecycle, HomeEventSelection } from "@/types/event";
 import type { HomeQuote } from "@/types/home";
+import { eventStatus, formatEventDate } from "@/lib/event-presentation";
 import { HomeQuoteBridge } from "./home-quote-bridge";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
-
-function formatEventDate(event: Event) {
-  return new Intl.DateTimeFormat("en-GH", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    timeZone: event.start.timeZone,
-  }).format(new Date(event.start.dateTime));
-}
-
-function eventStatus(event: Event, lifecycle: EventLifecycle) {
-  if (lifecycle === "concluded") return "Concluded";
-  if (lifecycle === "happening") return event.end ? "Happening now" : "Today";
-  if (!event.registration.required) return "Upcoming";
-  if (event.registration.status === "open") return "Registration open";
-  if (event.registration.status === "closed") return "Registration closed";
-  return "Registration pending";
-}
 
 function EventPreviewCard({ event, lifecycle }: { event: Event; lifecycle: EventLifecycle }) {
   return <article className="home-event-card angular-cut" data-rail-item tabIndex={-1}>

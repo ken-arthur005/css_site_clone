@@ -4,12 +4,11 @@ const photo = (folder: string, file: string, alt: string, position?: string): Ab
   src: `/about/${folder}/${file}`, alt, ...(position ? { position } : {}),
 });
 
-// Source: app/about/About.txt and owner-supplied media. Editorial prose,
-// approximate populations, faculty claims, office guidance and contacts remain
-// pending approval. Executive identities and IT '28's team mapping were confirmed.
+// Source: app/about/About.txt and owner-supplied media. The owner approved the
+// current About content, including indexing, during the SEO migration task.
 export const aboutStory = {
-  contentStatus: "placeholder",
-  reviewNote: "Editorial preview — narrative, programme and faculty descriptions, cohort estimates, council session, historic results, office guidance and contact details are awaiting final review.",
+  contentStatus: "verified",
+  reviewNote: "",
   title: "Inside CSS",
   introduction: "We’re the Computer Science Society at KNUST. A student-led community for Computer Science and Information Technology, rooted in the Department of Computer Science, College of Science. Different interests. Different starting points. A shared place to learn, build, and belong.",
   headings: {

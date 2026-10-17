@@ -12,6 +12,7 @@ import { SiteHeader } from "@/components/navigation/site-header";
 import { RouteTransitionProvider } from "@/components/transitions/route-transition-provider";
 import { HOME_INTRO_BOOT_SCRIPT } from "@/lib/home-intro";
 import { NAVIGATION_SCROLL_BOOT_SCRIPT } from "@/lib/navigation-scroll";
+import { getSiteInfo } from "@/lib/content/site";
 import "./globals.css";
 
 const bricolage = Bricolage_Grotesque({
@@ -35,13 +36,15 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "CSS KNUST",
-  description: "Computer Science Society, KNUST.",
-  icons: {
-    icon: "/css_logo-nobg.png",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const site = await getSiteInfo();
+  return {
+    metadataBase: new URL(site.canonicalOrigin.value),
+    title: "CSS KNUST",
+    description: "The Computer Science Society at KNUST. Meet the community and its executives, explore events, and discover CSS merchandise.",
+    icons: { icon: "/css_logo-nobg.png" },
+  };
+}
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

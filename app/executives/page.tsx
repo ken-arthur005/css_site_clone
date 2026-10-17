@@ -4,28 +4,16 @@ import { AdministrationHero } from "@/components/executives/administration-hero"
 import { CommitteeNavigation } from "@/components/executives/committee-navigation";
 import { PersonCard } from "@/components/executives/person-card";
 import { getAdministration } from "@/lib/content/committees";
-import { getSiteInfo } from "@/lib/content/site";
+import { getPageMetadata } from "@/lib/seo";
 import "./executives.css";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const site = await getSiteInfo();
-  const title = "2026/27 Administration — Executives & Committees | CSS KNUST";
-  const description = "Meet the executives and committee members of the 2026/27 Computer Science Society administration at KNUST.";
-  const canonical = site.canonicalOrigin.contentStatus === "verified"
-    ? new URL("/executives", site.canonicalOrigin.value).toString()
-    : undefined;
-  const image = canonical ? new URL("/cos_landscape.jpeg", canonical).toString() : undefined;
-  return {
-    title,
-    description,
-    ...(canonical ? { alternates: { canonical } } : {}),
-    openGraph: {
-      title, description, type: "website",
-      ...(canonical ? { url: canonical } : {}),
-      ...(image ? { images: [{ url: image, width: 2000, height: 1125, alt: "College of Science, KNUST" }] } : {}),
-    },
-    twitter: { card: image ? "summary_large_image" : "summary", title, description, ...(image ? { images: [image] } : {}) },
-  };
+  return getPageMetadata({
+    title: "Executives & Committees | CSS KNUST — 2026/27",
+    description: "Meet the executives and committee members of the 2026/27 Computer Science Society administration at KNUST.",
+    path: "/executives",
+    image: { src: "/cos_landscape.jpeg", alt: "College of Science, KNUST" },
+  });
 }
 
 export default async function ExecutivesPage() {

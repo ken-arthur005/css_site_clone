@@ -10,6 +10,16 @@ import { getFeaturedMerchProducts } from "@/lib/content/merch";
 import { getSiteInfo } from "@/lib/content/site";
 import { getHomeLoadingPlan } from "@/lib/content/loading";
 import { getHomeQuotes } from "@/lib/content/home";
+import { getPageMetadata } from "@/lib/seo";
+
+export async function generateMetadata() {
+  return getPageMetadata({
+    title: "CSS KNUST — Computer Science Society",
+    description: "Discover the Computer Science Society at KNUST: our community, executives, events, and CSS merchandise. Learn, build, and belong.",
+    path: "/",
+    image: { src: "/cos_landscape.jpeg", alt: "College of Science, KNUST" },
+  });
+}
 
 // Request-driven ISR: refresh date-sensitive selection after one hour.
 export const revalidate = 3600;

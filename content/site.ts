@@ -6,7 +6,8 @@ function canonicalOrigin(): string {
   try {
     const configured = new URL(process.env.NEXT_PUBLIC_SITE_ORIGIN ?? approvedOrigin);
     // The custom domain supersedes older preview/deployment origin settings.
-    return configured.hostname === "vercel.app" || configured.hostname.endsWith(".vercel.app") ? approvedOrigin : configured.origin;
+    return ["thecssknust.com", "www.thecssknust.com", "vercel.app"].includes(configured.hostname)
+      || configured.hostname.endsWith(".vercel.app") ? approvedOrigin : configured.origin;
   } catch { return approvedOrigin; }
 }
 

@@ -13,21 +13,18 @@ import { getAboutPopulation, getAboutStory } from "@/lib/content/about";
 import { getExecutives } from "@/lib/content/executives";
 import { getSiteInfo } from "@/lib/content/site";
 import type { AboutHeading } from "@/types/about";
+import { getPageMetadata } from "@/lib/seo";
 import "./about.css";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const [story, site] = await Promise.all([getAboutStory(), getSiteInfo()]);
-  const title = "Inside CSS — About the Computer Science Society, KNUST";
-  const description = "Meet the people, explore CS and IT, discover student life, and find your way around the Computer Science Society at KNUST.";
-  const canonical = site.canonicalOrigin.contentStatus === "verified" ? new URL("/about", site.canonicalOrigin.value).toString() : undefined;
-  const shareImage = canonical ? new URL("/about/community/community.jpg", canonical).toString() : undefined;
-  return {
-    title, description,
-    ...(canonical ? { alternates: { canonical } } : {}),
-    robots: { index: story.contentStatus === "verified", follow: true },
-    openGraph: { title, description, type: "website", ...(canonical ? { url: canonical } : {}), ...(shareImage ? { images: [{ url: shareImage, alt: "The CSS KNUST community" }] } : {}) },
-    twitter: { card: shareImage ? "summary_large_image" : "summary", title, description, ...(shareImage ? { images: [shareImage] } : {}) },
-  };
+  const story = await getAboutStory();
+  return getPageMetadata({
+    title: "About CSS KNUST — Inside the Computer Science Society",
+    description: "Meet the people, explore CS and IT, discover student life, and find your way around the Computer Science Society at KNUST.",
+    path: "/about",
+    index: story.contentStatus === "verified",
+    image: { src: "/about/community/community.jpg", alt: "The CSS KNUST community" },
+  });
 }
 
 function ChapterLabel({ number, children }: { number: string; children: ReactNode }) {

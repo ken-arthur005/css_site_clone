@@ -8,13 +8,15 @@ import { MerchTyping } from "@/components/merch/merch-typing";
 import { MerchSectionNav } from "@/components/merch/merch-section-nav";
 import { MerchCyclingProduct } from "@/components/merch/merch-cycling-product";
 import { getMerchStore } from "@/lib/content/merch-store";
-import { getSiteInfo } from "@/lib/content/site";
+import { getPageMetadata } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const site = await getSiteInfo();
-  const canonical = site.canonicalOrigin.contentStatus === "verified" ? new URL("/merch", site.canonicalOrigin.value).href : undefined;
-  return { title: "Wear the society — CSS KNUST Merch", description: "Explore the CSS Tee in six colourways and the Pink October Tee. Choose your colourway and size, and discover the current offer in the shop.",
-    ...(canonical ? { alternates: { canonical }, openGraph: { url: canonical, images: [{ url: new URL("/merch/mockups/black-magenta.jpg", site.canonicalOrigin.value).href }] } } : {}) };
+  return getPageMetadata({
+    title: "Merch | CSS KNUST — Wear the society",
+    description: "Explore the CSS Tee in six colourways and the Pink October Tee. Choose your colourway and size, and discover the current offer in the shop.",
+    path: "/merch",
+    image: { src: "/merch/mockups/black-magenta.jpg", alt: "CSS Tee with magenta print on black fabric" },
+  });
 }
 
 export default async function MerchPage() {
