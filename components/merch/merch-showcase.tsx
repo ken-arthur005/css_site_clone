@@ -7,7 +7,7 @@ import { createContext, useContext, useEffect, useRef, useState, useSyncExternal
 import { TransitionLink } from "@/components/transitions/transition-link";
 import { MERCH_BOT_ENABLED } from "@/lib/merch/features";
 import { money } from "@/lib/merch/order";
-import type { CheckoutCatalog, TeeColourway, TeeId } from "@/types/merch-store";
+import type { ApiMerchandise, CheckoutCatalog, TeeColourway, TeeId } from "@/types/merch-store";
 import { MerchBotGuide } from "./merch-bot-guide";
 import { useMerchCatalog } from "./use-merch-catalog";
 
@@ -16,19 +16,27 @@ gsap.registerPlugin(useGSAP, ScrollTrigger);
 const ColourwayContext = createContext<{ colourway: TeeColourway; select: (id: string) => void } | null>(null);
 const CatalogContext = createContext<CheckoutCatalog | null>(null);
 
+/** The lowest live price: a customisable tee is priced by its cheapest back. */
+function liveFromMinor(live: ApiMerchandise | undefined): number | null {
+  if (!live?.in_stock || live.availability !== "available") return null;
+  if (live.backs.length) return Math.min(...live.backs.filter((back) => back.available).map((back) => back.priceMinor));
+  return live.price === null ? null : Math.round(Number(live.price) * 100);
+}
+
 export function MerchLivePrice({ product }: { product: TeeId }) {
   const catalog = useContext(CatalogContext);
-  const live = catalog?.products[product];
   if (!catalog) return <p>Price confirmed in shop</p>;
-  if (!live?.in_stock || live.price === null) return <p>Currently unavailable</p>;
-  return <p>From <strong>{money(Math.round(Number(live.price) * 100))}</strong></p>;
+  const from = liveFromMinor(catalog.products[product]);
+  if (from === null || !Number.isFinite(from)) return <p>Currently unavailable</p>;
+  return <p>From <strong>{money(from)}</strong></p>;
 }
 
 export function MerchLiveOffer() {
-  const discount = useContext(CatalogContext)?.discount;
-  return <p className="merch-offer"><span aria-hidden="true">↳</span> {discount?.enabled && discount.percent > 0
-    ? <>Good things come together. <strong>Any {discount.minimumQuantity}+ tees. {discount.percent}% off.</strong></>
-    : "Current prices and offers are confirmed in the shop."}</p>;
+  const catalog = useContext(CatalogContext);
+  const bundles = Object.entries(catalog?.products ?? {}).filter(([id]) => id.startsWith("bundle-")).map(([, live]) => liveFromMinor(live)).filter((price): price is number => price !== null);
+  return <p className="merch-offer"><span aria-hidden="true">↳</span> {bundles.length
+    ? <>Good things come together. <strong>Bundles from {money(Math.min(...bundles))}</strong>, sizes and colours your call.</>
+    : "Bundles, prices and availability are confirmed in the shop."}</p>;
 }
 function subscribeClock(listener: () => void) {
   const timer = window.setInterval(listener, 60000);
@@ -45,7 +53,8 @@ export function MerchOrderLink({ children, product = "css-tee", colourwayId, cla
 }) {
   const context = useContext(ColourwayContext);
   const open = useSyncExternalStore(subscribeClock, () => !availableUntil || Date.now() < Date.parse(`${availableUntil}T23:59:59.999Z`) + 1, () => true);
-  const cw = colourwayId ?? (product === "css-tee" ? context?.colourway.id : "pink-october");
+  // Only the CSS Tee has colourways to preselect; other products ignore the parameter.
+  const cw = colourwayId ?? (product === "css-tee" ? context?.colourway.id : undefined);
   const query = new URLSearchParams({ product, ...(cw ? { cw } : {}) });
   if (!open) return <span className={`${className} merch-ended`} aria-disabled="true">{children}<span className="merch-label">Edition ended</span></span>;
   return <TransitionLink href={`/merch/shop?${query}`} className={className} aria-label={ariaLabel} transitionLabel="SHOP">{children}</TransitionLink>;

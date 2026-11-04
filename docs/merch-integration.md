@@ -349,3 +349,108 @@ pass covering saved-order-only images, repeated units, mouse/keyboard/touch row
 selection/focus, same colour with different sizes, quantity/removal/Undo, empty
 state, refresh, large orders, hidden configurations, 320–1920px, 200% text,
 reduced motion and image failure. Payment requests were blocked or mocked.
+
+## Phase 2: one shop for everything — 4 November 2026
+
+The cssknust shop now carries the whole old css-merch catalogue, backed by the
+Django API (see the backend README §21, §23, §24).
+
+**Products** (`content/merch-store.ts`, `types/merch-store.ts`). Each product
+has a `kind`: a customisable `tee` (CSS Tee: colourway, Spec Sheet or Backbone
+back, regular or oversized fit, optional name on the back), a `simple` item
+(Pink October Tee, General Lacoste) or a `bundle` (Monorepo, Pair Programming,
+Dual Boot, Three-Way Merge) whose pieces each get their own colourway and size.
+Content IDs equal the backend product **slug**; the numeric `CSS_MERCH_*_ID`
+variables are only a fallback for records without a slug. Names and taglines
+come from the old `catalog.json`; prices shown before the catalogue loads are
+estimates, the backend prices every order.
+
+**Cart lines** (`lib/merch/order.ts`). One `ShopLine` type covers all kinds.
+Saved carts from the tee-only shop migrate automatically (a CSS Tee without a
+back becomes a Spec Sheet in a regular fit). Line keys include the back, fit,
+name and every bundle piece, so different configurations never merge.
+
+**Checkout** (`components/merch/merch-shop.tsx`, `components/merch/shop/*`).
+Review & pay adds an optional promo code (bundle codes lower bundles to their
+promo price) and a payment choice:
+- **Mobile Money** is charged on the page (`/api/merch/orders/[id]/momo`): the
+  buyer approves the prompt on their phone (with network-specific USSD help),
+  or types the network's OTP (`/otp`). The page polls the receipt endpoint
+  until the backend has verified the payment.
+- **Card** opens Paystack's inline popup with the order's `access_code`,
+  falling back to the redirect checkout if the script can't load.
+Closing the pay sheet and paying again reuses the same order for the same cart.
+
+**After payment.** Receipts show a 5-step tracker (placed → paid → printing →
+ready → collected) and which pieces of a partly collected order were handed
+over. `/merch/orders` finds orders on this device or, on any device, by phone
+number plus a texted 6-digit code (or a 7-digit order code). The pickup desk's
+QR code opens `/merch/pickup?s=<code>`, where the buyer checks a paid order into
+the queue. Old css-merch receipt links (`/merch/order?ref=CSS-XXXXXXXX`) open
+the imported order once Phase 4 has imported it.
+
+**Assets.** `tools/prepare-merch-extras.mjs ../css-merch` generates the six
+Backbone backs (`public/merch/tees/*-back-backbone.webp`) with the same colour
+recipe as `prepare-merch.mjs`, and the General Lacoste images
+(`public/merch/lacoste/`). No new packages; it reuses Next's `sharp`.
+
+**Checks.** `node --experimental-strip-types --test tests/*.test.mjs` (25 merch
+tests), `pnpm lint`, `pnpm build`, plus an end-to-end run against a local
+Django and a local Paystack stand-in: bundle code, tee + Monorepo order
+(GH₵320 − GH₵10 + GH₵6.17 fee = GH₵316.17), MoMo approval → paid, My orders by
+SMS code, pickup check-in with the daily desk code, and every page rendering.
+
+**Not yet verified visually:** the name-on-back overlay's exact placement on a
+real phone (it is positioned from the old store's print coordinates).
+
+## Phase 3: staff dashboard at /admin
+
+Staff sign in at `/admin/login` with their own Django staff accounts (no shared
+codes). The backend's token is kept in an httpOnly, `SameSite=Strict` cookie
+(`css_staff`, 12 hours) and never reaches browser code; every dashboard call
+goes through `/api/admin/*` (`app/api/admin/[...path]/route.ts`), which adds the
+token, refuses writes whose `Origin` doesn't match the host the browser used,
+rejects odd paths and clears the cookie when the backend revokes the token.
+The backend checks every permission; the dashboard only hides what a role can't
+use. `/admin` and `/api/` are disallowed in `robots.txt` and pages are `noindex`.
+
+| Tab | Who (role) | What |
+| --- | --- | --- |
+| Pickup desk | Sales Desk, Merch Admin | Today's desk QR (full screen, printable sign, new code for admins), live queue, find a buyer, serve and hand over pieces |
+| Orders | all | Search (name, phone, code, old CSS- ref), filters, order panel with check-in, serve, per-piece hand-over, undo (Merch Admin), cancel (Treasurer, Merch Admin), CSV export |
+| New sale | Sales Desk, Merch Admin | Desk point of sale with the shop's own product options, bundle code, handed-over toggle |
+| Printing | Merch Admin | Paid pieces first-paid-first, send N to the printer as a batch, mark back (texts ready buyers), delete an unreturned batch |
+| Counts | all | Units by product, design and size; CSV and print sheet |
+| Activity | Treasurer, Merch Admin | Everything staff did on a day, per-person totals, CSV |
+| Books | Treasurer, Merch Admin | Expenses and payables, money accounted for, promo codes |
+| Audit | Treasurer, Merch Admin | Profit on the pieces (by item and piece, date and exec/everyone filters, CSV) and the money check against Paystack's balance and payouts |
+| Texts | Merch Admin | Text a group of buyers from a template (preview with SMS-part cost, sends 25 at a time, never twice), and the log of every text, email and push |
+| Settings | Merch Admin | Pickup details used in texts and emails |
+
+New package: `qrcode-generator` (MIT, no dependencies) draws the desk QR code
+on the pickup tab. Tests: `tests/admin.test.mjs` (session cookie, proxy, origin
+and path guards, sign-out).
+
+## Phase 5: audit, bulk texts, web push and social proof
+
+- **Audit tab** (`components/admin/audit-tab.tsx`): reads `staff/audit/`, first
+  without and then with Paystack's figures (the slower call), so the profit
+  shows straight away. All the maths is on the backend (backend README §26).
+- **Texts tab** (`components/admin/texts-tab.tsx`): audiences, groups and
+  placeholders come from `staff/sms/bulk/`. A fresh batch id is made whenever
+  the message or audience changes; sending loops until `left` is 0, and an
+  interrupted send carries on safely when Send is pressed again.
+- **Web push**: `MerchNotify` on the receipt (paid or awaiting payment)
+  registers `public/merch/sw.js` (scope `/merch/`) and subscribes through
+  `/api/merch/push`, which only forwards the endpoint and its two keys for real
+  order ids. Hidden when the browser can't do push or the backend has no VAPID
+  key. iPhones only get web push from a site added to the Home Screen; texts
+  still cover everything.
+- **Social proof**: `/api/merch/stats` (edge-cached 10 minutes) feeds
+  `lib/merch/stats.ts`: "N ordered this week" from 5, "N people bought this"
+  from 10, and "Most popular" on the bundle that leads with at least 10 buyers.
+  Shown on the shop's product picker, refreshed every 5 minutes.
+
+Tests: `tests/merch-extras.test.mjs` (stats parsing and thresholds, the stats
+and push proxies).
+
