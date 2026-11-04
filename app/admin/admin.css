@@ -92,6 +92,14 @@
 .admin-totals > div { display: grid; padding: .7rem 1rem; border: 1px solid var(--border-subtle); background: var(--surface-raised); min-width: 8rem; }
 .admin-totals strong { font: 600 1.5rem var(--font-geist-mono), monospace; }
 .admin-totals span { font-size: .72rem; color: var(--foreground-muted); }
+.admin-totals small { font-size: .68rem; color: var(--foreground-muted); max-width: 14rem; }
+.admin-totals > div[data-tone=good] { border-color: #1f6b3a; }
+.admin-totals > div[data-tone=good] strong { color: #1f6b3a; }
+.admin-totals > div[data-tone=bad] { border-color: #9b2a22; }
+.admin-totals > div[data-tone=bad] strong { color: #9b2a22; }
+.admin-scroll { overflow-x: auto; }
+.admin-card h4 { margin-top: .4rem; }
+.admin-card code { font: .75rem var(--font-geist-mono), monospace; }
 
 .admin-sale { display: grid; gap: 1.25rem; align-items: start; }
 @media (min-width: 1100px) { .admin-sale { grid-template-columns: minmax(0, 1.3fr) minmax(22rem, 1fr); } }
