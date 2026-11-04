@@ -5,7 +5,7 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
   const site = await getSiteInfo();
   return {
     // Crawlers must be able to fetch event details to read their noindex tags.
-    rules: { userAgent: "*", allow: "/" },
+    rules: { userAgent: "*", allow: "/", disallow: ["/admin", "/api/"] },
     ...(site.canonicalOrigin.contentStatus === "verified"
       ? { sitemap: new URL("/sitemap.xml", site.canonicalOrigin.value).href }
       : {}),
