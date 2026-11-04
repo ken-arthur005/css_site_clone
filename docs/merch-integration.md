@@ -402,3 +402,29 @@ SMS code, pickup check-in with the daily desk code, and every page rendering.
 
 **Not yet verified visually:** the name-on-back overlay's exact placement on a
 real phone (it is positioned from the old store's print coordinates).
+
+## Phase 3: staff dashboard at /admin
+
+Staff sign in at `/admin/login` with their own Django staff accounts (no shared
+codes). The backend's token is kept in an httpOnly, `SameSite=Strict` cookie
+(`css_staff`, 12 hours) and never reaches browser code; every dashboard call
+goes through `/api/admin/*` (`app/api/admin/[...path]/route.ts`), which adds the
+token, refuses writes whose `Origin` doesn't match the host the browser used,
+rejects odd paths and clears the cookie when the backend revokes the token.
+The backend checks every permission; the dashboard only hides what a role can't
+use. `/admin` and `/api/` are disallowed in `robots.txt` and pages are `noindex`.
+
+| Tab | Who (role) | What |
+| --- | --- | --- |
+| Pickup desk | Sales Desk, Merch Admin | Today's desk QR (full screen, printable sign, new code for admins), live queue, find a buyer, serve and hand over pieces |
+| Orders | all | Search (name, phone, code, old CSS- ref), filters, order panel with check-in, serve, per-piece hand-over, undo (Merch Admin), cancel (Treasurer, Merch Admin), CSV export |
+| New sale | Sales Desk, Merch Admin | Desk point of sale with the shop's own product options, bundle code, handed-over toggle |
+| Printing | Merch Admin | Paid pieces first-paid-first, send N to the printer as a batch, mark back (texts ready buyers), delete an unreturned batch |
+| Counts | all | Units by product, design and size; CSV and print sheet |
+| Activity | Treasurer, Merch Admin | Everything staff did on a day, per-person totals, CSV |
+| Books | Treasurer, Merch Admin | Expenses and payables, money accounted for, promo codes |
+| Settings | Merch Admin | Pickup details used in texts and emails |
+
+New package: `qrcode-generator` (MIT, no dependencies) draws the desk QR code
+on the pickup tab. Tests: `tests/admin.test.mjs` (session cookie, proxy, origin
+and path guards, sign-out).
