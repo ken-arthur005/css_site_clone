@@ -1,8 +1,8 @@
 "use client";
 
 import { useId, useRef, type CSSProperties } from "react";
-import { lineKey } from "@/lib/merch/order";
-import type { MerchStoreContent, TeeLine } from "@/types/merch-store";
+import { describeLine, lineKey } from "@/lib/merch/order";
+import type { MerchStoreContent, ShopLine as TeeLine } from "@/types/merch-store";
 import { MerchImage } from "./merch-image";
 
 // A composition limit, rather than an order limit. Every configuration remains
@@ -10,7 +10,10 @@ import { MerchImage } from "./merch-image";
 const DISPLAY_TEES = 8;
 
 export function reviewLineId(line: TeeLine) {
-  return `merch-review-${line.productId}-${line.colourwayId}-${line.size}`;
+  // A stable DOM id per line configuration (the key itself contains quotes).
+  let hash = 0;
+  for (const char of lineKey(line)) hash = (hash * 31 + char.charCodeAt(0)) | 0;
+  return `merch-review-${line.productId}-${(hash >>> 0).toString(36)}`;
 }
 
 function displayUnits(lines: TeeLine[], selectedKey: string | null) {
@@ -45,8 +48,7 @@ export function MerchReviewCart({ content, lines, selectedKey, onSelect, onBuild
   const units = displayUnits(lines, selectedKey);
   const remaining = quantity - units.length;
   const selected = lines.find((line) => lineKey(line) === selectedKey);
-  const selectedProduct = selected && content.products.find(({ id }) => id === selected.productId);
-  const selectedColourway = selectedProduct?.colourways.find(({ id }) => id === selected?.colourwayId);
+  const selectedInfo = selected ? describeLine(selected, content) : null;
 
   function select(key: string) {
     if (picker.current) picker.current.open = false;
@@ -61,8 +63,8 @@ export function MerchReviewCart({ content, lines, selectedKey, onSelect, onBuild
   }
 
   return <div className="merch-review-cart">
-    <div className="merch-review-cart__stage" role="group" aria-label={`Your order cart: ${quantity} ${quantity === 1 ? "tee" : "tees"}`}>
-      <div className="merch-review-cart__stage-label"><span className="merch-label">Your order / packed together</span><span>{String(quantity).padStart(2, "0")} <small>TEES</small></span></div>
+    <div className="merch-review-cart__stage" role="group" aria-label={`Your order cart: ${quantity} ${quantity === 1 ? "item" : "items"}`}>
+      <div className="merch-review-cart__stage-label"><span className="merch-label">Your order / packed together</span><span>{String(quantity).padStart(2, "0")} <small>ITEMS</small></span></div>
       <div className="merch-review-cart__scene">
         <svg className="merch-review-cart__frame merch-review-cart__frame--back" viewBox="0 0 600 520" fill="none" aria-hidden="true">
           <defs><linearGradient id={`${gradientId}-metal`} x1="90" y1="120" x2="520" y2="410" gradientUnits="userSpaceOnUse"><stop stopColor="#d7e0e2" /><stop offset=".35" stopColor="#7b919c" /><stop offset=".6" stopColor="#c5d2d6" /><stop offset="1" stopColor="#607883" /></linearGradient></defs>
@@ -76,8 +78,7 @@ export function MerchReviewCart({ content, lines, selectedKey, onSelect, onBuild
           <g fill="#96aab3" stroke="#f2f5f2" strokeWidth="3"><circle cx="187" cy="453" r="9" /><circle cx="440" cy="464" r="9" /></g>
         </svg>
         {units.map(({ line, copy }, index) => {
-          const product = content.products.find(({ id }) => id === line.productId)!;
-          const colourway = product.colourways.find(({ id }) => id === line.colourwayId)!;
+          const info = describeLine(line, content);
           const key = lineKey(line);
           const twoRows = units.length > 4;
           const row = twoRows ? Math.floor(index / 4) : 0;
@@ -89,9 +90,9 @@ export function MerchReviewCart({ content, lines, selectedKey, onSelect, onBuild
             "--shirt-angle": `${(column - (columns - 1) / 2) * 7 + (copy % 2 ? 3 : 0)}deg`,
             "--shirt-layer": index + 2,
           } as CSSProperties;
-          return <button className="merch-review-cart__tee" key={`${key}-${copy}`} style={style} type="button" aria-pressed={selectedKey === key} aria-controls={reviewLineId(line)} aria-label={`Show ${product.name}, ${colourway.name}, size ${line.size}, tee ${copy + 1} of ${line.quantity} in your order`} onClick={() => select(key)}>
-            <span className="merch-review-cart__tee-image"><MerchImage src={colourway.front} alt="" sizes="(max-width: 767px) 35vw, 230px" /></span>
-            <span className="merch-review-cart__size" aria-hidden="true">{line.size}</span>
+          return <button className="merch-review-cart__tee" key={`${key}-${copy}`} style={style} type="button" aria-pressed={selectedKey === key} aria-controls={reviewLineId(line)} aria-label={`Show ${info.label}, ${copy + 1} of ${line.quantity} in your order`} onClick={() => select(key)}>
+            <span className="merch-review-cart__tee-image">{info.image && <MerchImage src={info.image} alt="" sizes="(max-width: 767px) 35vw, 230px" />}</span>
+            <span className="merch-review-cart__size" aria-hidden="true">{line.size ?? `×${info.images.length}`}</span>
           </button>;
         })}
         <svg className="merch-review-cart__frame merch-review-cart__frame--front" viewBox="0 0 600 520" fill="none" aria-hidden="true">
@@ -110,18 +111,17 @@ export function MerchReviewCart({ content, lines, selectedKey, onSelect, onBuild
         </svg>
         {quantity === 0 && <p className="merch-review-cart__empty">Your cart is empty.</p>}
       </div>
-      {remaining > 0 && <button className="merch-review-cart__more" type="button" onClick={showSelections}>+{remaining} more {remaining === 1 ? "tee" : "tees"} <span aria-hidden="true">↗</span></button>}
+      {remaining > 0 && <button className="merch-review-cart__more" type="button" onClick={showSelections}>+{remaining} more <span aria-hidden="true">↗</span></button>}
     </div>
-    <div className="merch-review-cart__caption"><strong>{quantity} {quantity === 1 ? "tee" : "tees"} in your order</strong><span>{lines.length} {lines.length === 1 ? "configuration" : "configurations"}</span></div>
+    <div className="merch-review-cart__caption"><strong>{quantity} {quantity === 1 ? "item" : "items"} in your order</strong><span>{lines.length} {lines.length === 1 ? "selection" : "selections"}</span></div>
     {quantity > 0 ? <>
-      <p className="merch-review-cart__hint">Tap a shirt to find it in your order.</p>
-      <p className="merch-review-cart__selection" role="status">{selected && selectedColourway ? <><strong>{selectedProduct!.name} · {selectedColourway.name}</strong><span>Size {selected.size} · Quantity {selected.quantity}</span></> : "Every shirt here is part of your saved order."}</p>
+      <p className="merch-review-cart__hint">Tap an item to find it in your order.</p>
+      <p className="merch-review-cart__selection" role="status">{selected && selectedInfo ? <><strong>{selectedInfo.title}</strong><span>{selectedInfo.details.join(" · ")} · Quantity {selected.quantity}</span></> : "Everything here is part of your saved order."}</p>
       <details className="merch-review-cart__picker" ref={picker}><summary>Find a selection <span>{lines.length}</span></summary><div>{lines.map((line) => {
-        const product = content.products.find(({ id }) => id === line.productId)!;
-        const colourway = product.colourways.find(({ id }) => id === line.colourwayId)!;
+        const info = describeLine(line, content);
         const key = lineKey(line);
-        return <button type="button" key={key} aria-pressed={selectedKey === key} aria-controls={reviewLineId(line)} onClick={() => select(key)}><span>{product.name} · {colourway.name}<small>Size {line.size}</small></span><strong>×{line.quantity}</strong></button>;
+        return <button type="button" key={key} aria-pressed={selectedKey === key} aria-controls={reviewLineId(line)} onClick={() => select(key)}><span>{info.title}<small>{info.details.join(" · ")}</small></span><strong>×{line.quantity}</strong></button>;
       })}</div></details>
-    </> : <button className="merch-text-button" type="button" onClick={onBuild}>Choose your tees →</button>}
+    </> : <button className="merch-text-button" type="button" onClick={onBuild}>Start shopping →</button>}
   </div>;
 }

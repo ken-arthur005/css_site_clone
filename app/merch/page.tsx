@@ -13,7 +13,7 @@ import { getPageMetadata } from "@/lib/seo";
 export async function generateMetadata(): Promise<Metadata> {
   return getPageMetadata({
     title: "Merch | CSS KNUST — Wear the society",
-    description: "Explore the CSS Tee in six colourways and the Pink October Tee. Choose your colourway and size, and discover the current offer in the shop.",
+    description: "The CSS Tee in six colourways with two back designs, the General Lacoste and money-saving bundles. Choose your colours, back, fit and size, and pay with Mobile Money or card.",
     path: "/merch",
     image: { src: "/merch/mockups/black-magenta.jpg", alt: "CSS Tee with magenta print on black fabric" },
   });
@@ -21,7 +21,11 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function MerchPage() {
   const content = await getMerchStore();
-  const [tee, pink] = content.products;
+  const tee = content.products.find(({ id }) => id === "css-tee")!;
+  const pink = content.products.find(({ id }) => id === "pink-october")!;
+  const garments = content.products.filter(({ kind }) => kind !== "bundle");
+  const bundles = content.products.filter(({ kind }) => kind === "bundle");
+  const front = (id: string) => content.products.find((item) => item.id === id)?.colourways[0]?.front;
   return <main className="merch-page">
     <MerchShowcase colourways={tee.colourways}>
       <MerchSectionNav />
@@ -33,16 +37,26 @@ export default async function MerchPage() {
       </section>
       <MerchTour story={content.story} />
       <section className="merch-shop-section" id="shop" aria-labelledby="shop-title">
-        <div className="merch-section-heading" data-merch-bot-anchor="shop"><div><p className="merch-label">02 / The collection</p><h2 id="shop-title"><MerchTyping>The shop<span>.</span></MerchTyping></h2></div><p>Two tees. No complicated choices.<br />Choose your colours, find your fit, wear CSS.</p></div>
+        <div className="merch-section-heading" data-merch-bot-anchor="shop"><div><p className="merch-label">02 / The collection</p><h2 id="shop-title"><MerchTyping>The shop<span>.</span></MerchTyping></h2></div><p>The tee, the polo, the bundles.<br />Choose your colours, find your fit, wear CSS.</p></div>
         <MerchLiveOffer />
-        <div className="merch-product-grid">{content.products.map((product) => product.id === "css-tee" ? <MerchCyclingProduct key={product.id} product={product} /> : <article className="merch-product" key={product.id} data-merch-reveal>
+        <div className="merch-product-grid">{garments.map((product) => product.id === "css-tee" ? <MerchCyclingProduct key={product.id} product={product} /> : <article className="merch-product" key={product.id} data-merch-reveal>
           <MerchOrderLink product={product.id} availableUntil={product.availableUntil} className={`merch-product__image ${product.id === "pink-october" ? "merch-product__image--pink" : ""}`}>
-            <span className="merch-label merch-product__tag">{product.id === "pink-october" ? "October edition" : "Six colourways"}</span>
+            <span className="merch-label merch-product__tag">{product.id === "pink-october" ? "October edition" : product.group === "polos" ? "The polo" : "Six colourways"}</span>
             <MerchImage src={product.colourways[0].front} alt={product.name} />
             <span className="merch-product__arrow" aria-hidden="true">↗</span>
           </MerchOrderLink>
           <div className="merch-product__meta"><div><h3><MerchOrderLink product={product.id} availableUntil={product.availableUntil}>{product.name}</MerchOrderLink></h3><p>{product.description}</p></div><MerchLivePrice product={product.id} /></div>
         </article>)}</div>
+        <div className="merch-bundles" aria-labelledby="bundles-title">
+          <div className="merch-bundles__heading"><p className="merch-label">Bundles</p><h3 id="bundles-title">Better together.</h3><p>Flat prices, every piece in the colour and size you choose.</p></div>
+          <div className="merch-bundles__grid">{bundles.map((bundle) => <article className="merch-bundle" key={bundle.id} data-merch-reveal>
+            <MerchOrderLink product={bundle.id} availableUntil={bundle.availableUntil} className="merch-bundle__image" ariaLabel={`Build the ${bundle.name} bundle`}>
+              {bundle.badge && <span className="merch-label merch-product__tag">{bundle.badge}</span>}
+              {bundle.pieces?.map((piece) => { const src = piece.back ? content.products.find((item) => item.id === piece.productId)?.colourways[0]?.backs?.[piece.back] : front(piece.productId); return src ? <span key={piece.slot}><MerchImage src={src} alt="" sizes="(max-width: 767px) 30vw, 12vw" /></span> : null; })}
+            </MerchOrderLink>
+            <div className="merch-product__meta"><div><h4><MerchOrderLink product={bundle.id} availableUntil={bundle.availableUntil}>{bundle.name}</MerchOrderLink></h4><p>{bundle.pieces?.map((piece) => piece.label).join(" + ")}</p></div><MerchLivePrice product={bundle.id} /></div>
+          </article>)}</div>
+        </div>
       </section>
       <MerchPink facts={content.facts} availableUntil={pink.availableUntil!} />
       <section className="merch-lookbook" id="lookbook" aria-labelledby="lookbook-title">

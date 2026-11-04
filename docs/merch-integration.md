@@ -349,3 +349,56 @@ pass covering saved-order-only images, repeated units, mouse/keyboard/touch row
 selection/focus, same colour with different sizes, quantity/removal/Undo, empty
 state, refresh, large orders, hidden configurations, 320–1920px, 200% text,
 reduced motion and image failure. Payment requests were blocked or mocked.
+
+## Phase 2: one shop for everything — 4 November 2026
+
+The cssknust shop now carries the whole old css-merch catalogue, backed by the
+Django API (see the backend README §21, §23, §24).
+
+**Products** (`content/merch-store.ts`, `types/merch-store.ts`). Each product
+has a `kind`: a customisable `tee` (CSS Tee: colourway, Spec Sheet or Backbone
+back, regular or oversized fit, optional name on the back), a `simple` item
+(Pink October Tee, General Lacoste) or a `bundle` (Monorepo, Pair Programming,
+Dual Boot, Three-Way Merge) whose pieces each get their own colourway and size.
+Content IDs equal the backend product **slug**; the numeric `CSS_MERCH_*_ID`
+variables are only a fallback for records without a slug. Names and taglines
+come from the old `catalog.json`; prices shown before the catalogue loads are
+estimates, the backend prices every order.
+
+**Cart lines** (`lib/merch/order.ts`). One `ShopLine` type covers all kinds.
+Saved carts from the tee-only shop migrate automatically (a CSS Tee without a
+back becomes a Spec Sheet in a regular fit). Line keys include the back, fit,
+name and every bundle piece, so different configurations never merge.
+
+**Checkout** (`components/merch/merch-shop.tsx`, `components/merch/shop/*`).
+Review & pay adds an optional promo code (bundle codes lower bundles to their
+promo price) and a payment choice:
+- **Mobile Money** is charged on the page (`/api/merch/orders/[id]/momo`): the
+  buyer approves the prompt on their phone (with network-specific USSD help),
+  or types the network's OTP (`/otp`). The page polls the receipt endpoint
+  until the backend has verified the payment.
+- **Card** opens Paystack's inline popup with the order's `access_code`,
+  falling back to the redirect checkout if the script can't load.
+Closing the pay sheet and paying again reuses the same order for the same cart.
+
+**After payment.** Receipts show a 5-step tracker (placed → paid → printing →
+ready → collected) and which pieces of a partly collected order were handed
+over. `/merch/orders` finds orders on this device or, on any device, by phone
+number plus a texted 6-digit code (or a 7-digit order code). The pickup desk's
+QR code opens `/merch/pickup?s=<code>`, where the buyer checks a paid order into
+the queue. Old css-merch receipt links (`/merch/order?ref=CSS-XXXXXXXX`) open
+the imported order once Phase 4 has imported it.
+
+**Assets.** `tools/prepare-merch-extras.mjs ../css-merch` generates the six
+Backbone backs (`public/merch/tees/*-back-backbone.webp`) with the same colour
+recipe as `prepare-merch.mjs`, and the General Lacoste images
+(`public/merch/lacoste/`). No new packages; it reuses Next's `sharp`.
+
+**Checks.** `node --experimental-strip-types --test tests/*.test.mjs` (25 merch
+tests), `pnpm lint`, `pnpm build`, plus an end-to-end run against a local
+Django and a local Paystack stand-in: bundle code, tee + Monorepo order
+(GH₵320 − GH₵10 + GH₵6.17 fee = GH₵316.17), MoMo approval → paid, My orders by
+SMS code, pickup check-in with the daily desk code, and every page rendering.
+
+**Not yet verified visually:** the name-on-back overlay's exact placement on a
+real phone (it is positioned from the old store's print coordinates).
