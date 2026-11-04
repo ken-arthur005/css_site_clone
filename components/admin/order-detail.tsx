@@ -75,6 +75,10 @@ export function OrderDetail({ order, user, content, onChange, onClose }: {
       </li>;
     })}</ul>
 
+    {order.status === "pending" && order.payment_method === "CASH" && can(user, "sales.record_order") && <div className="admin-actions">
+      <p className="admin-flag">Waiting for cash: {cedis(order.total)}</p>
+      <button type="button" className="admin-button" disabled={busy} onClick={() => { if (confirm(`Received ${cedis(order.total)} in cash for order ${order.code}?`)) void act("cash-received", {}, "Cash received. The order is paid."); }}>Cash received</button>
+    </div>}
     {paid && mayCollect && <div className="admin-actions">
       <button type="button" className="admin-button" disabled={busy || !selectedOpen.length} onClick={() => void act("handover", { pieces: selectedOpen, picked_up_by: pickedUpBy }, `Handed over ${selectedOpen.length} piece(s).`)}>Hand over {selectedOpen.length || ""} selected</button>
       <button type="button" className="admin-button admin-button--ghost" disabled={busy || !open.length} onClick={() => setSelected(open.map((piece) => piece.id))}>Select all to collect</button>

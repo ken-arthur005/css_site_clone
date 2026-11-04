@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { MerchStoreContent } from "@/types/merch-store";
 import { can, type StaffUser } from "./admin-api";
 import { ActivityTab } from "./activity-tab";
+import { AuditTab } from "./audit-tab";
 import { BooksTab } from "./books-tab";
 import { CountsTab } from "./counts-tab";
 import { OrdersTab } from "./orders-tab";
@@ -11,6 +12,7 @@ import { PickupTab } from "./pickup-tab";
 import { PrintingTab } from "./printing-tab";
 import { SaleTab } from "./sale-tab";
 import { SettingsTab } from "./settings-tab";
+import { TextsTab } from "./texts-tab";
 
 type Tab = { id: string; name: string; allowed: (user: StaffUser) => boolean; render: (user: StaffUser, content: MerchStoreContent) => ReactNode };
 
@@ -21,6 +23,8 @@ const TABS: Tab[] = [
   { id: "printing", name: "Printing", allowed: (u) => can(u, "sales.manage_printing_order"), render: (_u, c) => <PrintingTab content={c} /> },
   { id: "counts", name: "Counts", allowed: (u) => can(u, "sales.view_order"), render: (_u, c) => <CountsTab content={c} /> },
   { id: "activity", name: "Activity", allowed: (u) => can(u, "sales.view_activityevent"), render: () => <ActivityTab /> },
+  { id: "audit", name: "Audit", allowed: (u) => can(u, "sales.audit_order"), render: () => <AuditTab /> },
+  { id: "texts", name: "Texts", allowed: (u) => can(u, "sales.bulk_sms_order") || can(u, "sales.view_notificationlog"), render: (u) => <TextsTab user={u} /> },
   { id: "books", name: "Books", allowed: (u) => can(u, "sales.view_expense") || can(u, "sales.view_accountedentry") || can(u, "sales.view_promocode"), render: (u) => <BooksTab user={u} /> },
   { id: "settings", name: "Settings", allowed: (u) => can(u, "sales.view_shopsettings"), render: (u) => <SettingsTab user={u} /> },
 ];

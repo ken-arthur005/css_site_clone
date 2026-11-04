@@ -423,8 +423,34 @@ use. `/admin` and `/api/` are disallowed in `robots.txt` and pages are `noindex`
 | Counts | all | Units by product, design and size; CSV and print sheet |
 | Activity | Treasurer, Merch Admin | Everything staff did on a day, per-person totals, CSV |
 | Books | Treasurer, Merch Admin | Expenses and payables, money accounted for, promo codes |
+| Audit | Treasurer, Merch Admin | Profit on the pieces (by item and piece, date and exec/everyone filters, CSV) and the money check against Paystack's balance and payouts |
+| Texts | Merch Admin | Text a group of buyers from a template (preview with SMS-part cost, sends 25 at a time, never twice), and the log of every text, email and push |
 | Settings | Merch Admin | Pickup details used in texts and emails |
 
 New package: `qrcode-generator` (MIT, no dependencies) draws the desk QR code
 on the pickup tab. Tests: `tests/admin.test.mjs` (session cookie, proxy, origin
 and path guards, sign-out).
+
+## Phase 5: audit, bulk texts, web push and social proof
+
+- **Audit tab** (`components/admin/audit-tab.tsx`): reads `staff/audit/`, first
+  without and then with Paystack's figures (the slower call), so the profit
+  shows straight away. All the maths is on the backend (backend README §26).
+- **Texts tab** (`components/admin/texts-tab.tsx`): audiences, groups and
+  placeholders come from `staff/sms/bulk/`. A fresh batch id is made whenever
+  the message or audience changes; sending loops until `left` is 0, and an
+  interrupted send carries on safely when Send is pressed again.
+- **Web push**: `MerchNotify` on the receipt (paid or awaiting payment)
+  registers `public/merch/sw.js` (scope `/merch/`) and subscribes through
+  `/api/merch/push`, which only forwards the endpoint and its two keys for real
+  order ids. Hidden when the browser can't do push or the backend has no VAPID
+  key. iPhones only get web push from a site added to the Home Screen; texts
+  still cover everything.
+- **Social proof**: `/api/merch/stats` (edge-cached 10 minutes) feeds
+  `lib/merch/stats.ts`: "N ordered this week" from 5, "N people bought this"
+  from 10, and "Most popular" on the bundle that leads with at least 10 buyers.
+  Shown on the shop's product picker, refreshed every 5 minutes.
+
+Tests: `tests/merch-extras.test.mjs` (stats parsing and thresholds, the stats
+and push proxies).
+

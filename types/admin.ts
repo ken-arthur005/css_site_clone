@@ -94,3 +94,39 @@ export type Expense = { id: number; day: string; category: string; note: string;
 export type AccountedEntry = { id: number; day: string; kind: string; label: string; amount: string; created_at: string; created_by: string | null };
 
 export type PromoCode = { id: number; code: string; kind: "BUNDLE" | "PERCENT"; percent: string | null; is_active: boolean; note: string; used_by: string | null; used_at: string | null };
+
+export type AuditLine = { name: string; sold: number; money: string; cost: string; profit: string; profit_each: string };
+export type AuditOrder = { code: string; legacy_ref: string | null; paid_day: string; group: "exec" | "public"; buyer: string; payment: string; money: string; cost: string; fee: string; profit: string };
+
+export type AuditProfit = {
+  range: { from: string | null; to: string | null; group: string };
+  paid_orders: number; money: string; print_cost: string; fees: string; fee_orders: number; fee_rate: string;
+  expenses: string; expenses_count: number; paystack_typed: string; profit: string;
+  due: { orders: number; money: string; profit: string };
+  lines: AuditLine[];
+  pieces: { name: string; pieces: number; average: string; cost: string }[];
+  expense_categories: { category: string; amount: string }[];
+  orders: AuditOrder[];
+};
+
+export type PaystackSummary = { balance: string; paid_out: string; on_the_way: string; payouts: { amount: string; status: string; date: string | null }[]; checked_at: string } | { error: string };
+
+export type MoneyCheck = {
+  came_in: { cash: string; paystack: string; total: string; store_fees: string };
+  paystack: PaystackSummary | null;
+  to_printer: string; store_spent: string; owed_back: string;
+  in_hand: { day: string; amount: string; label: string } | null;
+  cash_lines: { kind: string; label: string; amount: string }[];
+  cash_held: string; cash_unaccounted: string;
+  paystack_held?: string; paystack_pending?: string; reached?: string; should_have?: string; short?: string | null; unexplained?: string;
+  printer: { name: string; sent: number; sent_cost: string; left: number; left_cost: string }[];
+  sent_cost: string; left_cost: string; printer_gap: string;
+  cash_by_person: { person: string; orders: number; money: string }[];
+};
+
+export type AuditData = { profit: AuditProfit; check: MoneyCheck };
+
+export type BulkOptions = { enabled: boolean; audiences: { id: string; label: string }[]; placeholders: Record<string, string>; max_template: number };
+export type BulkPreview = { count: number; sample: string; chars: number; parts: number; max_parts: number; total_parts: number; people: { name: string; phone: string; code: string; group: string; owed: string; ready: string; text: string }[] };
+export type BulkResult = { sent: number; failed: number; skipped: number; left: number };
+export type NotificationRow = { id: number; created_at: string; order: string | null; channel: "SMS" | "EMAIL" | "PUSH"; kind: string; recipient: string; ok: boolean; info: string };

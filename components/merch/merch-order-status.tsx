@@ -6,6 +6,7 @@ import { money, orderPhase, receiptOptions, receiptProduct } from "@/lib/merch/o
 import type { ApiOrder, MerchStoreContent } from "@/types/merch-store";
 import { reconcileStoredOrder, usePendingOrder } from "./use-merch-cart";
 import { MerchImage } from "./merch-image";
+import { MerchNotify } from "./merch-notify";
 import { MerchOrderTracker } from "./merch-order-tracker";
 
 function statusCopy(status: string): [string, string, string] {
@@ -85,6 +86,7 @@ export function MerchOrderStatus({ id, content, initialOrder = null, initialErro
         <div className="merch-order__copy-control">{order.pickup_code ? <button type="button" className="merch-button merch-button--secondary" onClick={() => void copyCode()}>Copy code <span aria-hidden="true">↗</span></button> : <p>Your payment is confirmed. Check again shortly for your pickup code.</p>}<p role="status">{copyMessage}</p></div>
       </div>}
       <MerchOrderTracker order={order} />
+      {(status === "PAID" || phase === "pending") && <MerchNotify orderId={id} />}
       <div className="merch-order__body">
         <section className="merch-order__selection" aria-labelledby="receipt-items-title"><div className="merch-order__section-heading"><h2 id="receipt-items-title">Your order</h2>{quantity > 0 && <span>{quantity} item{quantity === 1 ? "" : "s"}</span>}</div>
           {order.items && order.items.length > 0 ? <div className="merch-order__items">{order.items.map((item, index) => {

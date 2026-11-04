@@ -1,6 +1,7 @@
 "use client";
 
 import { fromPriceMinor, money, productIsOpen } from "@/lib/merch/order";
+import { EMPTY_STATS, mostPopular, proofLine, type MerchStats } from "@/lib/merch/stats";
 import type { CheckoutCatalog, MerchStoreContent, ProductGroup, ProductId, ShopProduct } from "@/types/merch-store";
 import { MerchImage } from "../merch-image";
 import { productThumb } from "./shop-preview";
@@ -20,9 +21,10 @@ export function productStatus(product: ShopProduct, content: MerchStoreContent, 
   return { open: true, text: `${catalog ? "From" : "Estimate"} ${price}` };
 }
 
-export function ShopPicker({ content, catalog, selected, disabled, onChoose }: {
-  content: MerchStoreContent; catalog: CheckoutCatalog | null; selected: ProductId; disabled: boolean; onChoose: (id: ProductId) => void;
+export function ShopPicker({ content, catalog, selected, disabled, onChoose, stats = EMPTY_STATS }: {
+  content: MerchStoreContent; catalog: CheckoutCatalog | null; selected: ProductId; disabled: boolean; onChoose: (id: ProductId) => void; stats?: MerchStats;
 }) {
+  const popular = mostPopular(content.products.filter((product) => product.kind === "bundle").map((product) => product.id), stats);
   return <fieldset className="merch-designs" disabled={disabled}><legend>Choose {disabled && <small>Cancel this edit to switch items</small>}</legend>
     {GROUPS.map((group) => {
       const products = content.products.filter((product) => product.group === group.id);
@@ -32,9 +34,11 @@ export function ShopPicker({ content, catalog, selected, disabled, onChoose }: {
         <div className="merch-pick-products">{products.map((product) => {
           const status = productStatus(product, content, catalog);
           const thumb = productThumb(content, product.id);
+          const proof = status.open ? proofLine(product.id, stats) : "";
+          const badge = product.badge ?? (product.id === popular ? "Most popular" : null);
           return <button key={product.id} type="button" className="merch-pick-product" aria-pressed={selected === product.id} disabled={!status.open} onClick={() => onChoose(product.id)}>
             <span className="merch-pick-product__image">{thumb && <MerchImage src={thumb} alt="" sizes="64px" />}{product.kind === "bundle" && <span className="merch-pick-product__count" aria-hidden="true">×{product.pieces?.length}</span>}</span>
-            <span><strong>{product.name}{product.badge && <em className="merch-pick-product__badge">{product.badge}</em>}</strong><small>{status.text}</small></span>
+            <span><strong>{product.name}{badge && <em className="merch-pick-product__badge">{badge}</em>}</strong><small>{status.text}</small>{proof && <small className="merch-pick-product__proof">{proof}</small>}</span>
             <span aria-hidden="true">{selected === product.id ? "✓" : "↗"}</span>
           </button>;
         })}</div>

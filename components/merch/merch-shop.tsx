@@ -14,6 +14,7 @@ import { Quantity } from "./merch-quantity";
 import { MerchImage } from "./merch-image";
 import { rememberOrderReference, saveCheckoutOrder, storedValue, useMerchCart } from "./use-merch-cart";
 import { useMerchCatalog } from "./use-merch-catalog";
+import { useMerchStats } from "./use-merch-stats";
 import { useOrderReconciliation } from "./use-order-reconciliation";
 import { NETWORKS, PaySheet, type PayMethod } from "./shop/pay-sheet";
 import { ShopOptions } from "./shop/shop-options";
@@ -29,6 +30,7 @@ export function MerchShop({ content: localContent, initialProduct, initialColour
 }) {
   const router = useRouter();
   const { catalog, error: catalogError, refresh: refreshCatalog } = useMerchCatalog();
+  const stats = useMerchStats();
   const content = useMemo(() => withCatalogPricing(localContent, catalog), [localContent, catalog]);
   const requested = findProduct(content, initialProduct);
   // Old links may point at an edition that has ended: start on an open product.
@@ -299,7 +301,7 @@ export function MerchShop({ content: localContent, initialProduct, initialColour
         <h1 id="order-step-title" ref={heading} tabIndex={-1}>{step === 0 ? editingKey ? "Make an edit." : "Make it yours." : "Review & pay."}</h1>
         <p className="merch-builder__sub">{step === 0 ? editingKey ? "Update this selection, then save your changes." : "Pick a tee, the Lacoste or a bundle. Make it yours. Add it to your order." : "Check your order, add your details, then pay with Mobile Money or card, right here."}</p>
         {step === 0 && <>
-          <ShopPicker content={content} catalog={catalog} selected={draft.productId} disabled={!!editingKey} onChoose={chooseProduct} />
+          <ShopPicker content={content} catalog={catalog} selected={draft.productId} disabled={!!editingKey} onChoose={chooseProduct} stats={stats} />
           <p className="merch-pick-description">{product.description}</p>
           <ShopOptions content={content} catalog={catalog} draft={draft} maxQuantity={content.maxQuantity} onChange={(next) => { setDraft(next); setError(""); }} />
           <details className="merch-size-guide"><summary>Find your size ↗</summary><table><caption className="sr-only">Measurements in inches</caption><thead><tr><th scope="col">Size</th><th scope="col">Chest (in)</th><th scope="col">Length (in)</th></tr></thead><tbody>{content.sizes.map((size) => <tr key={size.id}><th scope="row">{size.id}</th><td>{size.chest}</td><td>{size.length}</td></tr>)}</tbody></table><p>Between sizes? Consider sizing up. We’ll check availability once more when you pay.</p></details>
