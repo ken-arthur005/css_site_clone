@@ -34,6 +34,7 @@ export function OrderDetail({ order, user, content, onChange, onClose }: {
   const paid = order.status === "paid";
   const mayCollect = can(user, "sales.collect_order");
   const mayUndo = can(user, "sales.undo_handover_order");
+  const magazines = order.items.filter((item) => item.magazine_edition);
 
   async function act(path: string, body: unknown, done: string) {
     setBusy(true); setError(""); setMessage("");
@@ -75,6 +76,10 @@ export function OrderDetail({ order, user, content, onChange, onClose }: {
       </li>;
     })}</ul>
 
+    {magazines.length > 0 && <div className="admin-actions">
+      <p className="admin-muted">Magazine: {magazines.map((item) => `${item.quantity}× ${item.product_name} at ${cedis(item.unit_price)}`).join(", ")}{order.magazine_locked ? " · opened on a device" : " · not opened yet"}</p>
+      {mayCollect && (order.status === "paid" || order.status === "collected") && order.magazine_locked && <button type="button" className="admin-button admin-button--ghost" disabled={busy} title="The magazine only opens on one device. Use this if the buyer changed phones." onClick={() => void act("magazine-reset", {}, "Done: the buyer can open it on their new device.")}>Move magazine to new device</button>}
+    </div>}
     {order.status === "pending" && order.payment_method === "CASH" && can(user, "sales.record_order") && <div className="admin-actions">
       <p className="admin-flag">Waiting for cash: {cedis(order.total)}</p>
       <button type="button" className="admin-button" disabled={busy} onClick={() => { if (confirm(`Received ${cedis(order.total)} in cash for order ${order.code}?`)) void act("cash-received", {}, "Cash received. The order is paid."); }}>Cash received</button>

@@ -1,4 +1,5 @@
 import { getMerchStore } from "@/lib/content/merch-store";
+import { MAGAZINE_EDITIONS, type MagazineEdition } from "@/lib/merch/magazine";
 import type { ApiComponent, ApiMerchandise, ApiMerchOption, ApiOrder, ApiOrderItem, ApiOrderPiece, ApiPricedOption, ChargeResult, ChargeStatus, CheckoutCatalog, MerchStoreContent, OrderStage, ProductKind, PromoCheck } from "@/types/merch-store";
 
 export class MerchApiError extends Error {
@@ -6,7 +7,7 @@ export class MerchApiError extends Error {
   constructor(message: string, status = 502) { super(message); this.status = status; }
 }
 
-function apiBase(): string {
+export function apiBase(): string {
   return (process.env.CSS_API_BASE_URL ?? "https://css-knust-api.onrender.com/api/v1/").replace(/\/?$/, "/");
 }
 
@@ -125,6 +126,17 @@ export async function getCheckoutCatalog(content?: MerchStoreContent): Promise<C
   return { products };
 }
 
+/** The fundraiser magazines' live records, by edition (missing until the catalogue is set up). */
+export async function getMagazineProducts(): Promise<Partial<Record<MagazineEdition, ApiMerchandise>>> {
+  const records = await getMerchandiseRecords();
+  const found: Partial<Record<MagazineEdition, ApiMerchandise>> = {};
+  for (const edition of MAGAZINE_EDITIONS) {
+    const record = records.find((item) => item.slug === edition.slug);
+    if (record) found[edition.id] = record;
+  }
+  return found;
+}
+
 export function parsePromo(value: unknown, catalog: CheckoutCatalog): PromoCheck {
   if (!value || typeof value !== "object") throw new MerchApiError("That code couldn’t be checked.");
   const raw = value as Record<string, unknown>;
@@ -214,6 +226,7 @@ function publicOrderItem(value: unknown): ApiOrderItem | null {
     ...(typeof item.unit_price === "string" ? { unit_price: item.unit_price } : {}),
     ...(typeof item.line_total === "string" ? { line_total: item.line_total } : {}),
     ...(Array.isArray(item.pieces) ? { pieces: item.pieces.map(publicPiece).filter((piece): piece is ApiOrderPiece => piece !== null) } : {}),
+    ...(typeof item.magazine_edition === "string" && /^[a-z0-9-]{1,20}$/.test(item.magazine_edition) ? { magazine_edition: item.magazine_edition } : {}),
   };
 }
 

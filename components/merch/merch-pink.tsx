@@ -1,5 +1,6 @@
 "use client";
 
+import { TransitionLink } from "@/components/transitions/transition-link";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { useEffect, useId, useRef, useState } from "react";
@@ -35,7 +36,8 @@ export function MerchPink({ facts, availableUntil }: { facts: string[]; availabl
         <h2 id="pink-title"><MerchTyping>debugCancer<span>(cure)</span></MerchTyping></h2>
         <p className="merch-pink__lede">October is Breast Cancer Awareness Month. Wear the reminder: check on yourself, check on the people you love.</p>
         <div className="merch-pink__actions">
-          <MerchOrderLink product="pink-october" availableUntil={availableUntil} className="merch-button">Choose Pink October <span aria-hidden="true">↗</span></MerchOrderLink>
+          <TransitionLink href="/merch/magazine" transitionLabel="MAGAZINE" className="merch-button">Buy the magazine: every cedi to the cause <span aria-hidden="true">↗</span></TransitionLink>
+          <MerchOrderLink product="pink-october" availableUntil={availableUntil} className="merch-text-button">Choose Pink October <span aria-hidden="true">↗</span></MerchOrderLink>
           <button type="button" className="merch-text-button" ref={trigger} aria-expanded={open} aria-controls="merch-awareness-facts" onClick={() => setOpen(!open)}>Breast cancer awareness <span aria-hidden="true">{open ? "−" : "+"}</span></button>
         </div>
         <p className="merch-pink__deadline">Order through {new Date(`${availableUntil}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "Africa/Accra" })}.</p>

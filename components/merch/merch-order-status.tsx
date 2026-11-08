@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { TransitionLink } from "@/components/transitions/transition-link";
+import { orderMagazines } from "@/lib/merch/magazine";
 import { money, orderPhase, receiptOptions, receiptProduct } from "@/lib/merch/order";
 import type { ApiOrder, MerchStoreContent } from "@/types/merch-store";
 import { reconcileStoredOrder, usePendingOrder } from "./use-merch-cart";
@@ -62,7 +63,10 @@ export function MerchOrderStatus({ id, content, initialOrder = null, initialErro
   const phase = orderPhase(status);
   const paid = phase === "paid";
   const resumeUrl = savedSession?.id === id && phase === "pending" ? savedUrl : null;
-  const [kicker, title, copy] = order ? statusCopy(status) : ["> finding your receipt", "Finding your receipt.", "We’re checking your payment. Your receipt and pickup code will appear here once it’s confirmed."];
+  const quantity = order?.items?.reduce((total, item) => total + item.quantity, 0) ?? 0;
+  const magazines = order ? orderMagazines(order) : [];
+  const magazineOnly = magazines.length > 0 && !!order?.items?.every((item) => item.magazine_edition);
+  const [kicker, title, copy] = order && magazineOnly && paid ? ["> thank you", "Payment confirmed.", "Thank you for supporting breast cancer care. Your magazine is ready to read."] : order ? statusCopy(status) : ["> finding your receipt", "Finding your receipt.", "We’re checking your payment. Your receipt and pickup code will appear here once it’s confirmed."];
   const retryCheck = () => { setChecking(true); setRetry((value) => value + 1); };
   async function copyCode() {
     if (!order?.pickup_code) return;
@@ -73,7 +77,6 @@ export function MerchOrderStatus({ id, content, initialOrder = null, initialErro
     }
   }
   const amount = (value: string) => money(Math.round(Number(value) * 100));
-  const quantity = order?.items?.reduce((total, item) => total + item.quantity, 0) ?? 0;
   return <section className="merch-order" data-paid={paid || undefined} aria-labelledby="receipt-title" aria-busy={checking}>
     <div className="merch-order__hero">
       <div><p className="merch-label">CSS Merch / {paid ? "Your receipt" : "Your order"}</p><h1 id="receipt-title">{error && !order ? "Let’s find your receipt." : title}</h1><p className="merch-order__copy" role="status">{copy}</p><p className="merch-order__kicker">{kicker}</p></div>
@@ -81,18 +84,22 @@ export function MerchOrderStatus({ id, content, initialOrder = null, initialErro
     </div>
     {order && <>
       {!paid && <p className="merch-order__status">{order.status.replaceAll("_", " ")}</p>}
-      {paid && <div className="merch-order__pickup">
+      {paid && magazines.length > 0 && <div className="merch-order__pickup merch-order__magazine">
+        <div><p className="merch-label">Pink October magazine</p><strong>Ready to read</strong><p>It opens on the first device you read it on. Changed phones? Ask at the CSS desk to move it.</p></div>
+        <div className="merch-order__copy-control"><a href={`/merch/magazine?read=${encodeURIComponent(id)}`} className="merch-button">Read your magazine <span aria-hidden="true">↗</span></a></div>
+      </div>}
+      {paid && !magazineOnly && <div className="merch-order__pickup">
         <div><p className="merch-label">Your pickup code</p><strong ref={code}>{order.pickup_code || "On its way"}</strong><p>Show this code when collecting. At the desk, scan the QR code to join the queue.</p></div>
         <div className="merch-order__copy-control">{order.pickup_code ? <button type="button" className="merch-button merch-button--secondary" onClick={() => void copyCode()}>Copy code <span aria-hidden="true">↗</span></button> : <p>Your payment is confirmed. Check again shortly for your pickup code.</p>}<p role="status">{copyMessage}</p></div>
       </div>}
-      <MerchOrderTracker order={order} />
-      {(status === "PAID" || phase === "pending") && <MerchNotify orderId={id} />}
+      {!magazineOnly && <MerchOrderTracker order={order} />}
+      {!magazineOnly && (status === "PAID" || phase === "pending") && <MerchNotify orderId={id} />}
       <div className="merch-order__body">
         <section className="merch-order__selection" aria-labelledby="receipt-items-title"><div className="merch-order__section-heading"><h2 id="receipt-items-title">Your order</h2>{quantity > 0 && <span>{quantity} item{quantity === 1 ? "" : "s"}</span>}</div>
           {order.items && order.items.length > 0 ? <div className="merch-order__items">{order.items.map((item, index) => {
             const match = receiptProduct(item, content);
             const name = match?.product.name ?? item.product_name ?? `Item ${index + 1}`;
-            const options = receiptOptions(item, content);
+            const options = item.magazine_edition ? `${item.magazine_edition === "male" ? "Male" : "Female"} edition · all to breast cancer care` : receiptOptions(item, content);
             const lineTotal = item.line_total ?? (item.unit_price ? (Number(item.unit_price) * item.quantity).toFixed(2) : null);
             const handed = item.pieces?.filter((piece) => piece.handed) ?? [];
             const collected = handed.length > 0 && handed.length < (item.pieces?.length ?? 0) ? `Collected: ${handed.map((piece) => piece.label).join(", ")}` : null;
