@@ -4,6 +4,7 @@ import { useEffect, useRef, type MouseEvent } from "react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useSmoothScroll } from "@/components/providers/smooth-scroll-provider";
 import { getMerchStackHeight, MERCH_LAYOUT_EVENT } from "@/lib/animations/merch-layout";
+import { TransitionLink } from "@/components/transitions/transition-link";
 import { MerchOrderLink } from "./merch-showcase";
 
 const links = [
@@ -69,6 +70,7 @@ export function MerchSectionNav() {
   return <div className="merch-index-space">
     <nav className="merch-index" aria-label="Merch sections" ref={nav} data-lenis-prevent>
       {links.map(({ id, label }) => <a key={id} href={`#${id}`} onClick={(event) => navigateSection(event, id)}>{label}</a>)}
+      <TransitionLink href="/merch/magazine" transitionLabel="MAGAZINE" className="merch-index__magazine">Magazine</TransitionLink>
       <MerchOrderLink className="merch-index__order">Start an order ↗</MerchOrderLink>
     </nav>
   </div>;

@@ -7,7 +7,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Deliberately promote only the homepage and the four main public pages.
   // No invented last-modified dates, retired URLs, event details, or order URLs.
-  return ["/", "/about", "/executives", "/events", "/merch"].map((path) => ({
+  return ["/", "/about", "/executives", "/events", "/merch", "/merch/magazine"].map((path) => ({
     url: new URL(path, site.canonicalOrigin.value).href,
   }));
 }

@@ -31,6 +31,8 @@ export type StaffItem = {
   back_name: string;
   note: string;
   pieces: StaffPiece[];
+  /** Fundraiser magazines: the edition (empty for garments). */
+  magazine_edition?: string;
 };
 
 export type StaffStage = "placed" | "paid" | "printing" | "ready" | "collected" | "cancelled";
@@ -65,6 +67,8 @@ export type StaffOrder = {
   picked_up_by: string;
   cancelled_at: string | null;
   cancel_reason: string;
+  /** The magazine is bound to a device (staff can move it to a new one). */
+  magazine_locked?: boolean;
   items: StaffItem[];
 };
 
@@ -102,6 +106,8 @@ export type AuditProfit = {
   range: { from: string | null; to: string | null; group: string };
   paid_orders: number; money: string; print_cost: string; fees: string; fee_orders: number; fee_rate: string;
   expenses: string; expenses_count: number; paystack_typed: string; profit: string;
+  /** Magazine money: all goes to the cause, so it is kept out of the profit. */
+  fundraiser?: string;
   due: { orders: number; money: string; profit: string };
   lines: AuditLine[];
   pieces: { name: string; pieces: number; average: string; cost: string }[];

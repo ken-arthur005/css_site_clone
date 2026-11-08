@@ -18,6 +18,9 @@ const nextConfig: NextConfig = {
       },
       { source: "/current-administration", destination: "/executives", permanent: true },
       { source: "/history", destination: "/about", permanent: true },
+      // Old css-merch magazine links (?read=CSS-XXXXXXXX is kept).
+      { source: "/magazine.html", destination: "/merch/magazine", permanent: true },
+      { source: "/merch/magazine.html", destination: "/merch/magazine", permanent: true },
       {
         source: "/:path*",
         has: [{ type: "host", value: "www.thecssknust.com" }],

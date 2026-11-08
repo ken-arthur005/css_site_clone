@@ -117,7 +117,7 @@ export function AuditTab() {
     if (!p) return;
     const rows: (string | number)[][] = [
       ["Audit", filters.from || "start", filters.to || today(), filters.group || "everyone"], [],
-      ["Money received", p.money], ["Print costs", p.print_cost], ["Paystack charges we paid", p.fees], ["Expenses", p.expenses], ["Profit", p.profit], [],
+      ["Money received", p.money], ["Magazine fundraiser (not profit)", p.fundraiser ?? "0.00"], ["Print costs", p.print_cost], ["Paystack charges we paid", p.fees], ["Expenses", p.expenses], ["Profit", p.profit], [],
       ["Package / item", "Sold", "Money received", "Print cost", "Profit"], ...p.lines.map((l) => [l.name, l.sold, l.money, l.cost, l.profit]), [],
       ["Order", "Old ref", "Paid", "Group", "Buyer", "Payment", "Money received", "Print cost", "Paystack charge we paid", "Profit"],
       ...p.orders.map((o) => [o.code, o.legacy_ref ?? "", o.paid_day, o.group, o.buyer, o.payment, o.money, o.cost, o.fee, o.profit]),
@@ -139,6 +139,7 @@ export function AuditTab() {
       {!p ? <p className="admin-muted">{error ? "" : "Working out the figures…"}</p> : <>
         <div className="admin-totals">
           <Stat label="Money received" value={cedis(p.money)} note={`${p.paid_orders} paid orders`} />
+          {num(p.fundraiser) > 0 && <Stat label="Magazine fundraiser" value={cedis(p.fundraiser)} note="Goes to breast cancer care; not profit" />}
           <Stat label="Print costs" value={cedis(p.print_cost)} note="Every piece sold, at its print cost" />
           <Stat label="Paystack charges (we paid)" value={cedis(num(p.fees) + num(p.paystack_typed))} note={`${cedis(p.fees)} on ${p.fee_orders} early online orders${num(p.paystack_typed) ? ` + ${cedis(p.paystack_typed)} typed in` : ""}`} />
           <Stat label="Expenses" value={cedis(num(p.expenses) - num(p.paystack_typed))} note={`${p.expenses_count} typed in`} />

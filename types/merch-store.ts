@@ -153,6 +153,8 @@ export type ApiOrderItem = {
   unit_price?: string;
   line_total?: string;
   pieces?: ApiOrderPiece[];
+  /** Fundraiser magazines: the edition the reader opens. */
+  magazine_edition?: string;
 };
 
 export type OrderStage = "placed" | "paid" | "printing" | "ready" | "collected" | "cancelled";

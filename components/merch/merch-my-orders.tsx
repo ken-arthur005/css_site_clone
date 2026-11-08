@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { TransitionLink } from "@/components/transitions/transition-link";
+import { orderMagazines } from "@/lib/merch/magazine";
 import { LAST_RECEIPT_KEY, money, minorOf, ORDER_HISTORY_KEY, PENDING_ORDER_KEY } from "@/lib/merch/order";
 import type { ApiOrder } from "@/types/merch-store";
 import { MerchLookup } from "./merch-lookup";
@@ -36,7 +37,7 @@ export function OrderList({ orders, action }: { orders: ApiOrder[]; action?: (or
     return <article className="merch-order__item merch-order-card" key={order.id}>
       <div><h3>{STAGE_NAMES[stage] ?? order.status}</h3><p>{items}</p>
         <small>{order.created_at && new Date(order.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "Africa/Accra" })}{order.pickup_code && <> · Pickup code <strong>{order.pickup_code}</strong></>}</small></div>
-      <div className="merch-order-card__side"><strong>{money(minorOf(order.total) ?? 0)}</strong>{action ? action(order) : <TransitionLink href={`/merch/order/${order.id}`} transitionLabel="YOUR RECEIPT" className="merch-text-button">Receipt ↗</TransitionLink>}</div>
+      <div className="merch-order-card__side"><strong>{money(minorOf(order.total) ?? 0)}</strong>{action ? action(order) : <TransitionLink href={`/merch/order/${order.id}`} transitionLabel="YOUR RECEIPT" className="merch-text-button">Receipt ↗</TransitionLink>}{["PAID", "COLLECTED"].includes(order.status.toUpperCase()) && orderMagazines(order).length > 0 && <a href={`/merch/magazine?read=${encodeURIComponent(order.id)}`} className="merch-text-button">Read magazine ↗</a>}</div>
     </article>;
   })}</div>;
 }
