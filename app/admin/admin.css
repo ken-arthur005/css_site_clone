@@ -76,6 +76,18 @@
 .admin-pieces li[data-handed] strong { text-decoration: line-through; text-decoration-color: var(--foreground-subtle); }
 .admin-cancel summary { cursor: pointer; font-size: .8rem; color: #9b2a22; }
 .admin-cancel .admin-actions { margin-top: .6rem; }
+.admin-order__tools { display: flex; gap: .75rem; align-items: center; align-self: start; }
+.admin-editor { width: min(40rem, calc(100vw - 2rem)); max-height: calc(100svh - 2rem); margin: auto; padding: 1.25rem; border: 1px solid var(--border-subtle); background: var(--surface-raised); color: inherit; overflow-y: auto; }
+.admin-editor::backdrop { background: rgb(0 0 0 / .45); }
+.admin-editor__head { display: flex; justify-content: space-between; gap: 1rem; align-items: start; }
+.admin-editor fieldset { display: grid; gap: .8rem; border: 1px solid var(--border-subtle); padding: .9rem; }
+.admin-editor legend { padding: 0 .35rem; font-weight: 600; }
+.admin-editor__piece { display: grid; gap: .5rem; }
+.admin-editor__piece + .admin-editor__piece { border-top: 1px dashed var(--border-subtle); padding-top: .8rem; }
+.admin-editor__piece-name { font-size: .8rem; font-weight: 600; }
+.admin-editor__fields { display: grid; gap: .8rem; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); }
+.admin-editor__history { display: grid; gap: .4rem; margin-top: .5rem; font-size: .8rem; }
+.admin-editor__history small { color: var(--foreground-muted); }
 
 .admin-desk { grid-template-columns: 1fr auto; align-items: center; }
 .admin-code { font: 600 2.2rem var(--font-geist-mono), monospace; letter-spacing: .12em; }

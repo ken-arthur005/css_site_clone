@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { MerchStoreContent } from "@/types/merch-store";
 import type { StaffOrder, StaffPiece } from "@/types/admin";
 import { adminApi, can, cedis, when, type StaffUser } from "./admin-api";
+import { OrderEditor } from "./order-editor";
 
 export const STAGE_LABEL: Record<string, string> = { placed: "Awaiting payment", paid: "Paid", printing: "Printing", ready: "Ready", collected: "Collected", cancelled: "Cancelled" };
 
@@ -28,6 +29,7 @@ export function OrderDetail({ order, user, content, onChange, onClose }: {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [editing, setEditing] = useState(false);
   const pieces = order.items.flatMap((item) => item.pieces.map((piece) => ({ ...piece, item })));
   const open = pieces.filter((piece) => !piece.handed_at);
   const handed = pieces.filter((piece) => piece.handed_at);
@@ -59,7 +61,10 @@ export function OrderDetail({ order, user, content, onChange, onClose }: {
         {order.checked_in_at && paid && <p className="admin-flag">In the pickup queue since {when(order.checked_in_at, false)}{order.serving_by && ` · ${order.serving_by} is serving`}</p>}
         {order.cancel_reason && <p className="admin-flag admin-flag--bad">Cancelled: {order.cancel_reason}</p>}
       </div>
-      {onClose && <button type="button" className="admin-link" onClick={onClose}>Close ✕</button>}
+      <div className="admin-order__tools">
+        {can(user, "sales.edit_order") && order.status !== "cancelled" && <button type="button" className="admin-button admin-button--ghost" onClick={() => setEditing(true)}>Edit details</button>}
+        {onClose && <button type="button" className="admin-link" onClick={onClose}>Close ✕</button>}
+      </div>
     </header>
 
     <ul className="admin-pieces">{pieces.map((piece) => {
@@ -103,5 +108,6 @@ export function OrderDetail({ order, user, content, onChange, onClose }: {
     </details>}
     <p className="admin-ok" role="status">{message}</p>
     <p className="admin-error" role="alert">{error}</p>
+    {editing && <OrderEditor order={order} content={content} onSaved={(next) => { onChange(next); setMessage("Changes saved."); }} onClose={() => setEditing(false)} />}
   </section>;
 }
