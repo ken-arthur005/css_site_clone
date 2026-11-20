@@ -6,18 +6,21 @@ import type { StaffItem, StaffOrder, StaffPiece } from "@/types/admin";
 import { adminApi, allPages, cedis, downloadCsv, today, when, type Page, type StaffUser } from "./admin-api";
 import { OrderDetail, pieceText, StageBadge } from "./order-detail";
 
-type Garment = "tee" | "lacoste";
+type Garment = "tee" | "lacoste" | "pink";
 type ItemFilter = "" | Garment | "both";
 type Filters = { q: string; status: string; stage: string; checkedIn: boolean; item: ItemFilter; since: string };
 
 const PAGE_SIZE = 50;
+const ITEM_LABEL: Record<ItemFilter, string> = { "": "CSV", both: "CSS shirts + Lacoste", tee: "CSS shirts", lacoste: "Lacoste", pink: "Pink October" };
+const ITEM_SLUG: Record<Exclude<ItemFilter, "">, string> = { both: "css-shirts-and-lacoste", tee: "css-shirts", lacoste: "lacoste", pink: "pink-october" };
 
 /** Which garment a piece is. Bundles name each piece; single items fall back to the product name. */
 export function garmentOf(piece: StaffPiece, item: StaffItem): Garment | null {
   for (const text of [`${piece.slot} ${piece.label}`, item.product_name]) {
     const value = text.toLowerCase();
     if (/lacoste|polo/.test(value)) return "lacoste";
-    if (/tee|shirt|octobe/.test(value)) return "tee";
+    if (/pink|octobe/.test(value)) return "pink";
+    if (/tee|shirt/.test(value)) return "tee";
   }
   return null;
 }
@@ -25,7 +28,7 @@ export function garmentOf(piece: StaffPiece, item: StaffItem): Garment | null {
 function pieceMatches(filters: Filters, piece: StaffPiece, item: StaffItem): boolean {
   if (!filters.item) return true;
   const garment = garmentOf(piece, item);
-  return filters.item === "both" ? garment !== null : garment === filters.item;
+  return filters.item === "both" ? garment === "tee" || garment === "lacoste" : garment === filters.item;
 }
 
 /** The item and date filters run here, because the staff API has no such filters. */
@@ -92,7 +95,7 @@ export function OrdersTab({ user, content }: { user: StaffUser; content: MerchSt
     setExporting(true);
     try {
       const rows = matched ?? await allPages<StaffOrder>(query(filters).replace(/\?page=1&?/, "?"));
-      downloadCsv(`css-orders-${today()}.csv`,
+      downloadCsv(`css-orders-${filters.item ? `${ITEM_SLUG[filters.item]}-` : ""}${today()}.csv`,
         ["Order", "Old ref", "Placed", "Status", "Stage", "Buyer", "Phone", "Email", "Source", "Item", "Piece", "Options", "Qty", "Line total", "Order total", "Code", "Handed over", "Handed by"],
         rows.flatMap((order) => order.items.flatMap((item) => item.pieces.filter((piece) => pieceMatches(filters, piece, item)).map((piece) => [
           order.code, order.legacy_ref, when(order.created_at), order.status, order.stage, order.buyer_name, order.buyer_phone, order.buyer_email, order.source,
@@ -115,12 +118,12 @@ export function OrdersTab({ user, content }: { user: StaffUser; content: MerchSt
           <option value="">Any stage</option><option value="paid">Not printing yet</option><option value="printing">Printing</option><option value="ready">Ready</option>
         </select>
         <select aria-label="Item" value={filters.item} onChange={(event) => { setPage(1); setFilters({ ...filters, item: event.target.value as ItemFilter }); }}>
-          <option value="">Any item</option><option value="both">T-shirts and Lacoste</option><option value="tee">T-shirts only</option><option value="lacoste">Lacoste only</option>
+          <option value="">Any item</option><option value="both">CSS shirts + Lacoste</option><option value="tee">CSS shirts only</option><option value="lacoste">Lacoste only</option><option value="pink">Pink October only</option>
         </select>
         <label className="admin-inline">Placed since <input type="date" value={filters.since} max={today()} onChange={(event) => { setPage(1); setFilters({ ...filters, since: event.target.value }); }} /></label>
         <label className="admin-inline"><input type="checkbox" checked={filters.checkedIn} onChange={(event) => { setPage(1); setFilters({ ...filters, checkedIn: event.target.checked }); }} /> In the queue</label>
         <button className="admin-button" type="submit">Search</button>
-        <button className="admin-button admin-button--ghost" type="button" disabled={exporting} onClick={() => void exportCsv()}>{exporting ? "Exporting…" : "Export CSV"}</button>
+        <button className="admin-button admin-button--ghost" type="button" disabled={exporting} onClick={() => void exportCsv()}>{exporting ? "Exporting…" : `Export ${ITEM_LABEL[filters.item]}`}</button>
       </form>
       <p className="admin-error" role="alert">{error}</p>
       {loading ? <p className="admin-muted">Loading every order to filter…</p> : data && <p className="admin-muted">{data.count} order{data.count === 1 ? "" : "s"}{localFiltering(filters) && ", newest first"}</p>}
